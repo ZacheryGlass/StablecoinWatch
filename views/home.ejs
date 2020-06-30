@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Stablecoin Watch</title>
+        <link rel="stylesheet" type="text/css" href="/style.css" />
+        <link rel="stylesheet" type="text/css" href="/style1.css" />
+    </head>
+    <body>
+        <header>
+            <h1>StableCoin Watch</h1>
+            <!-- <ul>
+                <li><a href="/">Home</a></li>
+            </ul> -->
+        </header>
+        <div class="header2">
+            <ul id="metrics">
+                <li>Total Market Cap:&nbsp;<%=totalMCap_s%></li>
+                <li class="right">
+                    Total Volume:&nbsp;&nbsp;&nbsp;<%=totalVolume_s%>
+                </li>
+            </ul>
+        </div>
+
+        <main>
+            <% if( coins ) { %>
+            <section class="wrapper">
+                <!-- Row title -->
+                <main class="row title">
+                    <ul>
+                        <li class="rank">Rank</li>
+                        <li class="name center">Name</li>
+                        <li>Symbol</li>
+                        <li>Market Cap</li>
+                        <li>Market Cap Dominance</li>
+                        <li>Volume</li>
+                        <li>Volume Dominance</li>
+                        <li>Type</li>
+                    </ul>
+                </main>
+                <% coins.forEach( (coin, i) => { %>
+                <!-- Row X -->
+                <article class="row type<%=i%4+1%>">
+                    <ul>
+                        <li class="rank center"><%= (i+1) %></li>
+                        <li class="name">
+                            <strong><a href="#"><%= coin.name %></a></strong>
+                        </li>
+                        <li><%= coin.symbol %></li>
+                        <li><%= coin.mcap_s %></li>
+                        <li>
+                            <%= ((coin.mcap/totalMCap)*100).toFixed(2) %>%
+                        </li>
+                        <li><%= coin.volume_s %></li>
+                        <li>
+                            <%= ((coin.volume/totalVolume)*100).toFixed(2) %>%
+                        </li>
+                        <li class="type">
+                            <%= coin.type %>
+                        </li>
+                    </ul>
+                    <ul class="more-content">
+                        <li>
+                            <%= coin.desc %>
+                        </li>
+                    </ul>
+                </article>
+                <% }) %>
+            </section>
+            <% } else { %>
+            <p>Something went wrong.</p>
+            <% } %>
+        </main>
+    </body>
+</html>
