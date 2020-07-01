@@ -8,12 +8,13 @@ const app = express();
 
 app.set('view engine', 'ejs');
 app.use(express.static(__dirname + '/styles'));
+app.use(express.static(__dirname + '/res'));
 
 let stablecoins = [];
 let totalMCap = 0;
 let totalVolume = 0;
 updateData();
-cron.schedule('*/1 * * * *', updateData);
+cron.schedule('*/10 * * * *', updateData);
 
 async function updateData() {
     let d = new Date();
