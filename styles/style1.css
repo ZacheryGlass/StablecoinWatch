@@ -66,6 +66,7 @@ body {
 
 .row ul li {
     margin: 0;
+    padding: 0;
     font-size: 16px;
     font-weight: normal;
     list-style: none;
@@ -103,6 +104,7 @@ body {
 
 .rank {
     width: 5% !important;
+    text-align: center;
 }
 
 .type {
@@ -139,7 +141,7 @@ body {
 }
 
 .title {
-    padding: 25px 0 5px 0;
+    padding: 10px 0px 20px 0px;
     height: 45px;
     font-size: 0;
     background-color: rgba(34, 31, 31, 0.603);
@@ -275,7 +277,7 @@ ul.more-content li {
     top: 12px;
     font-size: 13px;
     margin: 0;
-    padding: 10px 13px;
+    padding: 6px 13px;
     display: block;
     height: 50px;
     width: 100%;

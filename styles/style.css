@@ -31,7 +31,7 @@ header {
 .header2 li {
     list-style-type: none;
     display: inline-block;
-    margin: 0 10px 0 0;
+    /* margin: 0 10px 0 0; */
     text-align: right;
     color: white;
     font-weight: bold;
@@ -50,26 +50,33 @@ header a {
     display: block;
 }
 
-footer * {
+.split * {
     box-sizing: border-box;
 }
 
 /* Create three equal columns that floats next to each other */
-footer .column {
+.column {
 float: left;
 width: 33.33%;
-padding: 10px;
+/* padding: 10px; */
 position: relative
 
 }
 
-footer {
+footer .column {
     background-color: #3e3e3e;
     color: white;
     /* font-size: 10px; */
+    min-height: 51px;
+    padding: 10px 0px;
 }
 
-footer:after {
+footer .column a {
+
+    padding: 10px 10px;
+}
+
+.split:after {
     content: "";
     display: table;
     clear: both;
@@ -107,4 +114,9 @@ footer a {
 #btc_img {
     width: 20px;
     height: 20px;
+}
+
+
+.more-content li {
+    padding: 0px;
 }
