@@ -38,6 +38,7 @@ header {
 }
 
 .right {
+    text-align: right;
     float: right;
 }
 
@@ -96,7 +97,7 @@ footer .column a {
     text-align: center;
 }
 
-.right {
+.right * {
     text-align: right;
 }
 
@@ -116,7 +117,16 @@ footer a {
     height: 20px;
 }
 
+p {
+    margin: 0;
+}
 
 .more-content li {
     padding: 0px;
+    text-align: inherit;
+}
+
+ul.supply_list li {
+    padding: 0;
+    top: 0;
 }

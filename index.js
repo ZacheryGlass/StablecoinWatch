@@ -73,6 +73,7 @@ app.get('/', async (req, res) => {
         totalMCap_s: roundMCap(totalMCap),
         totalVolume: totalVolume,
         totalVolume_s: roundMCap(totalVolume),
+        tether_eth_supply: 6000000000,
     });
 });
 
