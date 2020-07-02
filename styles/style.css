@@ -57,11 +57,10 @@ header a {
 
 /* Create three equal columns that floats next to each other */
 .column {
-float: left;
-width: 33.33%;
-/* padding: 10px; */
-position: relative
-
+    float: left;
+    width: 33.33%;
+    /* padding: 10px; */
+    position: relative;
 }
 
 footer .column {
@@ -73,12 +72,11 @@ footer .column {
 }
 
 footer .column a {
-
     padding: 10px 10px;
 }
 
 .split:after {
-    content: "";
+    content: '';
     display: table;
     clear: both;
 }
@@ -109,7 +107,7 @@ footer .column a {
 
 footer a {
     /* text-decoration: none; */
-    color: inherit
+    color: inherit;
 }
 
 #btc_img {
@@ -126,7 +124,9 @@ p {
     text-align: inherit;
 }
 
-ul.supply_list li {
+.supply_list li,
+.supply_list {
     padding: 0;
     top: 0;
+    font-size: 12px;
 }

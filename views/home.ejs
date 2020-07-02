@@ -28,10 +28,10 @@
             <section class="wrapper">
                 <!-- Row title -->
                 <main class="row title">
-                    <ul>
+                    <ul class="coinstats">
                         <li class="rank">#</li>
                         <li class="name">Name</li>
-                        <li>Symbol</li>
+                        <li class="symbol">Symbol</li>
                         <li>Market Cap</li>
                         <li>Market Cap Dominance</li>
                         <li>Volume</li>
@@ -47,7 +47,7 @@
                         <li class="name">
                             <strong><a href="#"><%= coin.name %></a></strong>
                         </li>
-                        <li><%= coin.symbol %></li>
+                        <li class="symbol"><%= coin.symbol %></li>
                         <li><%= coin.mcap_s %></li>
                         <li>
                             <%= ((coin.mcap/totalMCap)*100).toFixed(2) %>%
@@ -56,16 +56,18 @@
                         <li>
                             <%= ((coin.volume/totalVolume)*100).toFixed(2) %>%
                         </li>
-                        <%# if ( coin.name == "Tether" ) { %>
-                            <p>Tether on the Blockchain:</p>
+                        <% if ( coin.name == "Tether" ) { %>
+                        <li class="type">
                             <ul class="supply_list">
-                                <li>Ethereum: <%#= ((tether_eth_supply/coin.mcap)*100).toFixed() %>%</li>
+                                <li>ERC-20: <%= ((tether_eth_supply/coin.mcap)*100).toFixed() %>%</li>
                             </ul>
-                        <%# } else { %>
+                        </li>
+
+                        <% } else { %>
                         <li class="type">
                             <%= coin.type %>
                         </li>
-                        <%# } %>
+                        <% } %>
                         </ul>
                     <ul class="more-content">
                          <li class="split">

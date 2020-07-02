@@ -64,9 +64,8 @@ body {
     padding: 0;
 }
 
-.row ul li {
+.row ul.coinstats li {
     margin: 0;
-    padding: 0;
     font-size: 16px;
     font-weight: normal;
     list-style: none;
@@ -74,6 +73,12 @@ body {
     width: 13%;
     box-sizing: border-box;
     display: inline-flex;
+    padding: 5px 10px;
+}
+
+.title ul.coinstats li {
+    padding: 15px 13px;
+    font-weight: bold;
 }
 
 @media only screen and (max-width: 767px) and (min-width: 480px) {
@@ -86,15 +91,6 @@ body {
     .row ul li {
         font-size: 13px;
     }
-}
-
-.title ul li {
-    padding: 15px 13px;
-    font-weight: bold;
-}
-
-.row ul li {
-    padding: 5px 10px;
 }
 
 .name {
@@ -123,11 +119,6 @@ body {
     background-color: rgba(34, 31, 31, 0.603);
 }
 
-.coinstats {
-    /* border-bottom: 1px solid rgba(0, 0, 0, 0.603); */
-
-}
-
 .row:hover {
     background-color: rgba(26, 26, 26, 0.9);
     height: 105px;
@@ -136,11 +127,10 @@ body {
 .more-content {
     display: none;
 }
-    
+
 .row:hover > .more-content {
     display: block;
 }
-
 
 @media only screen and (max-width: 767px) {
     .row:hover {
