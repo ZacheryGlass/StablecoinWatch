@@ -2,6 +2,18 @@ const express = require('express');
 const Messari = require('messari-api');
 const MessariClient = new Messari();
 var cron = require('node-cron');
+var ethapikey = require('./keys').ethapikey;
+var ethapi = require('etherscan-api').init(ethapikey);
+
+// CONSTANTS
+const TETHER_DECIMALS = 6;
+const TETHER_CONTRACT_ADDRESS = '0xdac17f958d2ee523a2206206994597c13d831ec7';
+
+// GLOBAL VARS
+let tether_eth_supply = 0;
+let stablecoins = [];
+let totalMCap = 0;
+let totalVolume = 0;
 
 // set up express app.
 const app = express();
@@ -10,16 +22,10 @@ app.set('view engine', 'ejs');
 app.use(express.static(__dirname + '/styles'));
 app.use(express.static(__dirname + '/res'));
 
-let stablecoins = [];
-let totalMCap = 0;
-let totalVolume = 0;
 updateData();
 cron.schedule('*/10 * * * *', updateData);
 
 async function updateData() {
-    let d = new Date();
-    console.log(d.getTime());
-
     let response = await MessariClient.assets.all({ limit: 500 });
     allCoins = response.data.data;
 
@@ -27,6 +33,7 @@ async function updateData() {
     totalMCap = 0;
     totalVolume = 0;
 
+    // update stablecoins data
     allCoins.forEach((coin) => {
         if (coin.profile.sector === 'Stablecoins') {
             totalMCap += coin.metrics.marketcap.current_marketcap_usd;
@@ -49,6 +56,15 @@ async function updateData() {
             stablecoins.push(scoin);
         }
     });
+
+    // update tether on eth supply
+    ethapi.stats.tokensupply(null, TETHER_CONTRACT_ADDRESS).then((data) => {
+        tether_eth_supply = data.result / 10 ** TETHER_DECIMALS;
+    });
+
+    // update tether on eth supply
+    //https://www.npmjs.com/package/trongrid
+    // tronapi.asset.getList('Tether', options);
 }
 
 function roundMCap(v) {
@@ -73,7 +89,7 @@ app.get('/', async (req, res) => {
         totalMCap_s: roundMCap(totalMCap),
         totalVolume: totalVolume,
         totalVolume_s: roundMCap(totalVolume),
-        tether_eth_supply: 6000000000,
+        tetherEthSupply: tether_eth_supply,
     });
 });
 

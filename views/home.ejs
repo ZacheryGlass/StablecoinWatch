@@ -59,7 +59,9 @@
                         <% if ( coin.name == "Tether" ) { %>
                         <li class="type">
                             <ul class="supply_list">
-                                <li>ERC-20: <%= ((tether_eth_supply/coin.mcap)*100).toFixed() %>%</li>
+                                <li>ERC-20: <%= ((tetherEthSupply/coin.mcap)*100).toFixed() %>%</li>
+                                <li>Omni: <%#= ((tetherBTCSupply/coin.mcap)*100).toFixed() %>%</li>
+                                <li>TRC-20: <%#= ((tetherTronSupply/coin.mcap)*100).toFixed() %>%</li>
                             </ul>
                         </li>
 

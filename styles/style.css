@@ -128,5 +128,6 @@ p {
 .supply_list {
     padding: 0;
     top: 0;
-    font-size: 12px;
+    font-size: 14px;
+    list-style: none;
 }
