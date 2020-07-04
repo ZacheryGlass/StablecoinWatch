@@ -5,40 +5,12 @@
         <title>Stablecoin Watch</title>
         <link rel="stylesheet" type="text/css" href="/style.css" />
         <link rel="stylesheet" type="text/css" href="/style1.css" />
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
     </head>
     <body>
-        <header>
-            <h1><a href="/"><img src="/site_logo.png" alt="Stablecoin Watch"></a></h1>
-
-        </header>
-        <div class="bar">
-            <div class="container">
-                <div class="col50 colleft">
-                    <ul>
-                        <li>
-                            Total Market Cap:&nbsp;<%=totalMCap_s%>
-                        </li>
-                        <li>
-                            Total Volume:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%=totalVolume_s%>
-                        </li>
-                    </ul>
-                </div>
-                <div class="col50 colright">
-                    <ul>
-                        <li>
-                            Total on ETH: <%=totalEthMCap_s%>
-                        </li>
-                        <li>
-                            Share on ETH:&nbsp;&nbsp;&nbsp;<%= ((totalEthMCap/totalMCap)*100).toFixed(1)%>%
-                        </li>
-                    </ul>
-                </div>
-                <!-- <li class="right">
-                    
-                </li> -->
-            </div>
-        </div>
+        <!-- Footer -->
+        <%- include('partials/header') %>
+        <!-- Footer -->
 
         <main>
             <% if( coins ) { %>
@@ -76,46 +48,47 @@
                         <% if ( coin.name == "Tether" ) { %>
                         <li class="type">
                             <ul class="supply_list">
-                                <li>ERC-20: <%= ( ( coin.eth_supply / coin.mcap ) * 100 ).toFixed() %>%</li>
-                                <li>Omni: <%= ( ( coin.btc_supply / coin.mcap ) * 100 ).toFixed() %>%</li>
-                                <li>TRC-20: <%= ((1-((coin.eth_supply/coin.mcap)+(coin.btc_supply/coin.mcap)))*100).toFixed() %>%</li>
-
+                                <li>
+                                    ERC-20: <%= ( ( coin.eth_supply / coin.mcap
+                                    ) * 100 ).toFixed() %>%
+                                </li>
+                                <li>
+                                    Omni: <%= ( ( coin.btc_supply / coin.mcap )
+                                    * 100 ).toFixed() %>%
+                                </li>
+                                <li>
+                                    TRC-20: <%=
+                                    ((1-((coin.eth_supply/coin.mcap)+(coin.btc_supply/coin.mcap)))*100).toFixed()
+                                    %>%
+                                </li>
                             </ul>
                         </li>
                         <% } else if ( coin.name == "Stably Dollar" ) { %>
-                            <li class="type">
-                                <ul class="supply_list">
-                                    <li>ERC-20: <%= ((coin.eth_supply/coin.mcap)*100).toFixed() %>%</li>
-                                    <li>BEP2: <%= ( 100 - (coin.eth_supply/coin.mcap)*100).toFixed() %>%</li>
-                                </ul>
-                            </li>
-                        
+                        <li class="type">
+                            <ul class="supply_list">
+                                <li>
+                                    ERC-20: <%=
+                                    ((coin.eth_supply/coin.mcap)*100).toFixed()
+                                    %>%
+                                </li>
+                                <li>
+                                    BEP2: <%= ( 100 -
+                                    (coin.eth_supply/coin.mcap)*100).toFixed()
+                                    %>%
+                                </li>
+                            </ul>
+                        </li>
+
                         <% } else { %>
                         <li class="type">
                             <%= coin.type %>
                         </li>
                         <% } %>
-                        </ul>
+                    </ul>
                     <ul class="more-content">
-                         <li class="split">
-                        <!--    <div class="column" >
-                                column 1
-                            </div>
-                            <div class="column center" >
-                                column 2
-                            </div>
-                            <div class="column right" >
-                                <%# if ( coin.name == "Tether" ) { %>
-                                    <p>Tether on the Blockchain:</p>
-                                    <ul class="supply_list">
-                                        <li>Ethereum: <%#= ((tether_eth_supply/coin.mcap)*100).toFixed() %>%</li>
-                                    </ul>
-                                <%# } %>
-                                
-                            </div> -->
+                        <li class="split">
                             <%= coin.desc %>
                         </li>
-                        <!-- <li> test content</li> -->
                     </ul>
                 </article>
                 <% }) %>
@@ -125,19 +98,7 @@
             <% } %>
         </main>
         <!-- Footer -->
-        <footer>
-            <div class="column" >
-                <a href="/donate">
-                    <img id="btc_img" src="/btc_logo.png" alt=""> Donate
-                </a>
-            </div>
-            <div class="column center" >
-                <p>Created by an independent solo developer.</p>
-            </div>
-            <div class="column right smalltext" >
-              <a href="/contact">Feedback / Contact</a>
-            </div>
-          <footer>
+        <%- include('partials/footer') %>
         <!-- Footer -->
     </body>
 </html>

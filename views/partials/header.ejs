@@ -1,0 +1,31 @@
+<header>
+    <h1>
+        <a href="/"><img src="/site_logo.png" alt="Stablecoin Watch" /></a>
+    </h1>
+</header>
+<div class="bar">
+    <div class="container">
+        <div class="col50 colleft">
+            <ul>
+                <li>
+                    Total Market Cap:&nbsp;<%=totalMCap_s%>
+                </li>
+                <li>
+                    Total
+                    Volume:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%=totalVolume_s%>
+                </li>
+            </ul>
+        </div>
+        <div class="col50 colright">
+            <ul>
+                <li>
+                    Total on ETH: <%=totalEthMCap_s%>
+                </li>
+                <li>
+                    Share on ETH:&nbsp;&nbsp;&nbsp;<%=
+                    ((totalEthMCap/totalMCap)*100).toFixed(1)%>%
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
