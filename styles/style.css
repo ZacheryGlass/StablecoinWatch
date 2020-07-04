@@ -1,84 +1,50 @@
-main {
-    max-width: 960px;
-    margin: auto;
-}
-h1 {
-    color: white;
-    text-align: center;
-    font-weight: bold;
-}
-/* h2 {
-    float: right;
-} */
-body {
-    font-family: arial;
-    margin: 0;
-}
+/****************************************
+                Header
+*****************************************/
 header {
     background: #003c60;
     padding: 10px 20px;
 }
 
-.header2 {
-    background: #007ac1;
-    padding: 10px 20px;
-}
-.header2 ul {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 0;
-}
-.header2 li {
-    list-style-type: none;
-    display: inline-block;
-    /* margin: 0 10px 0 0; */
-    text-align: right;
-    color: white;
-    font-weight: bold;
-}
-
-.right {
-    text-align: right;
-    float: right;
-}
-
-header a {
+/* header a {
     color: rgb(255, 255, 255);
     font-size: 18px;
     background: rgb(110, 107, 255);
     text-decoration: none;
     padding: 10px;
     display: block;
+} */
+
+header img {
+    height: 90px;
+    border-radius: 10px;
+    margin: 0;
+    padding: 0;
 }
 
-.split * {
-    box-sizing: border-box;
+h1,
+h1 a {
+    text-align: center;
+    margin: 0;
+    padding: 0;
 }
 
-/* Create three equal columns that floats next to each other */
-.column {
-    float: left;
-    width: 33.33%;
-    /* padding: 10px; */
-    position: relative;
+/****************************************
+
+*****************************************/
+main {
+    max-width: 960px;
+    margin: auto;
 }
 
-footer .column {
-    background-color: #3e3e3e;
-    color: white;
-    /* font-size: 10px; */
-    min-height: 51px;
-    padding: 10px 0px;
+body {
+    font-family: arial;
+    margin: 0;
 }
 
-footer .column a {
-    padding: 10px 10px;
-}
-
-.split:after {
-    content: '';
-    display: table;
-    clear: both;
+.right {
+    text-align: right;
+    float: right;
 }
 
 .smalltext {
@@ -99,24 +65,9 @@ footer .column a {
     text-align: right;
 }
 
-/* footer ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-} */
-
 footer a {
     /* text-decoration: none; */
     color: inherit;
-}
-
-#btc_img {
-    width: 20px;
-    height: 20px;
-}
-
-p {
-    margin: 0;
 }
 
 .more-content li {
@@ -124,10 +75,94 @@ p {
     text-align: inherit;
 }
 
-.supply_list li,
-.supply_list {
+.supply_list li {
     padding: 0;
     top: 0;
     font-size: 14px;
     list-style: none;
+    transform: translateY(-20px);
+}
+
+/****************************************
+                Footer 
+*****************************************/
+
+.split * {
+    box-sizing: border-box;
+}
+
+/* Create three equal columns that floats next to each other */
+.column {
+    float: left;
+    width: 33.33%;
+    /* padding: 10px; */
+    position: relative;
+}
+
+footer {
+    position: relative;
+    width: 100%;
+    bottom: 0;
+}
+
+footer .column {
+    background-color: #3e3e3e;
+    color: white;
+    /* font-size: 10px; */
+    min-height: 51px;
+    padding: 10px 0px;
+}
+
+footer .column a {
+    padding: 10px 10px;
+}
+
+.split:after {
+    content: '';
+    display: table;
+    clear: both;
+}
+
+p {
+    margin: 0;
+}
+
+/****************************************
+                BAR 
+*****************************************/
+.bar {
+    background: #007ac1;
+    padding: 10px 20px;
+    min-height: 30px;
+}
+
+.bar .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0;
+}
+
+.col50 {
+    float: left;
+    width: 50%;
+    list-style-type: none;
+    color: white;
+    font-weight: bold;
+    padding: 0;
+    margin: 0;
+}
+
+.colright {
+    text-align: right;
+}
+
+.bar ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+#btc_img {
+    width: 20px;
+    height: 20px;
 }

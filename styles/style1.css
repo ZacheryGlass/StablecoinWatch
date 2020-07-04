@@ -50,7 +50,8 @@ body {
 .wrapper {
     width: 100%;
     max-width: 1000px;
-    margin: 20px auto 100px auto;
+    min-height: 100px;
+    margin: 20px auto 40px auto;
     padding: 0;
     background: rgba(34, 31, 31, 0.603);
     color: rgba(255, 255, 255, 0.9);
@@ -286,7 +287,7 @@ ul.more-content li.split {
     /* padding: 0 10px; */
     display: block;
     height: 50px;
-    width: 100%;
+    /* width: 100%; */
 }
 
 @media only screen and (max-width: 767px) {

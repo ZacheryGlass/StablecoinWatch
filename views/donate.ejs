@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Stablecoin Watch</title>
+        <link rel="stylesheet" type="text/css" href="/style.css" />
+        <link rel="stylesheet" type="text/css" href="/style1.css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            #donate_section {
+                padding: 20px;
+                background-color: #e3e3e3;
+                border-radius: 5px;
+                color: black;
+                font-weight: bold;
+                font-size: 16px;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1><a href="/"><img src="/site_logo.png" alt="Stablecoin Watch"></a></h1>
+        </header>
+        <div class="bar">
+            <div class="container">
+                <div class="col50 colleft">
+                    <ul>
+                        <li>
+                            Total Market Cap:&nbsp;<%=totalMCap_s%>
+                        </li>
+                        <li>
+                            Total Volume:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%=totalVolume_s%>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col50 colright">
+                    <ul>
+                        <li>
+                            Total on ETH: <%=totalEthMCap_s%>
+                        </li>
+                        <li>
+                            Share on ETH:&nbsp;&nbsp;&nbsp;<%= ((totalEthMCap/totalMCap)*100).toFixed(1)%>%
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <main>
+            <section id="donate_section" class="wrapper">
+                    It costs me money to run this site and I don't make anything from doing it. 
+                    If you think it's cool and want to support it, thank you.         
+            </section>
+        </main>
+        <!-- Footer -->
+        <footer>
+            <div class="column" >
+                <a href="/donate">
+                    <img id="btc_img" src="/btc_logo.png" alt=""> Donate
+                </a>
+            </div>
+            <div class="column center" >
+                <p>Created by an independent solo developer.</p>
+            </div>
+            <div class="column right smalltext" >
+              <a href="/contact">Feedback / Contact</a>
+            </div>
+          <footer>
+        <!-- Footer -->
+    </body>
+</html>
