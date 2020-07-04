@@ -146,6 +146,18 @@ app.get('/', async (req, res) => {
     });
 });
 
+// create dontate page
+app.get('/donate', async (req, res) => {
+    res.render('donate', {
+        totalMCap: totalMCap,
+        totalMCap_s: roundMCap(totalMCap),
+        totalVolume: totalVolume,
+        totalVolume_s: roundMCap(totalVolume),
+        totalEthMCap: totalEthMCap,
+        totalEthMCap_s: roundMCap(totalEthMCap),
+    });
+});
+
 // parses json request and attach to route handler
 // (order of app.use matters here)
 app.use(express.json());
