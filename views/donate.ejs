@@ -5,7 +5,7 @@
         <title>Stablecoin Watch</title>
         <link rel="stylesheet" type="text/css" href="/style.css" />
         <link rel="stylesheet" type="text/css" href="/style1.css" />
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <style>
             #donate_section {
                 padding: 20px;
@@ -14,6 +14,41 @@
                 color: black;
                 font-weight: bold;
                 font-size: 16px;
+            }
+            #donate_section ul {
+                margin: auto;
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            #donate_section ul li {
+                margin: auto;
+                list-style: none;
+                text-align: center;
+                padding-bottom: 10px;
+                border-bottom: 1px solid black;
+            }
+
+            #donate_section img {
+                max-width: 200px;
+            }
+
+            .btc {
+                color: rgb(255, 185, 88);
+            }
+            .bch {
+                color: rgb(0, 175, 0);
+                /* text-shadow: 1px 1px black; */
+            }
+            .eth {
+                color: #007ac1;
+            }
+            .xmr {
+                color: orangered;
+            }
+            p.xmr {
+                font-size: 14px;
             }
         </style>
     </head>
@@ -24,23 +59,46 @@
 
         <main>
             <section id="donate_section" class="wrapper">
-                    MSG HERE    
+                <ul>
+                    <li>
+                        <h1>Contact/Feedback</h2>
+                        <p>cryptonymous@protonmail.com</p>
+                        <br />
+                        <br />
+                        <h1>Donate</h2>
+                    </li>
+                    <li>
+                        <h2 class="btc">Bitcoin</h2>
+                        <img src="/btcqr.png" alt="" />
+                        <p class="btc">bc1qgfv4hzsggnxp8zy52l2rsf9j50tgpfq489n3xy</p>
+                    </li>
+                    <li>
+                        <h2 class="eth">
+                            Ethereum
+                            <span class="small"><br />& ERC-20</span>
+                        </h2>
+                        <img src="ethqr.png" alt="" />
+                        <p class="eth">0xeC526f920D414B8e67724ce2C3F40e8b5a8527D1</p>
+                    </li>
+                    <li>
+                        <h2 class="bch">
+                            Bitcoin Cash
+                        </h2>
+                        <img src="bchqr.png" alt="" />
+                        <p class="bch">qqsnamltmnuez9qnsl5c6x590rgpwr730sarp4txg4</p>
+                    </li>
+                    <li>
+                        <h2 class="xmr">
+                            Monero
+                        </h2>
+                        <img src="xmrqr.png" alt="" />
+                        <p class="xmr">87kMWF9FV3MS1VtYdkG3QhYAo1aCLcM8xQa7a6zBQjN7dLqGMja6Za2EJP8B6ctZXz9N3y26thqA2F3Y2Ah7xP14GeZe4ha</p>
+                    </li>
+                </ul>
             </section>
         </main>
         <!-- Footer -->
-        <footer>
-            <div class="column" >
-                <a href="/donate">
-                    <img id="btc_img" src="/btc_logo.png" alt=""> Donate
-                </a>
-            </div>
-            <div class="column center" >
-                <p>Created by an independent solo developer.</p>
-            </div>
-            <div class="column right smalltext" >
-              <a href="/contact">Feedback / Contact</a>
-            </div>
-          <footer>
+        <%- include('partials/footer') %>
         <!-- Footer -->
     </body>
 </html>

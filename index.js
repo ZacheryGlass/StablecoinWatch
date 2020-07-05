@@ -29,18 +29,22 @@ app.use(express.static(__dirname + '/styles'));
 app.use(express.static(__dirname + '/res'));
 
 updateData();
-cron.schedule('*/10 * * * *', updateData);
+cron.schedule('*/1 * * * *', updateData);
 
 async function updateData() {
     // update tether on eth supply
-    ethapi.stats.tokensupply(null, TETHER_CONTRACT_ADDRESS).then((data) => {
-        tether_eth_supply = data.result / 10 ** TETHER_DECIMALS;
-    });
+    await ethapi.stats
+        .tokensupply(null, TETHER_CONTRACT_ADDRESS)
+        .then((data) => {
+            tether_eth_supply = data.result / 10 ** TETHER_DECIMALS;
+        });
 
     // update stably on eth supply
-    ethapi.stats.tokensupply(null, STABLY_CONTRACT_ADDRESS).then((data) => {
-        stably_eth_supply = data.result / 10 ** STABLY_DECIMALS;
-    });
+    await ethapi.stats
+        .tokensupply(null, STABLY_CONTRACT_ADDRESS)
+        .then((data) => {
+            stably_eth_supply = data.result / 10 ** STABLY_DECIMALS;
+        });
 
     // update tether on omni supply supply
     const url = 'https://api.omniexplorer.info/v1/property/31';
@@ -60,14 +64,14 @@ async function updateData() {
     let response = await MessariClient.assets.all({ limit: 500 });
     allCoins = response.data.data;
 
-    stablecoins = [];
     totalMCap = 0;
     totalVolume = 0;
     totalEthMCap = 0;
+    stablecoins_temp = [];
 
-    // update stablecoins data
+    // pull new stablecoins data
     allCoins.forEach((coin) => {
-        if (coin.profile.sector === 'Stablecoins') {
+        if (coin.profile.sector == 'Stablecoins') {
             let scoin = {
                 name: coin.name,
                 symbol: coin.symbol,
@@ -84,14 +88,43 @@ async function updateData() {
                 eth_supply: 0,
                 btc_supply: 0,
             };
+            // console.log(scoin.name);
             scoin.eth_supply = supply_on_ethereum(scoin);
             scoin.btc_supply = scoin.name == 'Tether' ? tether_btc_supply : 0;
 
-            stablecoins.push(scoin);
-            totalMCap += coin.metrics.marketcap.current_marketcap_usd;
-            totalVolume += coin.metrics.market_data.real_volume_last_24_hours;
-            totalEthMCap += scoin.eth_supply;
+            stablecoins_temp.push(scoin);
         }
+    });
+
+    // update global stablecoin data with newly pulled data
+    stablecoins_temp.forEach((scoin_temp) => {
+        let scoin_temp_found = false;
+
+        stablecoins.forEach((scoin) => {
+            if (scoin.name == scoin_temp.name) {
+                scoin_temp_found = true;
+                // new data found
+                // replace scoin with scoin_temp in stablecoins list
+                var index = stablecoins.indexOf(scoin);
+
+                if (index !== -1) {
+                    stablecoins[index] = scoin_temp;
+                }
+            }
+        });
+
+        // new coin found in data that wasn't already in global stablecoins list.
+        // Add new coin to stablecoins list
+        if (!scoin_temp_found) {
+            stablecoins.push(scoin_temp);
+        }
+    });
+
+    // update global total data
+    stablecoins.forEach((scoin) => {
+        totalMCap += scoin.mcap;
+        totalVolume += scoin.volume;
+        totalEthMCap += scoin.eth_supply;
     });
 
     // update tether on tron supply
