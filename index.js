@@ -13,13 +13,12 @@ const STABLY_DECIMALS = 6;
 const STABLY_CONTRACT_ADDRESS = '0xa4bdb11dc0a2bec88d24a3aa1e6bb17201112ebe';
 
 // GLOBAL VARS
-let tether_eth_supply = 0;
-let tether_btc_supply = 0;
-let stably_eth_supply = 0;
 let stablecoins = [];
 let totalMCap = 0;
 let totalVolume = 0;
-let totalEthMCap = 0;
+let totalETHMCap = 0;
+let totalBTCMCap = 0;
+let totalBNBMCap = 0;
 
 // set up express app.
 const app = express();
@@ -32,44 +31,10 @@ updateData();
 cron.schedule('*/1 * * * *', updateData);
 
 async function updateData() {
-    // update tether on eth supply
-    await ethapi.stats
-        .tokensupply(null, TETHER_CONTRACT_ADDRESS)
-        .then((data) => {
-            tether_eth_supply = data.result / 10 ** TETHER_DECIMALS;
-        });
-
-    // update stably on eth supply
-    await ethapi.stats
-        .tokensupply(null, STABLY_CONTRACT_ADDRESS)
-        .then((data) => {
-            stably_eth_supply = data.result / 10 ** STABLY_DECIMALS;
-        });
-
-    // update tether on omni supply supply
-    const url = 'https://api.omniexplorer.info/v1/property/31';
-
-    https.get(url, (res) => {
-        res.setEncoding('utf8');
-        let body = '';
-        res.on('data', (data) => {
-            body += data;
-        });
-        res.on('end', () => {
-            body = JSON.parse(body);
-            tether_btc_supply = body.totaltokens;
-        });
-    });
-
+    // pull new stablecoins data
     let response = await MessariClient.assets.all({ limit: 500 });
     allCoins = response.data.data;
-
-    totalMCap = 0;
-    totalVolume = 0;
-    totalEthMCap = 0;
     stablecoins_temp = [];
-
-    // pull new stablecoins data
     allCoins.forEach((coin) => {
         if (coin.profile.sector == 'Stablecoins') {
             let scoin = {
@@ -85,12 +50,8 @@ async function updateData() {
                     coin.metrics.market_data.real_volume_last_24_hours
                 ),
                 volume: coin.metrics.market_data.real_volume_last_24_hours,
-                eth_supply: 0,
-                btc_supply: 0,
+                chain_supply: {},
             };
-            // console.log(scoin.name);
-            scoin.eth_supply = supply_on_ethereum(scoin);
-            scoin.btc_supply = scoin.name == 'Tether' ? tether_btc_supply : 0;
 
             stablecoins_temp.push(scoin);
         }
@@ -120,16 +81,96 @@ async function updateData() {
         }
     });
 
-    // update global total data
-    stablecoins.forEach((scoin) => {
+    stablecoins.forEach(async (scoin) => {
+        // update blockchain specific supply data for stablecoins which
+        // have coins on multiple blockchains
+        switch (scoin.symbol) {
+            // Tether
+            case 'USDT':
+                // update Tether on ETH supply
+                await ethapi.stats
+                    .tokensupply(null, TETHER_CONTRACT_ADDRESS)
+                    .then((data) => {
+                        let tether_eth_supply =
+                            data.result / 10 ** TETHER_DECIMALS;
+                        scoin.chain_supply['Ethereum'] = tether_eth_supply;
+                    });
+
+                // update Tether on BTC supply
+                const omni_api_url =
+                    'https://api.omniexplorer.info/v1/property/31';
+                await https.get(omni_api_url, async (res) => {
+                    res.setEncoding('utf8');
+                    let body = '';
+                    await res.on('data', async (data) => {
+                        body += data;
+                    });
+                    await res.on('end', async () => {
+                        body = JSON.parse(body);
+                        scoin.chain_supply['Bitcoin'] = body.totaltokens;
+                        scoin.chain_supply['Tron'] =
+                            scoin.mcap -
+                            scoin.chain_supply['Bitcoin'] -
+                            scoin.chain_supply['Ethereum'];
+                    });
+                });
+                // update Tether on Tron supply
+
+                break;
+
+            // Stably Dollar
+            case 'USDS':
+                // update stably on ETH supply
+                await ethapi.stats
+                    .tokensupply(null, STABLY_CONTRACT_ADDRESS)
+                    .then((data) => {
+                        let stably_eth_supply = 0;
+                        stably_eth_supply = data.result / 10 ** STABLY_DECIMALS;
+                        scoin.chain_supply['Ethereum'] = stably_eth_supply;
+                    });
+                break;
+
+            default:
+                switch (scoin.type) {
+                    case 'ERC-20':
+                        scoin.chain_supply['Ethereum'] = scoin.mcap;
+                        break;
+                    case 'TRC-20':
+                        scoin.chain_supply['Tron'] = scoin.mcap;
+                        break;
+                    case 'BEP2':
+                        scoin.chain_supply['Binance Chain'] = scoin.mcap;
+                        break;
+                    case 'Native':
+                        scoin.chain_supply[scoin.name] = scoin.mcap;
+                        break;
+
+                    default:
+                        console.log(
+                            `SERIOUS ERROR: No coin supply set for ${scoin.name}.`
+                        );
+                        break;
+                } // end inner-switch
+                break;
+        } // end switch
+
+        // update global total data
+        totalMCap = 0;
+        totalVolume = 0;
+        totalETHMCap = 0;
+        totalBTCMCap = 0;
+        totalBNBMCap = 0;
+
         totalMCap += scoin.mcap;
         totalVolume += scoin.volume;
-        totalEthMCap += scoin.eth_supply;
+        totalETHMCap += scoin.chain_supply['Ethereum']
+            ? scoin.chain_supply['Ethereum']
+            : 0;
+        totalBTCMCap += scoin.chain_supply['Bitcoin']
+            ? scoin.chain_supply['Bitcoin']
+            : 0;
+        totalBNBMCap += scoin.bnb_supply ? scoin.bnb_supply : 0;
     });
-
-    // update tether on tron supply
-    //https://www.npmjs.com/package/trongrid
-    // tronapi.asset.getList('Tether', options);
 }
 
 function roundMCap(v) {
@@ -146,36 +187,21 @@ function roundMCap(v) {
     }
 }
 
-function supply_on_ethereum(coin) {
-    switch (coin.symbol) {
-        case 'USDT':
-            return tether_eth_supply;
-            break;
-
-        case 'USDS':
-            return stably_eth_supply;
-            break;
-
-        default:
-            if (coin.type == 'ERC-20') {
-                return coin.mcap;
-            } else {
-                return 0;
-            }
-            break;
-    }
-}
-
 // create home page
 app.get('/', async (req, res) => {
+    stablecoins.forEach((coin) => {
+        if (coin.symbol == 'USDT') {
+            console.log(coin.chain_supply);
+        }
+    });
     res.render('home', {
         coins: stablecoins,
         totalMCap: totalMCap,
         totalMCap_s: roundMCap(totalMCap),
         totalVolume: totalVolume,
         totalVolume_s: roundMCap(totalVolume),
-        totalEthMCap: totalEthMCap,
-        totalEthMCap_s: roundMCap(totalEthMCap),
+        totalETHMCap: totalETHMCap,
+        totalETHMCap_s: roundMCap(totalETHMCap),
     });
 });
 
@@ -186,8 +212,8 @@ app.get('/donate', async (req, res) => {
         totalMCap_s: roundMCap(totalMCap),
         totalVolume: totalVolume,
         totalVolume_s: roundMCap(totalVolume),
-        totalEthMCap: totalEthMCap,
-        totalEthMCap_s: roundMCap(totalEthMCap),
+        totalETHMCap: totalETHMCap,
+        totalETHMCap_s: roundMCap(totalETHMCap),
     });
 });
 

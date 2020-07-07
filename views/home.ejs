@@ -49,17 +49,16 @@
                         <li class="type">
                             <ul class="supply_list">
                                 <li>
-                                    ERC-20: <%= ( ( coin.eth_supply / coin.mcap
-                                    ) * 100 ).toFixed() %>%
+                                    ERC-20: <%= ( ( coin.chain_supply.Ethereum /
+                                    coin.mcap ) * 100 ).toFixed() %>%
                                 </li>
                                 <li>
-                                    Omni: <%= ( ( coin.btc_supply / coin.mcap )
-                                    * 100 ).toFixed() %>%
+                                    Omni: <%= ( ( coin.chain_supply.Bitcoin /
+                                    coin.mcap ) * 100 ).toFixed() %>%
                                 </li>
                                 <li>
-                                    TRC-20: <%=
-                                    ((1-((coin.eth_supply/coin.mcap)+(coin.btc_supply/coin.mcap)))*100).toFixed()
-                                    %>%
+                                    TRC-20: <%= ( ( coin.chain_supply.Tron /
+                                    coin.mcap ) * 100 ).toFixed() %>%
                                 </li>
                             </ul>
                         </li>
@@ -68,12 +67,12 @@
                             <ul class="supply_list">
                                 <li>
                                     ERC-20: <%=
-                                    ((coin.eth_supply/coin.mcap)*100).toFixed()
+                                    ((coin.chain_supply.Ethereum/coin.mcap)*100).toFixed()
                                     %>%
                                 </li>
                                 <li>
                                     BEP2: <%= ( 100 -
-                                    (coin.eth_supply/coin.mcap)*100).toFixed()
+                                    (coin.chain_supply.Ethereum/coin.mcap)*100).toFixed()
                                     %>%
                                 </li>
                             </ul>
