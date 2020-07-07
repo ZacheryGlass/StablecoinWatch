@@ -83,6 +83,12 @@ footer a {
     transform: translateY(-20px);
 }
 
+@media only screen and (max-width: 767px) {
+    .supply_list li {
+        font-size: 10px !important;
+    }
+}
+
 /****************************************
                 Footer 
 *****************************************/
@@ -128,42 +134,3 @@ p {
     margin: 0;
 }
 
-/****************************************
-                BAR 
-*****************************************/
-.bar {
-    background: #007ac1;
-    padding: 10px 20px;
-    min-height: 30px;
-}
-
-.bar .container {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 0;
-}
-
-.col50 {
-    float: left;
-    width: 50%;
-    list-style-type: none;
-    color: white;
-    font-weight: bold;
-    padding: 0;
-    margin: 0;
-}
-
-.colright {
-    text-align: right;
-}
-
-.bar ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-#btc_img {
-    width: 20px;
-    height: 20px;
-}

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Stablecoin Watch</title>
+        <link rel="stylesheet" type="text/css" href="/style.css" />
+        <link rel="stylesheet" type="text/css" href="/style1.css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+            .row ul.chainstats > li {
+                margin: 0;
+                font-size: 20px;
+                font-weight: normal;
+                list-style: none;
+                display: inline-block;
+                width: 30%;
+                box-sizing: border-box;
+                display: inline-flex;
+                padding: 5px 10px;
+            }
+
+            .title ul.chainstats li {
+                padding: 15px 13px;
+                font-weight: bold;
+            }
+
+            .chainrank {
+                width: 10% !important;
+                text-align: center;
+            }
+            
+
+        </style>
+    </head>
+    <body>
+        <!-- Header -->
+        <%- include('partials/header') %>
+        <!-- Header -->
+
+        <main>
+            <% if( totalSupplyOnChain && totalSupplyOnChain.length ) { %>
+            <section class="wrapper">
+                <!-- Row title -->
+                <main class="row title">
+                    <ul class="chainstats">
+                        <li class="chainrank">Rank</li>
+                        <li>Blockchain</li>
+                        <li>Dollars on Chain (USD)</li>
+                        <li>% of Total</li>
+                    </ul>
+                </main>
+                <% for (var i = 0; i < totalSupplyOnChain.length; i++) { %>
+
+                <!-- Row X -->
+                <article class="row type<%=i%4+1%>">
+                    <ul class="chainstats">
+                        <li class="chainrank"><%= i+1 %></li>
+                        <li>
+                            <strong
+                                ><a href="#"
+                                    ><%= totalSupplyOnChain[i].name %></a
+                                ></strong
+                            >
+                        </li>
+                        <li><%= totalSupplyOnChain[i].scoin_total_s %></li>
+                        <li>
+                            <%=
+                            ((totalSupplyOnChain[i].scoin_total/totalMCap)*100).toFixed(2)
+                            %>%
+                        </li>
+                    </ul>
+                </article>
+                <% } } %>
+            </section>
+        </main>
+        <!-- Footer -->
+        <%- include('partials/footer') %>
+        <!-- Footer -->
+    </body>
+</html>
