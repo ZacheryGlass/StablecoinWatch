@@ -42,22 +42,24 @@
                             <%= ((coin.mcap/totalMCap)*100).toFixed(2) %>%
                         </li>
                         <li><%= coin.volume_s %></li>
-                        <li>                            
+                        <li>
                             <%= ((coin.volume/totalVolume)*100).toFixed(2) %>%
                         </li>
+                        <!-- TODO: Make this dynamic for any cross-chain coin -->
                         <% if ( coin.name == "Tether" ) { %>
                         <li class="type">
                             <ul class="supply_list">
                                 <li>
-                                    ERC-20: <%= ( ( coin.chain_supply.Ethereum /
-                                    coin.mcap ) * 100 ).toFixed() %>%
+                                    ERC-20: <%= ( (
+                                    coin.chain_supply.Ethereum.num / coin.mcap )
+                                    * 100 ).toFixed() %>%
                                 </li>
                                 <li>
-                                    Omni: <%= ( ( coin.chain_supply.Bitcoin /
-                                    coin.mcap ) * 100 ).toFixed() %>%
+                                    Omni: <%= ( ( coin.chain_supply.Bitcoin.num
+                                    / coin.mcap ) * 100 ).toFixed() %>%
                                 </li>
                                 <li>
-                                    TRC-20: <%= ( ( coin.chain_supply.Tron /
+                                    TRC-20: <%= ( ( coin.chain_supply.Tron.num /
                                     coin.mcap ) * 100 ).toFixed() %>%
                                 </li>
                             </ul>
@@ -67,12 +69,12 @@
                             <ul class="supply_list">
                                 <li>
                                     ERC-20: <%=
-                                    ((coin.chain_supply.Ethereum/coin.mcap)*100).toFixed()
+                                    ((coin.chain_supply.Ethereum.num/coin.mcap)*100).toFixed()
                                     %>%
                                 </li>
                                 <li>
                                     BEP2: <%= ( 100 -
-                                    (coin.chain_supply.Ethereum/coin.mcap)*100).toFixed()
+                                    (coin.chain_supply.Ethereum.num/coin.mcap)*100).toFixed()
                                     %>%
                                 </li>
                             </ul>

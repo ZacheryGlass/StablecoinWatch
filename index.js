@@ -225,39 +225,48 @@ function sleep(ms) {
 
 // create home page
 app.get('/', async (req, res) => {
+    let eth_data = totalSupplyOnChain.find(
+        (chain) => chain.name === 'Ethereum'
+    );
+
     res.render('home', {
         coins: stablecoins,
         totalMCap: totalMCap,
         totalMCap_s: roundMCap(totalMCap),
         totalVolume: totalVolume,
         totalVolume_s: roundMCap(totalVolume),
-        totalETHMCap: 0, //totalSupplyOnChain.Ethereum.num,
-        totalETHMCap_s: 0, //roundMCap(totalSupplyOnChain.Ethereum.num),
+        totalETHMCap: eth_data.scoin_total,
+        totalETHMCap_s: eth_data.scoin_total_s,
     });
 });
 
 // create dontate page
 app.get('/donate', async (req, res) => {
+    let eth_data = totalSupplyOnChain.find(
+        (chain) => chain.name === 'Ethereum'
+    );
     res.render('donate', {
         totalMCap: totalMCap,
         totalMCap_s: roundMCap(totalMCap),
         totalVolume: totalVolume,
         totalVolume_s: roundMCap(totalVolume),
-        totalETHMCap: 0, //totalSupplyOnChain.Ethereum.num,
-        totalETHMCap_s: 0, //roundMCap(totalSupplyOnChain.Ethereum.num),
+        totalETHMCap: eth_data.scoin_total,
+        totalETHMCap_s: eth_data.scoin_total_s,
     });
 });
 
 // create dontate page
 app.get('/chains', async (req, res) => {
-    console.log(totalSupplyOnChain);
+    let eth_data = totalSupplyOnChain.find(
+        (chain) => chain.name === 'Ethereum'
+    );
     res.render('chains', {
         totalMCap: totalMCap,
         totalMCap_s: roundMCap(totalMCap),
         totalVolume: totalVolume,
         totalVolume_s: roundMCap(totalVolume),
-        totalETHMCap: 0, //totalSupplyOnChain.Ethereum.num,
-        totalETHMCap_s: 0, //roundMCap(totalSupplyOnChain.Ethereum.num),
+        totalETHMCap: eth_data.scoin_total,
+        totalETHMCap_s: eth_data.scoin_total_s,
         totalSupplyOnChain: totalSupplyOnChain,
     });
 });
