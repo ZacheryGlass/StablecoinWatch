@@ -18,7 +18,7 @@ const STABLY_CONTRACT_ADDRESS = '0xa4bdb11dc0a2bec88d24a3aa1e6bb17201112ebe';
 let stablecoins = [];
 let totalMCap = 0;
 let totalVolume = 0;
-let totalSupplyOnChain = {};
+let totalSupplyOnChain = [];
 
 // set up express app.
 const app = express();
@@ -85,7 +85,7 @@ async function updateData() {
     totalVolume = 0;
 
     // reset per-blockchain metrics
-    totalSupplyOnChain = {};
+    totalSupplyOnChain = [];
 
     stablecoins.forEach(async (scoin) => {
         // update blockchain specific supply data for stablecoins which
@@ -170,16 +170,35 @@ async function updateData() {
                 break;
         } // end switch
 
+        // populate totalSupplyOnChain
         for (let key in scoin.chain_supply) {
-            if (!(key in totalSupplyOnChain)) {
-                totalSupplyOnChain[key] = { num: 0 };
+            var chain_exists = false;
+            totalSupplyOnChain.forEach((chain_scoin_data) => {
+                // new coin
+                if (chain_scoin_data.name == key) {
+                    chain_scoin_data.scoin_total += scoin.chain_supply[key].num;
+                    chain_scoin_data.scoin_total_s = roundMCap(
+                        scoin.chain_supply[key].num
+                    );
+                    chain_exists = true;
+                }
+            }); // end for each
+
+            // seen before
+            if (!chain_exists) {
+                totalSupplyOnChain.push({
+                    name: key,
+                    scoin_total: scoin.chain_supply[key].num,
+                    scoin_total_s: roundMCap(scoin.chain_supply[key].num),
+                });
             }
-            totalSupplyOnChain[key].num += scoin.chain_supply[key].num;
-            totalSupplyOnChain[key].str = roundMCap(
-                totalSupplyOnChain[key].num
-            );
         }
-        console.log(totalSupplyOnChain);
+
+        // sort totalSupplyOnChain
+        totalSupplyOnChain = totalSupplyOnChain.sort(function (a, b) {
+            return b.scoin_total - a.scoin_total;
+        });
+
         // update global total data
         totalMCap += scoin.mcap;
         totalVolume += scoin.volume;
@@ -212,8 +231,8 @@ app.get('/', async (req, res) => {
         totalMCap_s: roundMCap(totalMCap),
         totalVolume: totalVolume,
         totalVolume_s: roundMCap(totalVolume),
-        totalETHMCap: totalSupplyOnChain.Ethereum.num,
-        totalETHMCap_s: roundMCap(totalSupplyOnChain.Ethereum.num),
+        totalETHMCap: 0, //totalSupplyOnChain.Ethereum.num,
+        totalETHMCap_s: 0, //roundMCap(totalSupplyOnChain.Ethereum.num),
     });
 });
 
@@ -224,20 +243,21 @@ app.get('/donate', async (req, res) => {
         totalMCap_s: roundMCap(totalMCap),
         totalVolume: totalVolume,
         totalVolume_s: roundMCap(totalVolume),
-        totalETHMCap: totalSupplyOnChain.Ethereum.num,
-        totalETHMCap_s: roundMCap(totalSupplyOnChain.Ethereum.num),
+        totalETHMCap: 0, //totalSupplyOnChain.Ethereum.num,
+        totalETHMCap_s: 0, //roundMCap(totalSupplyOnChain.Ethereum.num),
     });
 });
 
 // create dontate page
 app.get('/chains', async (req, res) => {
+    console.log(totalSupplyOnChain);
     res.render('chains', {
         totalMCap: totalMCap,
         totalMCap_s: roundMCap(totalMCap),
         totalVolume: totalVolume,
         totalVolume_s: roundMCap(totalVolume),
-        totalETHMCap: totalSupplyOnChain.Ethereum.num,
-        totalETHMCap_s: roundMCap(totalSupplyOnChain.Ethereum.num),
+        totalETHMCap: 0, //totalSupplyOnChain.Ethereum.num,
+        totalETHMCap_s: 0, //roundMCap(totalSupplyOnChain.Ethereum.num),
         totalSupplyOnChain: totalSupplyOnChain,
     });
 });

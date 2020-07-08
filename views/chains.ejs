@@ -25,20 +25,23 @@
                         <li>Stablecoin Dominance</li>
                     </ul>
                 </main>
-                <% let i = 0; %>
-                <% for( let [chain, data] of Object.entries(totalSupplyOnChain)) { %>
-                <% i++; %>
+                <h1><%=totalSupplyOnChain.length%></h1>
+                <% for (var i = 0; i < totalSupplyOnChain.length; i++) { %>
 
                 <!-- Row X -->
                 <article class="row type<%=i%4+1%>">
                     <ul class="coinstats">
-                        <li class="rank"><%= i %></li>
+                        <li class="rank"><%= i+1 %></li>
                         <li class="name">
-                            <strong><a href="#"><%= chain %></a></strong>
+                            <strong
+                                ><a href="#"
+                                    ><%= totalSupplyOnChain[i].name %></a
+                                ></strong
+                            >
                         </li>
                         <li>(token type)</li>
-                        <li> <%= data.str %></li>
-                        <li> (dominance) </li>
+                        <li><%= totalSupplyOnChain[i].scoin_total_s %></li>
+                        <li>(dominance)</li>
                     </ul>
                     <ul class="more-content">
                         <li class="split">
@@ -46,11 +49,8 @@
                         </li>
                     </ul>
                 </article>
-                <% } %>
+                <% } } %>
             </section>
-            <% } else { %>
-            <p>Something went wrong.</p>
-            <% } %>
         </main>
         <!-- Footer -->
         <%- include('partials/footer') %>
