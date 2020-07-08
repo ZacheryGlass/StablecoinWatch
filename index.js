@@ -7,11 +7,9 @@ const { Console } = require('console');
 var ethapikey = require('./keys').ethapikey;
 var ethapi = require('etherscan-api').init(ethapikey);
 
-
 function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 // CONSTANTS
 const TETHER_DECIMALS = 6;
@@ -23,11 +21,7 @@ const STABLY_CONTRACT_ADDRESS = '0xa4bdb11dc0a2bec88d24a3aa1e6bb17201112ebe';
 let stablecoins = [];
 let totalMCap = 0;
 let totalVolume = 0;
-let totalETHMCap = 0;
-let totalBTCMCap = 0;
-let totalBNBMCap = 0;
-let totalSupplyOnChain = {}
-
+let totalSupplyOnChain = {};
 
 // set up express app.
 const app = express();
@@ -98,19 +92,17 @@ async function updateData() {
     // totalBNBMCap = 0;
 
     // reset per-blockchain metrics
-    totalSupplyOnChain = {}
-    console.log('Keys cleared. ')
-    console.log(totalSupplyOnChain)
-    
+    totalSupplyOnChain = {};
+
     stablecoins.forEach(async (scoin) => {
         // update blockchain specific supply data for stablecoins which
         // have coins on multiple blockchains
         switch (scoin.symbol) {
             // Tether
             case 'USDT':
-                scoin.chain_supply['Bitcoin']  = { num: 0 }
-                scoin.chain_supply['Tron']     = { num: 0 }
-                scoin.chain_supply['Ethereum'] = { num: 0 }
+                scoin.chain_supply['Bitcoin'] = { num: 0 };
+                scoin.chain_supply['Tron'] = { num: 0 };
+                scoin.chain_supply['Ethereum'] = { num: 0 };
 
                 // update Tether on ETH supply
                 await ethapi.stats
@@ -146,8 +138,8 @@ async function updateData() {
 
             // Stably Dollar
             case 'USDS':
-                scoin.chain_supply['Ethereum']      = { num: 0 }
-                scoin.chain_supply['Binance Chain'] = { num: 0 }
+                scoin.chain_supply['Ethereum'] = { num: 0 };
+                scoin.chain_supply['Binance Chain'] = { num: 0 };
                 // update stably on ETH supply
                 await ethapi.stats
                     .tokensupply(null, STABLY_CONTRACT_ADDRESS)
@@ -155,81 +147,70 @@ async function updateData() {
                         let stably_eth_supply = 0;
                         stably_eth_supply = data.result / 10 ** STABLY_DECIMALS;
                         scoin.chain_supply['Ethereum'].num = stably_eth_supply;
-                        scoin.chain_supply['Binance Chain'].num = scoin.mcap - stably_eth_supply;
+                        scoin.chain_supply['Binance Chain'].num =
+                            scoin.mcap - stably_eth_supply;
                     });
                 break;
 
             default:
                 switch (scoin.type) {
                     case 'ERC-20':
-                        scoin.chain_supply['Ethereum'] = { num: 0 }
+                        scoin.chain_supply['Ethereum'] = { num: 0 };
                         scoin.chain_supply['Ethereum'].num = scoin.mcap;
                         break;
                     case 'TRC-20':
-                        scoin.chain_supply['Tron'] = { num: 0 }
+                        scoin.chain_supply['Tron'] = { num: 0 };
                         scoin.chain_supply['Tron'].num = scoin.mcap;
                         break;
                     case 'BEP2':
-                        scoin.chain_supply['Binance Chain'] = { num: 0 }
+                        scoin.chain_supply['Binance Chain'] = { num: 0 };
                         scoin.chain_supply['Binance Chain'].num = scoin.mcap;
                         break;
                     case 'Native':
-                        scoin.chain_supply[scoin.name] = { num: 0 }
+                        scoin.chain_supply[scoin.name] = { num: 0 };
                         scoin.chain_supply[scoin.name].num = scoin.mcap;
                         break;
                     default:
-                        scoin.chain_supply['Unknown'] = { num: 0 }
+                        scoin.chain_supply['Unknown'] = { num: 0 };
                         scoin.chain_supply['Unknown'].num = scoin.mcap;
                         break;
                 } // end inner-switch
                 break;
         } // end switch
 
-        
-        // await sleep(0500);
         for (let key in scoin.chain_supply) {
-            // console.log('\t', key, scoin.chain_supply[key]);
-                if( !(key in totalSupplyOnChain) ) {
-                    totalSupplyOnChain[key] = {};
-                    totalSupplyOnChain[key].num = 0;
-                    console.log(`New Key: ${key}`)
-                }
+            if (!(key in totalSupplyOnChain)) {
+                totalSupplyOnChain[key] = { num: 0 };
+            }
             totalSupplyOnChain[key].num += scoin.chain_supply[key].num;
-            totalSupplyOnChain[key].str = roundMCap(totalSupplyOnChain[key].num);
+            totalSupplyOnChain[key].str = roundMCap(
+                totalSupplyOnChain[key].num
+            );
         }
 
         // update global total data
         totalMCap += scoin.mcap;
         totalVolume += scoin.volume;
-        // totalETHMCap += scoin.chain_supply['Ethereum']
-        //     ? scoin.chain_supply['Ethereum']
-        //     : 0;
-        // totalBTCMCap += scoin.chain_supply['Bitcoin']
-        //     ? scoin.chain_supply['Bitcoin']
-        //     : 0;
-        // totalBNBMCap += scoin.bnb_supply ? scoin.bnb_supply : 0;
     }); // end stablecoins loop
-
-
 }
 
 function roundMCap(v) {
-    if (!v) {
-        return '$0';
-    }
+    if (!v) return '$0';
 
-    if (v > 1000000000) {
-        return '$' + (v / 1000000000).toFixed(2) + 'B';
-    } else if (v > 1000000) {
-        return '$' + (v / 1000000).toFixed(1) + 'M';
+    const BILLION = 1000000000;
+    const MILLION = 1000000;
+
+    if (v >= BILLION) {
+        return `$${(v / BILLION).toFixed(2)}B`;
+    } else if (v >= MILLION) {
+        return `$${(v / MILLION).toFixed(1)}M`;
     } else {
-        return '$' + (v / 1000).toFixed(0) + ',' + (v % 1000).toFixed(0);
+        return `$${Math.floor(v / 1000)},${(v % 1000).toFixed(0)}`;
     }
 }
 
 // create home page
 app.get('/', async (req, res) => {
-
     res.render('home', {
         coins: stablecoins,
         totalMCap: totalMCap,
@@ -263,7 +244,6 @@ app.get('/chains', async (req, res) => {
         totalETHMCap: totalSupplyOnChain.Ethereum.num,
         totalETHMCap_s: roundMCap(totalSupplyOnChain.Ethereum.num),
         totalSupplyOnChain: totalSupplyOnChain,
-
     });
 });
 

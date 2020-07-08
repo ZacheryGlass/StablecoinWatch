@@ -25,20 +25,18 @@
                         <li>Stablecoin Dominance</li>
                     </ul>
                 </main>
-                <% let i = 0; %>
-                <% for( let [chain, data] of Object.entries(totalSupplyOnChain)) { %>
-                <% i++; %>
-
+                <% let i = 0; %> <% for( let [chain, data] of
+                Object.entries(totalSupplyOnChain)) { %>
                 <!-- Row X -->
                 <article class="row type<%=i%4+1%>">
                     <ul class="coinstats">
-                        <li class="rank"><%= i %></li>
+                        <li class="rank"><%= ++i %></li>
                         <li class="name">
                             <strong><a href="#"><%= chain %></a></strong>
                         </li>
                         <li>(token type)</li>
-                        <li> <%= data.str %></li>
-                        <li> (dominance) </li>
+                        <li><%= data.str %></li>
+                        <li>(dominance)</li>
                     </ul>
                     <ul class="more-content">
                         <li class="split">
@@ -49,7 +47,10 @@
                 <% } %>
             </section>
             <% } else { %>
-            <p>Something went wrong.</p>
+            <p>
+                Something went wrong. Please let me know so I can fix the issue!
+                cryptonymous@protonmail.com
+            </p>
             <% } %>
         </main>
         <!-- Footer -->
