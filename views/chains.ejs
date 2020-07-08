@@ -6,6 +6,28 @@
         <link rel="stylesheet" type="text/css" href="/style.css" />
         <link rel="stylesheet" type="text/css" href="/style1.css" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+            .row ul.chainstats > li {
+                margin: 0;
+                font-size: 16px;
+                font-weight: normal;
+                list-style: none;
+                display: inline-block;
+                width: 30%;
+                box-sizing: border-box;
+                display: inline-flex;
+                padding: 5px 10px;
+            }
+            .title ul.chainstats li {
+                padding: 15px 13px;
+                font-weight: bold;
+            }
+
+            .chainrank {
+                width: 10% !important;
+                text-align: center;
+            }
+        </style>
     </head>
     <body>
         <!-- Header -->
@@ -17,20 +39,20 @@
             <section class="wrapper">
                 <!-- Row title -->
                 <main class="row title">
-                    <ul class="coinstats">
-                        <li class="rank">#</li>
-                        <li class="name">Blockchain</li>
-                        <li># on Chain</li>
-                        <li>Stablecoin Dominance</li>
+                    <ul class="chainstats">
+                        <li class="chainrank">Rank</li>
+                        <li>Blockchain</li>
+                        <li>Dollars on Chain (USD)</li>
+                        <li>% of Total</li>
                     </ul>
                 </main>
                 <% for (var i = 0; i < totalSupplyOnChain.length; i++) { %>
 
                 <!-- Row X -->
                 <article class="row type<%=i%4+1%>">
-                    <ul class="coinstats">
-                        <li class="rank"><%= i+1 %></li>
-                        <li class="name">
+                    <ul class="chainstats">
+                        <li class="chainrank"><%= i+1 %></li>
+                        <li>
                             <strong
                                 ><a href="#"
                                     ><%= totalSupplyOnChain[i].name %></a
