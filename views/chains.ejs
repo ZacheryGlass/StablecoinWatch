@@ -13,7 +13,7 @@
         <!-- Header -->
 
         <main>
-            <% if( totalSupplyOnChain ) { %>
+            <% if( totalSupplyOnChain && totalSupplyOnChain.length ) { %>
             <section class="wrapper">
                 <!-- Row title -->
                 <main class="row title">
@@ -41,7 +41,11 @@
                         </li>
                         <li>(token type)</li>
                         <li><%= totalSupplyOnChain[i].scoin_total_s %></li>
-                        <li>(dominance)</li>
+                        <li>
+                            <%=
+                            ((totalSupplyOnChain[i].scoin_total/totalMCap)*100).toFixed(2)
+                            %>%
+                        </li>
                     </ul>
                     <ul class="more-content">
                         <li class="split">
