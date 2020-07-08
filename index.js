@@ -14,11 +14,12 @@ const TETHER_CONTRACT_ADDRESS = '0xdac17f958d2ee523a2206206994597c13d831ec7';
 const STABLY_DECIMALS = 6;
 const STABLY_CONTRACT_ADDRESS = '0xa4bdb11dc0a2bec88d24a3aa1e6bb17201112ebe';
 
-// GLOBAL VARS
-let stablecoins = [];
-let totalMCap = 0;
-let totalVolume = 0;
-let totalSupplyOnChain = [];
+// GLOBAL DATA
+let GLOBAL = {};
+GLOBAL.stablecoins = [];
+GLOBAL.totalMCap = 0;
+GLOBAL.totalVolume = 0;
+GLOBAL.totalSupplyOnChain = [];
 
 // set up express app.
 const app = express();
@@ -54,21 +55,21 @@ async function updateData() {
             };
             stablecoins_temp.push(scoin);
         }
-    });
+    }); // allCoins loop
 
     // update global stablecoin data with newly pulled data
     stablecoins_temp.forEach((scoin_temp) => {
         let scoin_temp_found = false;
 
-        stablecoins.forEach((scoin) => {
+        GLOBAL.stablecoins.forEach((scoin) => {
             if (scoin.name == scoin_temp.name) {
                 scoin_temp_found = true;
                 // new data found
                 // replace scoin with scoin_temp in stablecoins list
-                var index = stablecoins.indexOf(scoin);
+                var index = GLOBAL.stablecoins.indexOf(scoin);
 
                 if (index !== -1) {
-                    stablecoins[index] = scoin_temp;
+                    GLOBAL.stablecoins[index] = scoin_temp;
                 }
             }
         });
@@ -76,18 +77,18 @@ async function updateData() {
         // new coin found in data that wasn't already in global stablecoins list.
         // Add new coin to stablecoins list
         if (!scoin_temp_found) {
-            stablecoins.push(scoin_temp);
+            GLOBAL.stablecoins.push(scoin_temp);
         }
     }); // end loop through stablecoins_temp
 
     // reset total metrics
-    totalMCap = 0;
-    totalVolume = 0;
+    GLOBAL.totalMCap = 0;
+    GLOBAL.totalVolume = 0;
 
     // reset per-blockchain metrics
-    totalSupplyOnChain = [];
+    GLOBAL.totalSupplyOnChain = [];
 
-    stablecoins.forEach(async (scoin) => {
+    GLOBAL.stablecoins.forEach(async (scoin) => {
         // update blockchain specific supply data for stablecoins which
         // have coins on multiple blockchains
         switch (scoin.symbol) {
@@ -173,7 +174,7 @@ async function updateData() {
         // populate totalSupplyOnChain
         for (let key in scoin.chain_supply) {
             var chain_exists = false;
-            totalSupplyOnChain.forEach((chain_scoin_data) => {
+            GLOBAL.totalSupplyOnChain.forEach((chain_scoin_data) => {
                 // new coin
                 if (chain_scoin_data.name == key) {
                     chain_scoin_data.scoin_total += scoin.chain_supply[key].num;
@@ -186,22 +187,25 @@ async function updateData() {
 
             // seen before
             if (!chain_exists) {
-                totalSupplyOnChain.push({
+                GLOBAL.totalSupplyOnChain.push({
                     name: key,
                     scoin_total: scoin.chain_supply[key].num,
                     scoin_total_s: roundMCap(scoin.chain_supply[key].num),
                 });
             }
-        }
+        } // end loop through stablecoin properties
 
         // sort totalSupplyOnChain
-        totalSupplyOnChain = totalSupplyOnChain.sort(function (a, b) {
+        GLOBAL.totalSupplyOnChain = GLOBAL.totalSupplyOnChain.sort(function (
+            a,
+            b
+        ) {
             return b.scoin_total - a.scoin_total;
         });
 
         // update global total data
-        totalMCap += scoin.mcap;
-        totalVolume += scoin.volume;
+        GLOBAL.totalMCap += scoin.mcap;
+        GLOBAL.totalVolume += scoin.volume;
     }); // end stablecoins loop
 }
 
@@ -226,11 +230,11 @@ function sleep(ms) {
 // create home page
 app.get('/', async (req, res) => {
     res.render('home', {
-        coins: stablecoins,
-        totalMCap: totalMCap,
-        totalMCap_s: roundMCap(totalMCap),
-        totalVolume: totalVolume,
-        totalVolume_s: roundMCap(totalVolume),
+        coins: GLOBAL.stablecoins,
+        totalMCap: GLOBAL.totalMCap,
+        totalMCap_s: roundMCap(GLOBAL.totalMCap),
+        totalVolume: GLOBAL.totalVolume,
+        totalVolume_s: roundMCap(GLOBAL.totalVolume),
         totalETHMCap: 0, //totalSupplyOnChain.Ethereum.num,
         totalETHMCap_s: 0, //roundMCap(totalSupplyOnChain.Ethereum.num),
     });
@@ -239,10 +243,10 @@ app.get('/', async (req, res) => {
 // create dontate page
 app.get('/donate', async (req, res) => {
     res.render('donate', {
-        totalMCap: totalMCap,
-        totalMCap_s: roundMCap(totalMCap),
-        totalVolume: totalVolume,
-        totalVolume_s: roundMCap(totalVolume),
+        totalMCap: GLOBAL.totalMCap,
+        totalMCap_s: roundMCap(GLOBAL.totalMCap),
+        totalVolume: GLOBAL.totalVolume,
+        totalVolume_s: roundMCap(GLOBAL.totalVolume),
         totalETHMCap: 0, //totalSupplyOnChain.Ethereum.num,
         totalETHMCap_s: 0, //roundMCap(totalSupplyOnChain.Ethereum.num),
     });
@@ -250,15 +254,15 @@ app.get('/donate', async (req, res) => {
 
 // create dontate page
 app.get('/chains', async (req, res) => {
-    console.log(totalSupplyOnChain);
+    console.log(GLOBAL.totalSupplyOnChain);
     res.render('chains', {
-        totalMCap: totalMCap,
-        totalMCap_s: roundMCap(totalMCap),
-        totalVolume: totalVolume,
-        totalVolume_s: roundMCap(totalVolume),
+        totalMCap: GLOBAL.totalMCap,
+        totalMCap_s: roundMCap(GLOBAL.totalMCap),
+        totalVolume: GLOBAL.totalVolume,
+        totalVolume_s: roundMCap(GLOBAL.totalVolume),
         totalETHMCap: 0, //totalSupplyOnChain.Ethereum.num,
         totalETHMCap_s: 0, //roundMCap(totalSupplyOnChain.Ethereum.num),
-        totalSupplyOnChain: totalSupplyOnChain,
+        totalSupplyOnChain: GLOBAL.totalSupplyOnChain,
     });
 });
 
