@@ -8,7 +8,8 @@
         "etherscan-api": "^10.0.5",
         "express": "^4.17.1",
         "messari-api": "^1.0.0",
-        "node-cron": "^2.0.3"
+        "node-cron": "^2.0.3",
+        "request": "^2.88.2"
     },
     "devDependencies": {},
     "scripts": {
