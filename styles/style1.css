@@ -121,7 +121,7 @@ body {
     background-color: rgba(34, 31, 31, 0.603);
 }
 
-.row:hover {
+.expand:hover {
     background-color: rgba(26, 26, 26, 0.9);
     height: 105px;
 }
@@ -130,18 +130,18 @@ body {
     display: none;
 }
 
-.row:hover > .more-content {
+.expand:hover > .more-content {
     display: block;
 }
 
 @media only screen and (max-width: 767px) {
-    .row:hover {
+    .expand:hover {
         height: 125px;
     }
 }
 
 @media only screen and (max-width: 359px) {
-    .row:hover {
+    .expand:hover {
         height: 145px;
     }
 }
