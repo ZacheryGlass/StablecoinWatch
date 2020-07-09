@@ -1,78 +1,208 @@
 <style>
-/****************************************
+    /****************************************
                 BAR 
-*****************************************/
-.bar {
-    background: #007ac1;
-    padding: 3px 20px;
-    min-height: 38px;
-}
+    *****************************************/
+    .bar {
+        background: #007ac1;
+        padding: 3px 20px;
+        min-height: 38px;
+        display: none;
+    }
 
-.bar .container {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 0;
-}
+    .bar .container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0;
+    }
 
-.col33 {
-    /* float: left; */
-    display: inline-block;
-    width: 33%;
-    list-style-type: none;
-    color: white;
-    font-weight: bold;
-    padding: 0;
-    margin: 0;
-}
+    .col33 {
+        /* float: left; */
+        display: inline-block;
+        width: 33%;
+        list-style-type: none;
+        color: white;
+        font-weight: bold;
+        padding: 0;
+        margin: 0;
+    }
 
-.colright {
-    text-align: right;
-}
+    .colright {
+        text-align: right;
+    }
 
-.bar ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
+    .bar ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
 
-#btc_img {
-    width: 20px;
-    height: 20px;
-}
+    #btc_img {
+        width: 20px;
+        height: 20px;
+    }
 
-/****************************************
+    /****************************************
                 Buttons
-*****************************************/
-.button_container {
-    margin: auto;
-    text-align: center;
-}
+    *****************************************/
+    /* .button_container {
+        margin: auto;
+        text-align: center;
+    }
 
-.button {
-    background-color: #003c60;
-    border: none;
-    color: white;
-    padding: 10px 32px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    /* margin: 4px 2px; */
-    cursor: pointer;
-    border-radius: 4px;
-    border: 1px solid #0066ff;
-}
+    .button {
+        background-color: #003c60;
+        border: none;
+        color: white;
+        padding: 10px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        cursor: pointer;
+        border-radius: 4px;
+        border: 1px solid #0066ff;
+    }
 
-.disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
+    .disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    } */
+
+    /****************************************
+                    new button
+    *****************************************/
+    .btn:link,
+    .btn:visited {
+        text-decoration: none;
+        padding: 10px 0;
+        margin: 2px;
+        display: inline-block;
+        border-radius: 10px;
+        transition: all 0.2s;
+        user-select: none;
+        width: 40%;
+        min-width: 100px;
+    }
+
+    .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-white {
+        background-color: #fff;
+        color: #777;
+    }
+    .disabled {
+        opacity: 0.6;
+        pointer-events: none;
+        cursor: not-allowed;
+    }
+    /****************************************
+                    Bar 2
+    *****************************************/
+    .bar2 {
+        margin: 0 auto;
+        padding: 0;
+        background: #007ac1;
+        text-align: center;
+    }
+
+    .gridy {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr 1fr;
+        grid-template-areas:
+            'a b c'
+            'd b f';
+        /* margin: 2rem 0; */
+        /***************************/
+        align-items: center;
+        color: white;
+        font-weight: bold;
+        max-width: 960px;
+        margin: auto;
+        padding: 0.25rem 0;
+    }
+
+    .gridy > * {
+        margin-left: 5px;
+        margin-right: 5px;
+    }
+    .gridy .a {
+        grid-area: a;
+        /* background-color: rgb(80, 63, 42); */
+        /* padding: 1rem; */
+        /***************************/
+        text-align: left;
+    }
+    .gridy .b {
+        grid-area: b;
+        /* background-color: lightskyblue; */
+        /* padding: 1rem; */
+        /***************************/
+    }
+    .gridy .c {
+        grid-area: c;
+        /* background-color: #bada55; */
+        /* padding: 1rem; */
+        /***************************/
+        text-align: right;
+    }
+
+    .gridy .d {
+        grid-area: d;
+        /* background-color: yellowgreen; */
+        /* padding: 1rem; */
+        /***************************/
+        text-align: left;
+    }
+
+    .gridy .f {
+        grid-area: f;
+        /* background-color: orangered; */
+        /* padding: 1rem; */
+        /***************************/
+        text-align: right;
+    }
 </style>
 <header>
     <h1>
         <a href="/"><img src="/site_logo.png" alt="Stablecoin Watch" /></a>
     </h1>
 </header>
+<div class="bar2">
+    <div class="gridy">
+        <section class="a">
+            Total Market Cap:&nbsp;<%=totalMCap_s%>
+        </section>
+        <section class="b">
+            <% if ( active === 'home' ) { %>
+            <!-- <button class="button disabled">Coin View</button> -->
+            <a href="/" class="btn btn-white disabled">Coins</a>
+            <% } else { %>
+            <!-- <a href="/"><button class="button">Coin View</button></a> -->
+            <a href="/" class="btn btn-white">Coins</a>
+            <% } %> <% if ( active === 'chains' ) { %>
+            <!-- <button class="button disabled">Coin View</button> -->
+            <a href="/chains" class="btn btn-white disabled">Chains</a>
+            <% } else { %>
+            <!-- <a href="/chains"><button class="button">Chain View</button></a> -->
+            <a href="/chains" class="btn btn-white">Chains</a>
+            <% } %>
+        </section>
+        <section class="c">
+            Total $ on ETH: <%=totalETHMCap_s%>
+        </section>
+        <section class="d">
+            Total 24h Volume: <%=totalVolume_s%>
+        </section>
+        <section class="f">
+            Total % on ETH:&nbsp;&nbsp;&nbsp;<%=
+            ((totalETHMCap/totalMCap)*100).toFixed(1)%>%
+        </section>
+    </div>
+</div>
+
 <div class="bar">
     <div class="container">
         <div class="col33 colleft">
@@ -85,17 +215,16 @@
                 </li>
             </ul>
         </div>
-        <div class='col33 colcenter'>
+        <div class="col33 colcenter">
             <div class="button_container">
                 <% if ( active === 'home' ) { %>
-                    <button class="button disabled">Coin View</button>
+                <button class="button disabled">Coin View</button>
                 <% } else { %>
-                    <a href="/"><button class="button">Coin View</button></a>
-                <% } %>
-                <% if ( active === 'chains' ) { %>
-                    <button class="button disabled">Coin View</button>
+                <a href="/"><button class="button">Coin View</button></a>
+                <% } %> <% if ( active === 'chains' ) { %>
+                <button class="button disabled">Coin View</button>
                 <% } else { %>
-                    <a href="/chains"><button class="button">Chain View</button></a>
+                <a href="/chains"><button class="button">Chain View</button></a>
                 <% } %>
             </div>
         </div>
