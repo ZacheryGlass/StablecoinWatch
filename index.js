@@ -206,16 +206,17 @@ async function updateData() {
 }
 
 function roundMCap(v) {
-    if (!v) {
-        return '$0';
-    }
+    if (!v) return '$0';
 
-    if (v > 1000000000) {
-        return '$' + (v / 1000000000).toFixed(2) + 'B';
-    } else if (v > 1000000) {
-        return '$' + (v / 1000000).toFixed(1) + 'M';
+    const BILLION = 1000000000;
+    const MILLION = 1000000;
+
+    if (v >= BILLION) {
+        return `$${(v / BILLION).toFixed(2)}B`;
+    } else if (v >= MILLION) {
+        return `$${(v / MILLION).toFixed(1)}M`;
     } else {
-        return '$' + (v / 1000).toFixed(0) + ',' + (v % 1000).toFixed(0);
+        return `$${Math.floor(v / 1000)},${(v % 1000).toFixed(0)}`;
     }
 }
 
@@ -237,7 +238,7 @@ app.get('/', async (req, res) => {
         totalVolume_s: roundMCap(totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
-        active: 'home'
+        active: 'home',
     });
 });
 
@@ -253,7 +254,7 @@ app.get('/donate', async (req, res) => {
         totalVolume_s: roundMCap(totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
-        active: 'donate'
+        active: 'donate',
     });
 });
 
@@ -270,7 +271,7 @@ app.get('/chains', async (req, res) => {
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
         totalSupplyOnChain: totalSupplyOnChain,
-        active: 'chains'
+        active: 'chains',
     });
 });
 
