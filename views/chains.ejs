@@ -9,7 +9,7 @@
         <style>
             .row ul.chainstats > li {
                 margin: 0;
-                font-size: 16px;
+                font-size: 20px;
                 font-weight: normal;
                 list-style: none;
                 display: inline-block;
@@ -18,6 +18,7 @@
                 display: inline-flex;
                 padding: 5px 10px;
             }
+
             .title ul.chainstats li {
                 padding: 15px 13px;
                 font-weight: bold;
@@ -27,6 +28,8 @@
                 width: 10% !important;
                 text-align: center;
             }
+            
+
         </style>
     </head>
     <body>
@@ -35,6 +38,10 @@
         <!-- Header -->
 
         <main>
+            <div class="button_container">
+                <a href="/"><button class="button">Coin View</button></a>
+                <button class="button disabled">Chain View</button>
+            </div>
             <% if( totalSupplyOnChain && totalSupplyOnChain.length ) { %>
             <section class="wrapper">
                 <!-- Row title -->

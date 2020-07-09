@@ -57,6 +57,7 @@ body {
     color: rgba(255, 255, 255, 0.9);
     overflow: hidden;
     position: relative;
+    margin-top: 5px;
 }
 
 /* lists */
@@ -165,6 +166,12 @@ body {
         display: none;
     }
 } */
+
+@media only screen and (max-width: 767px) {
+    .title ul li {
+        font-size: 14px !important;
+    }
+}
 
 .type1 {
     border-left: 3px solid #1c616c;
