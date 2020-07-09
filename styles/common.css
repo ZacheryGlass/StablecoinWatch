@@ -129,6 +129,10 @@ main.title {
     background-color: rgba(34, 31, 31, 0.603);
 }
 
+.row:hover {
+    background-color: rgba(26, 26, 26, 0.9);
+}
+
 .row ul {
     margin: 0;
     padding: 0;
