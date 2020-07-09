@@ -1,0 +1,147 @@
+/****************************************
+                Common
+*****************************************/
+main {
+    max-width: 960px;
+    margin: auto;
+}
+
+body {
+    font-family: arial;
+    margin: 0;
+    background: #e3e3e3;
+    font-family: 'Open Sans', sans-serif;
+}
+
+.type1 a,
+.type2 a,
+.type3 a,
+.type4 a {
+    text-decoration: none;
+    transition: color 0.2s ease-out;
+}
+
+.type1 a {
+    color: #4fc0d2;
+}
+
+.type1 a:hover {
+    color: #268695;
+}
+
+.type1 {
+    border-left: 5px solid #1c616c;
+}
+
+.type1:hover {
+    border-left: 5px solid #4fc0d2;
+}
+
+.type2 a {
+    color: #52d29a;
+}
+
+.type2 a:hover {
+    color: #279766;
+}
+
+.type2 {
+    border-left: 5px solid #1d6e4b;
+}
+
+.type2:hover {
+    border-left: 5px solid #52d29a;
+}
+
+.type3 a {
+    color: rgba(231, 196, 104, 0.7);
+}
+
+.type3 a:hover {
+    color: rgba(201, 154, 32, 0.7);
+}
+
+.type3 {
+    border-left: 5px solid rgba(157, 121, 25, 0.7);
+}
+
+.type3:hover {
+    border-left: 5px solid rgba(231, 196, 104, 0.7);
+}
+
+.type4 a {
+    color: #eb7655;
+}
+
+.type4 a:hover {
+    color: #c33d17;
+}
+.type4 {
+    border-left: 5px solid #952f12;
+}
+
+.type4:hover {
+    border-left: 5px solid #eb7655;
+}
+
+/* wrapper */
+.wrapper {
+    width: 100%;
+    max-width: 1000px;
+    min-height: 100px;
+    margin: 20px auto 40px auto;
+    padding: 0;
+    background: rgba(34, 31, 31, 0.603);
+    color: rgba(255, 255, 255, 0.9);
+    overflow: hidden;
+    position: relative;
+    margin-top: 5px;
+}
+
+p {
+    margin: 0;
+}
+
+/* title */
+main.title {
+    padding: 10px 0px 20px 0px;
+    height: 45px;
+    font-size: 0;
+    background-color: rgba(34, 31, 31, 0.603);
+    border-left: 5px solid rgba(255, 255, 255, 0.603);
+}
+
+@media only screen and (max-width: 767px) {
+    .title ul li {
+        font-size: 14px !important;
+    }
+}
+
+/* rows */
+.row {
+    padding: 20px 0;
+    height: 30px;
+    font-size: 0;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease-out;
+    border-top: 1px solid rgba(0, 0, 0, 0.603);
+    background-color: rgba(34, 31, 31, 0.603);
+}
+
+.row ul {
+    margin: 0;
+    padding: 0;
+}
+
+@media only screen and (max-width: 767px) and (min-width: 480px) {
+    .row ul li {
+        font-size: 13px;
+    }
+}
+
+@media only screen and (max-width: 479px) {
+    .row ul li {
+        font-size: 13px;
+    }
+}

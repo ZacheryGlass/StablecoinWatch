@@ -1,75 +1,27 @@
 <style>
     /****************************************
-                BAR 
+                    Header
     *****************************************/
-    .bar {
-        background: #007ac1;
-        padding: 3px 20px;
-        min-height: 38px;
-        display: none;
+    header {
+        background: #003c60;
+        padding-top: 10px;
     }
 
-    .bar .container {
-        max-width: 960px;
-        margin: 0 auto;
-        padding: 0;
-    }
-
-    .col33 {
-        /* float: left; */
-        display: inline-block;
-        width: 33%;
-        list-style-type: none;
-        color: white;
-        font-weight: bold;
-        padding: 0;
-        margin: 0;
-    }
-
-    .colright {
-        text-align: right;
-    }
-
-    .bar ul {
+    header img {
+        max-height: 90px;
+        border-radius: 10px;
         margin: 0;
         padding: 0;
-        list-style: none;
     }
 
-    #btc_img {
-        width: 20px;
-        height: 20px;
-    }
-
-    /****************************************
-                Buttons
-    *****************************************/
-    /* .button_container {
-        margin: auto;
+    h1,
+    h1 a {
         text-align: center;
+        margin: 0;
+        padding: 0;
     }
-
-    .button {
-        background-color: #003c60;
-        border: none;
-        color: white;
-        padding: 10px 32px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 16px;
-        cursor: pointer;
-        border-radius: 4px;
-        border: 1px solid #0066ff;
-    }
-
-    .disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    } */
-
     /****************************************
-                    new button
+                    buttons
     *****************************************/
     .btn:link,
     .btn:visited {
@@ -99,9 +51,9 @@
         cursor: not-allowed;
     }
     /****************************************
-                    Bar 2
+                    bar
     *****************************************/
-    .bar2 {
+    .bar {
         margin: 0 auto;
         padding: 0;
         background: #007ac1;
@@ -114,8 +66,6 @@
         grid-template-areas:
             'a b c'
             'd b f';
-        /* margin: 2rem 0; */
-        /***************************/
         align-items: center;
         color: white;
         font-weight: bold;
@@ -130,38 +80,23 @@
     }
     .gridy .a {
         grid-area: a;
-        /* background-color: rgb(80, 63, 42); */
-        /* padding: 1rem; */
-        /***************************/
         text-align: left;
     }
     .gridy .b {
         grid-area: b;
-        /* background-color: lightskyblue; */
-        /* padding: 1rem; */
-        /***************************/
     }
     .gridy .c {
         grid-area: c;
-        /* background-color: #bada55; */
-        /* padding: 1rem; */
-        /***************************/
         text-align: right;
     }
 
     .gridy .d {
         grid-area: d;
-        /* background-color: yellowgreen; */
-        /* padding: 1rem; */
-        /***************************/
         text-align: left;
     }
 
     .gridy .f {
         grid-area: f;
-        /* background-color: orangered; */
-        /* padding: 1rem; */
-        /***************************/
         text-align: right;
     }
 </style>
@@ -170,23 +105,19 @@
         <a href="/"><img src="/site_logo.png" alt="Stablecoin Watch" /></a>
     </h1>
 </header>
-<div class="bar2">
+<div class="bar">
     <div class="gridy">
         <section class="a">
             Total Market Cap:&nbsp;<%=totalMCap_s%>
         </section>
         <section class="b">
             <% if ( active === 'home' ) { %>
-            <!-- <button class="button disabled">Coin View</button> -->
             <a href="/" class="btn btn-white disabled">Coins</a>
             <% } else { %>
-            <!-- <a href="/"><button class="button">Coin View</button></a> -->
             <a href="/" class="btn btn-white">Coins</a>
             <% } %> <% if ( active === 'chains' ) { %>
-            <!-- <button class="button disabled">Coin View</button> -->
             <a href="/chains" class="btn btn-white disabled">Chains</a>
             <% } else { %>
-            <!-- <a href="/chains"><button class="button">Chain View</button></a> -->
             <a href="/chains" class="btn btn-white">Chains</a>
             <% } %>
         </section>
@@ -200,44 +131,5 @@
             Total % on ETH:&nbsp;&nbsp;&nbsp;<%=
             ((totalETHMCap/totalMCap)*100).toFixed(1)%>%
         </section>
-    </div>
-</div>
-
-<div class="bar">
-    <div class="container">
-        <div class="col33 colleft">
-            <ul>
-                <li>
-                    Total Market Cap:&nbsp;<%=totalMCap_s%>
-                </li>
-                <li>
-                    Total 24h Volume: <%=totalVolume_s%>
-                </li>
-            </ul>
-        </div>
-        <div class="col33 colcenter">
-            <div class="button_container">
-                <% if ( active === 'home' ) { %>
-                <button class="button disabled">Coin View</button>
-                <% } else { %>
-                <a href="/"><button class="button">Coin View</button></a>
-                <% } %> <% if ( active === 'chains' ) { %>
-                <button class="button disabled">Coin View</button>
-                <% } else { %>
-                <a href="/chains"><button class="button">Chain View</button></a>
-                <% } %>
-            </div>
-        </div>
-        <div class="col33 colright">
-            <ul>
-                <li>
-                    Total $ on ETH: <%=totalETHMCap_s%>
-                </li>
-                <li>
-                    Total % on ETH:&nbsp;&nbsp;&nbsp;<%=
-                    ((totalETHMCap/totalMCap)*100).toFixed(1)%>%
-                </li>
-            </ul>
-        </div>
     </div>
 </div>
