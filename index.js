@@ -237,6 +237,7 @@ app.get('/', async (req, res) => {
         totalVolume_s: roundMCap(totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
+        active: 'home'
     });
 });
 
@@ -252,6 +253,7 @@ app.get('/donate', async (req, res) => {
         totalVolume_s: roundMCap(totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
+        active: 'donate'
     });
 });
 
@@ -268,6 +270,7 @@ app.get('/chains', async (req, res) => {
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
         totalSupplyOnChain: totalSupplyOnChain,
+        active: 'chains'
     });
 });
 
