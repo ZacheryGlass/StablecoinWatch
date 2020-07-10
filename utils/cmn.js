@@ -16,8 +16,8 @@ exports.toDollarString = (v) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
-            minimumFractionDigits:0
-          }).format(v);
+            minimumFractionDigits: 0,
+        }).format(v);
     }
 }; // toDollarString()
 
@@ -27,10 +27,19 @@ exports.stripHTML = (str) => {
 }; // stripHTML()
 
 exports.getTokenPlatform = (token) => {
-    if (token.startsWith('ERC')){
+    if (typeof toke != String) return 'Unknown';
+
+    if (token.toUpperCase().startsWith('ERC')) {
         return 'Ethereum';
-    } else if (token.startsWith('TRC')) {
+    } else if (token.toUpperCase().startsWith('TRC')) {
         return 'Tron';
-    } else if 
-        
-}
+    } else if (token.toUpperCase().startsWith('BEP')) {
+        return 'Binance Chain';
+    } else if (token.toLowerCase() == 'omni') {
+        return 'Bitcoin';
+    } else if (token.toLowerCase() == 'native') {
+        return 'Native';
+    } else {
+        return 'Unknown';
+    }
+}; // getTokenPlatform()

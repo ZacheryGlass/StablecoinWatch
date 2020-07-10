@@ -55,11 +55,6 @@ updateData();
 cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, updateData);
 
 async function updateData() {
-    let l = await cmc.pullCMC( cmc_ticker_list );
-
-    console.log(l);
-    process.exit();
-
     // pull new stablecoins data
     stablecoins_temp = await messari.getMessariStablecoins();
 
@@ -140,28 +135,10 @@ async function updateData() {
                 break;
 
             default:
-                switch (scoin.type) {
-                    case 'ERC-20':
-                        scoin.chain_supply['Ethereum'] = { num: 0 };
-                        scoin.chain_supply['Ethereum'].num = scoin.mcap;
-                        break;
-                    case 'TRC-20':
-                        scoin.chain_supply['Tron'] = { num: 0 };
-                        scoin.chain_supply['Tron'].num = scoin.mcap;
-                        break;
-                    case 'BEP2':
-                        scoin.chain_supply['Binance Chain'] = { num: 0 };
-                        scoin.chain_supply['Binance Chain'].num = scoin.mcap;
-                        break;
-                    case 'Native':
-                        scoin.chain_supply[scoin.name] = { num: 0 };
-                        scoin.chain_supply[scoin.name].num = scoin.mcap;
-                        break;
-                    default:
-                        scoin.chain_supply['Unknown'] = { num: 0 };
-                        scoin.chain_supply['Unknown'].num = scoin.mcap;
-                        break;
-                } // end inner-switch
+                let platform = util.getTokenPlatform(symbol.type);
+                if (platform == 'Native') platform = scoin.name;
+                scoin.chain_supply[platform] = { num: 0 };
+                scoin.chain_supply[platform].num = scoin.mcap;
                 break;
         } // end switch
 
@@ -184,7 +161,9 @@ async function updateData() {
                 totalSupplyOnChain.push({
                     name: key,
                     scoin_total: scoin.chain_supply[key].num,
-                    scoin_total_s: util.toDollarString(scoin.chain_supply[key].num),
+                    scoin_total_s: util.toDollarString(
+                        scoin.chain_supply[key].num
+                    ),
                 });
             }
         }

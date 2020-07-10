@@ -1,58 +1,84 @@
 const keys = require('../keys');
 const CoinMarketCap = require('coinmarketcap-api');
 const Stablecoin = require('../stablecoin');
+const Platform = require('../platform');
+const { cmc } = require('../keys');
+const { sleep, toDollarString } = require('./cmn');
 const cmc_api = new CoinMarketCap(keys.cmc);
 
-exports.getCMCStablecoins = () => {
+function cmcCheckError(status) {
+    if (status.error_code) {
+        let code = status.error_code;
+        let msg = status.error_message;
+        // console.log('CMC API ERROR CODE: ', code);
+        // console.log('CMC API ERROR MSG: ', msg);
+        throw `CMC API ERROR ${code}: ${msg}`;
+    }
+} // end cmcCheckError()
+
+// This function returns all coins listed as stablecoins on CoinMarketCap
+// NOTE: This includes coins pegged to assets other than the US Dollar,
+// and oddly does not include DAI
+exports.getAllCMCStablecoins = async () => {
+    // TODO: This function can be reduced to two API calles by using
+    // using getTickers() and looping through each coin manually
+    // rather than using getMetadata() in getCMCStablecoins()...
+    // Make ticker_list option, default returns all CMCStablecois
+    // so reduce to a single function.
     let ret_list = [];
-    cmc_api
+    return cmc_api
         .getTickers({ limit: 1000 })
-        .then(async (resp) => {
+        .then((resp) => {
             resp.data.forEach((coin) => {
                 if (coin.tags.includes('stablecoin-asset-backed')) {
-                    console.log(coin);
-                    ret_list.push(coin);
+                    ret_list.push(coin.symbol);
                 }
             });
+            return exports.getCMCStablecoins(ret_list);
         })
         .catch((err) => {
             console.log('ERROR: ', err);
-            ret_list = null;
         });
-    return ret_list;
-}; // getCMCStablecoins()
+}; // end getCMCStablecoins()
 
-exports.pullCMC = async (ticker_list) => {
-    var coin_list = [];
-    await cmc_api
-        .getMetadata({ symbol: ticker_list })
-        .then(async (resp) => {
-            if (resp.status.error_code) {
-                console.log('CMC API ERROR CODE: ', resp.status.error_code);
-                console.log('CMC API ERROR TIME: ', resp.status.timestamp);
-                console.log('CMC API ERROR MSG: ', resp.status.error_message);
-                return;
-            }
-            Object.keys(resp.data).forEach(function (key, i) {
-                coin = resp.data[key];
-                coin_list.push( new Stablecoin(
-                    name = coin.name,
-                    symbol = coin.symbol,
-                    platform = { 
-                        name: platform.name,
-                        contract_address: platform.token_addres,
-                        supply: 0,
-                    },
-                    desc = coin.description,
-                    mcap = null,
-                    volume = null,
-                    chain_supply = {},
-                    img_url = coin.logo,
-                ) );
-            });
-        })
-        .catch((err) => {
-            console.log('CMC API ERROR: ', err);
-        });
-    return coin_list;
-}; //pullCMC()
+// Get a list of Stablecoin Objects from a list of tickers
+exports.getCMCStablecoins = async (ticker_list) => {
+    // TODO: retreive metadata and quote asynchronously
+    let metadata_resp = await cmc_api.getMetadata({ symbol: ticker_list });
+    cmcCheckError(metadata_resp.status);
+
+    let quote_resp = await cmc_api.getQuotes({ symbol: ticker_list });
+    cmcCheckError(quote_resp.status);
+
+    // build return list
+    let coin_list_ret = [];
+    Object.keys(metadata_resp.data).forEach(function (key, i) {
+        let metadata = metadata_resp.data[key];
+        let quote = null;
+        if (quote_resp.data.hasOwnProperty(key)) {
+            quote = quote_resp.data[key].quote;
+        }
+
+        let scoin = new Stablecoin(
+            metadata.name,
+            metadata.symbol,
+            metadata.platform
+                ? new Platform(
+                      metadata.platform.name,
+                      metadata.platform.token_addres,
+                      0 // contract total supply - fetch from Etherscan
+                  )
+                : null,
+            metadata.description,
+            quote ? quote.USD.market_cap : null,
+            quote ? quote.USD.volume_24h : null,
+            {}, // chain supply - currentl only used for Messari
+            metadata.logo
+        );
+
+        coin_list_ret.push(scoin);
+        // TODO: return Promise.all()
+    }); // for each (build return list)
+
+    return coin_list_ret;
+}; // end getCMCStablecoins()
