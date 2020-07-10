@@ -22,6 +22,28 @@ let totalMCap = 0;
 let totalVolume = 0;
 let totalSupplyOnChain = [];
 
+// cannot pull from API bc CMC has non-stablecoins listed
+// as stablecoins in API response.
+let cmc_ticker_list = [
+    'USDT',
+    'USDC',
+    'PAX',
+    'BUSD',
+    'TUSD',
+    'HUSD',
+    'DAI',
+    'LUNA',
+    'RSR',
+    'EURS',
+    'SUSD',
+    'GUSD',
+    'SBD',
+    'USDS',
+    'USDK',
+    'USDQ',
+    'EOSDT',
+];
+
 // set up express app.
 const app = express();
 
@@ -33,6 +55,11 @@ updateData();
 cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, updateData);
 
 async function updateData() {
+    let l = await cmc.pullCMC( cmc_ticker_list );
+
+    console.log(l);
+    process.exit();
+
     // pull new stablecoins data
     stablecoins_temp = await messari.getMessariStablecoins();
 
@@ -145,7 +172,7 @@ async function updateData() {
                 // new coin
                 if (chain_scoin_data.name == key) {
                     chain_scoin_data.scoin_total += scoin.chain_supply[key].num;
-                    chain_scoin_data.scoin_total_s = util.roundMCap(
+                    chain_scoin_data.scoin_total_s = util.toDollarString(
                         scoin.chain_supply[key].num
                     );
                     chain_exists = true;
@@ -157,7 +184,7 @@ async function updateData() {
                 totalSupplyOnChain.push({
                     name: key,
                     scoin_total: scoin.chain_supply[key].num,
-                    scoin_total_s: util.roundMCap(scoin.chain_supply[key].num),
+                    scoin_total_s: util.toDollarString(scoin.chain_supply[key].num),
                 });
             }
         }
@@ -184,9 +211,9 @@ app.get('/', async (req, res) => {
     res.render('home', {
         coins: stablecoins,
         totalMCap: totalMCap,
-        totalMCap_s: util.roundMCap(totalMCap),
+        totalMCap_s: util.toDollarString(totalMCap),
         totalVolume: totalVolume,
-        totalVolume_s: util.roundMCap(totalVolume),
+        totalVolume_s: util.toDollarString(totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
         active: 'home',
@@ -199,9 +226,9 @@ app.get('/donate', async (req, res) => {
     );
     res.render('donate', {
         totalMCap: totalMCap,
-        totalMCap_s: util.roundMCap(totalMCap),
+        totalMCap_s: util.toDollarString(totalMCap),
         totalVolume: totalVolume,
-        totalVolume_s: util.roundMCap(totalVolume),
+        totalVolume_s: util.toDollarString(totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
         active: 'donate',
@@ -215,9 +242,9 @@ app.get('/chains', async (req, res) => {
     );
     res.render('chains', {
         totalMCap: totalMCap,
-        totalMCap_s: util.roundMCap(totalMCap),
+        totalMCap_s: util.toDollarString(totalMCap),
         totalVolume: totalVolume,
-        totalVolume_s: util.roundMCap(totalVolume),
+        totalVolume_s: util.toDollarString(totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
         totalSupplyOnChain: totalSupplyOnChain,

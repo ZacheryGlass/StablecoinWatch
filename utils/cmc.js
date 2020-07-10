@@ -1,28 +1,7 @@
 const keys = require('../keys');
 const CoinMarketCap = require('coinmarketcap-api');
+const Stablecoin = require('../stablecoin');
 const cmc_api = new CoinMarketCap(keys.cmc);
-
-// cannot pull from API bc CMC has non-stablecoins listed
-// as stablecoins in API response.
-let cmc_ticker_list = [
-    'USDT',
-    'USDC',
-    'PAX',
-    'BUSD',
-    'TUSD',
-    'HUSD',
-    'DAI',
-    'LUNA',
-    'RSR',
-    'EURS',
-    'SUSD',
-    'GUSD',
-    'SBD',
-    'USDS',
-    'USDK',
-    'USDQ',
-    'EOSDT',
-];
 
 exports.getCMCStablecoins = () => {
     let ret_list = [];
@@ -43,8 +22,7 @@ exports.getCMCStablecoins = () => {
     return ret_list;
 }; // getCMCStablecoins()
 
-exports.pullCMC = async () => {
-    let ticker_list = cmc_ticker_list;
+exports.pullCMC = async (ticker_list) => {
     var coin_list = [];
     await cmc_api
         .getMetadata({ symbol: ticker_list })
@@ -55,16 +33,26 @@ exports.pullCMC = async () => {
                 console.log('CMC API ERROR MSG: ', resp.status.error_message);
                 return;
             }
-
             Object.keys(resp.data).forEach(function (key, i) {
-                // console.log(resp.data[key]);
-                coin_list.push(resp.data[key]);
-                // index: the ordinal position of the key within the object
+                coin = resp.data[key];
+                coin_list.push( new Stablecoin(
+                    name = coin.name,
+                    symbol = coin.symbol,
+                    platform = { 
+                        name: platform.name,
+                        contract_address: platform.token_addres,
+                        supply: 0,
+                    },
+                    desc = coin.description,
+                    mcap = null,
+                    volume = null,
+                    chain_supply = {},
+                    img_url = coin.logo,
+                ) );
             });
         })
         .catch((err) => {
             console.log('CMC API ERROR: ', err);
         });
-    console.log(coin_list.length);
     return coin_list;
 }; //pullCMC()

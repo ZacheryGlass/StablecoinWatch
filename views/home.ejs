@@ -46,7 +46,7 @@
                 text-align: center;
             }
 
-            .type {
+            .platform {
                 font-size: 12px;
                 text-align: right;
             }
@@ -71,7 +71,6 @@
             }
 
             .expand:hover {
-                /* background-color: rgba(26, 26, 26, 0.9); */
                 height: 105px;
             }
 
@@ -128,7 +127,7 @@
                         <li>Market Cap Dominance</li>
                         <li>Volume (24h)</li>
                         <li>Volume Dominance</li>
-                        <li>Type</li>
+                        <li>platform</li>
                     </ul>
                 </main>
                 <% coins.forEach( (coin, i) => { %>
@@ -150,7 +149,7 @@
                         </li>
                         <!-- TODO: Make this dynamic for any cross-chain coin -->
                         <% if ( coin.name == "Tether" ) { %>
-                        <li class="type">
+                        <li class="platform">
                             <ul class="supply_list">
                                 <li>
                                     ERC-20: <%= ( (
@@ -168,7 +167,7 @@
                             </ul>
                         </li>
                         <% } else if ( coin.name == "Stably Dollar" ) { %>
-                        <li class="type">
+                        <li class="platform">
                             <ul class="supply_list">
                                 <li>
                                     ERC-20: <%=
@@ -184,8 +183,8 @@
                         </li>
 
                         <% } else { %>
-                        <li class="type">
-                            <%= coin.type %>
+                        <li class="platform">
+                            <%= coin.platform %>
                         </li>
                         <% } %>
                     </ul>
