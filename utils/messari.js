@@ -13,7 +13,7 @@ exports.getMessariStablecoins = async function getMessariStablecoins() {
             let scoin = {
                 name: coin.name,
                 symbol: coin.symbol,
-                mcap_s: util.roundMCap(
+                mcap_s: util.toDollarString(
                     coin.metrics.marketcap.current_marketcap_usd
                 ),
                 mcap: coin.metrics.marketcap.current_marketcap_usd,
@@ -21,7 +21,7 @@ exports.getMessariStablecoins = async function getMessariStablecoins() {
                 desc: coin.profile.overview
                     ? coin.profile.overview.replace(/<[^>]*>?/gm, '')
                     : 'No  description available.',
-                volume_s: util.roundMCap(
+                volume_s: util.toDollarString(
                     coin.metrics.market_data.real_volume_last_24_hours
                 ),
                 volume: coin.metrics.market_data.real_volume_last_24_hours,

@@ -8,7 +8,7 @@ const omni = require('./utils/omni');
 const util = require('./utils/cmn');
 
 // CONSTANTS
-const MINS_BETWEEN_UPDATE = 1000;
+const MINS_BETWEEN_UPDATE = 5;
 const TETHER_DECIMALS = 6;
 const TETHER_CONTRACT_ADDRESS = '0xdac17f958d2ee523a2206206994597c13d831ec7';
 const TETHER_OMNI_ID = 31;
@@ -112,28 +112,10 @@ async function updateData() {
                 break;
 
             default:
-                switch (scoin.type) {
-                    case 'ERC-20':
-                        scoin.chain_supply['Ethereum'] = { num: 0 };
-                        scoin.chain_supply['Ethereum'].num = scoin.mcap;
-                        break;
-                    case 'TRC-20':
-                        scoin.chain_supply['Tron'] = { num: 0 };
-                        scoin.chain_supply['Tron'].num = scoin.mcap;
-                        break;
-                    case 'BEP2':
-                        scoin.chain_supply['Binance Chain'] = { num: 0 };
-                        scoin.chain_supply['Binance Chain'].num = scoin.mcap;
-                        break;
-                    case 'Native':
-                        scoin.chain_supply[scoin.name] = { num: 0 };
-                        scoin.chain_supply[scoin.name].num = scoin.mcap;
-                        break;
-                    default:
-                        scoin.chain_supply['Unknown'] = { num: 0 };
-                        scoin.chain_supply['Unknown'].num = scoin.mcap;
-                        break;
-                } // end inner-switch
+                let platform = util.getTokenPlatform(scoin.type);
+                if (platform == 'Native') platform = scoin.name;
+                scoin.chain_supply[platform] = { num: 0 };
+                scoin.chain_supply[platform].num = scoin.mcap;
                 break;
         } // end switch
 
@@ -144,7 +126,7 @@ async function updateData() {
                 // new coin
                 if (chain_scoin_data.name == key) {
                     chain_scoin_data.scoin_total += scoin.chain_supply[key].num;
-                    chain_scoin_data.scoin_total_s = util.roundMCap(
+                    chain_scoin_data.scoin_total_s = util.toDollarString(
                         scoin.chain_supply[key].num
                     );
                     chain_exists = true;
@@ -156,7 +138,9 @@ async function updateData() {
                 totalSupplyOnChain.push({
                     name: key,
                     scoin_total: scoin.chain_supply[key].num,
-                    scoin_total_s: util.roundMCap(scoin.chain_supply[key].num),
+                    scoin_total_s: util.toDollarString(
+                        scoin.chain_supply[key].num
+                    ),
                 });
             }
         }
@@ -183,9 +167,9 @@ app.get('/', async (req, res) => {
     res.render('home', {
         coins: stablecoins,
         totalMCap: totalMCap,
-        totalMCap_s: util.roundMCap(totalMCap),
+        totalMCap_s: util.toDollarString(totalMCap),
         totalVolume: totalVolume,
-        totalVolume_s: util.roundMCap(totalVolume),
+        totalVolume_s: util.toDollarString(totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
         active: 'home',
@@ -198,9 +182,9 @@ app.get('/donate', async (req, res) => {
     );
     res.render('donate', {
         totalMCap: totalMCap,
-        totalMCap_s: util.roundMCap(totalMCap),
+        totalMCap_s: util.toDollarString(totalMCap),
         totalVolume: totalVolume,
-        totalVolume_s: util.roundMCap(totalVolume),
+        totalVolume_s: util.toDollarString(totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
         active: 'donate',
@@ -214,9 +198,9 @@ app.get('/chains', async (req, res) => {
     );
     res.render('chains', {
         totalMCap: totalMCap,
-        totalMCap_s: util.roundMCap(totalMCap),
+        totalMCap_s: util.toDollarString(totalMCap),
         totalVolume: totalVolume,
-        totalVolume_s: util.roundMCap(totalVolume),
+        totalVolume_s: util.toDollarString(totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
         totalSupplyOnChain: totalSupplyOnChain,
