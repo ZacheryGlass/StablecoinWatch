@@ -16,3 +16,8 @@ exports.roundMCap = (v) => {
         return `$${Math.floor(v / 1000)},${(v % 1000).toFixed(0)}`;
     }
 }; // roundMCap()
+
+exports.stripHTML = (str) => {
+    if (typeof str !== String) return str;
+    return str.replace(/<[^>]*>?/gm, '');
+}; // stripHTML()

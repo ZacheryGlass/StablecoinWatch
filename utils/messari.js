@@ -1,6 +1,7 @@
 const Messari = require('messari-api');
 const MessariClient = new Messari();
 const util = require('./cmn');
+const util = require('./cmn');
 
 exports.getMessariStablecoins = async function getMessariStablecoins() {
     let ret_list = [];
@@ -9,26 +10,17 @@ exports.getMessariStablecoins = async function getMessariStablecoins() {
     allCoins = response.data.data;
 
     allCoins.forEach((coin) => {
-        if (coin.profile.sector == 'Stablecoins') {
-            let scoin = {
-                name: coin.name,
-                symbol: coin.symbol,
-                mcap_s: util.roundMCap(
-                    coin.metrics.marketcap.current_marketcap_usd
-                ),
-                mcap: coin.metrics.marketcap.current_marketcap_usd,
-                type: coin.profile.token_details.type,
-                desc: coin.profile.overview
-                    ? coin.profile.overview.replace(/<[^>]*>?/gm, '')
-                    : 'No  description available.',
-                volume_s: util.roundMCap(
-                    coin.metrics.market_data.real_volume_last_24_hours
-                ),
-                volume: coin.metrics.market_data.real_volume_last_24_hours,
-                chain_supply: {},
-            };
-            ret_list.push(scoin);
-        }
+        if (coin.profile.sector != 'Stablecoins') return;
+        ret_list.push(
+            new Stablecoin(
+                coin.name,
+                coin.symbol,
+                coin.profile.token_details.type,
+                coin.profile.overview,
+                coin.metrics.marketcap.current_marketcap_usd,
+                coin.metrics.market_data.real_volume_last_24_hours
+            )
+        );
     }); // for each
 
     return ret_list;

@@ -6,9 +6,10 @@ const messari = require('./utils/messari');
 const etherscan = require('./utils/etherscan');
 const omni = require('./utils/omni');
 const util = require('./utils/cmn');
+const cmc = require('./utils/cmc');
 
 // CONSTANTS
-const MINS_BETWEEN_UPDATE = 1000;
+const MINS_BETWEEN_UPDATE = 5;
 const TETHER_DECIMALS = 6;
 const TETHER_CONTRACT_ADDRESS = '0xdac17f958d2ee523a2206206994597c13d831ec7';
 const TETHER_OMNI_ID = 31;
@@ -38,7 +39,7 @@ async function updateData() {
     // update global stablecoin data with newly pulled data
     stablecoins_temp.forEach((scoin_temp) => {
         let scoin_temp_found = false;
-
+        // TODO: BUG HERE
         stablecoins.forEach((scoin) => {
             if (scoin.name == scoin_temp.name) {
                 scoin_temp_found = true;
