@@ -6,10 +6,9 @@ class Stablecoin {
         name = null,
         symbol = null,
         platforms = [new Platform()],
-        desc = null,
+        desc = 'No description available.',
         mcap = null,
         volume = null,
-        chain_supply = {},
         img_url = null
     ) {
         this.name = name;
@@ -21,12 +20,11 @@ class Stablecoin {
         } else {
             this.platforms = platforms;
         }
-        this.desc = desc;
+        this.desc = util.stripHTML(desc);
         this.mcap = mcap;
         this.mcap_s = util.toDollarString(mcap);
         this.volume = volume;
         this.volume_s = util.toDollarString(volume);
-        this.chain_supply = chain_supply;
         this.img_url = img_url;
     }
 }

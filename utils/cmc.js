@@ -72,7 +72,6 @@ exports.getCMCStablecoins = async (ticker_list) => {
             metadata.description,
             quote ? quote.USD.market_cap : null,
             quote ? quote.USD.volume_24h : null,
-            {}, // chain supply - currentl only used for Messari
             metadata.logo
         );
 

@@ -19,7 +19,7 @@ const STABLY_CONTRACT_ADDRESS = '0xa4bdb11dc0a2bec88d24a3aa1e6bb17201112ebe';
 let stablecoins = [];
 let totalMCap = 0;
 let totalVolume = 0;
-let totalSupplyOnChain = [];
+let glb_platform_data = [];
 
 // set up express app.
 const app = express();
@@ -33,9 +33,9 @@ cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, updateData);
 
 async function updateData() {
     // pull new stablecoins data
-    stablecoins_temp = await messari.getMessariStablecoins();
+    stablecoins_temp = await messari.getAllMessariStablecoins();
 
-    // update global stablecoin data with newly pulled data
+    // update global stablecoin data with newly pulled Messari data
     stablecoins_temp.forEach((scoin_temp) => {
         let scoin_temp_found = false;
 
@@ -59,110 +59,135 @@ async function updateData() {
         }
     }); // end loop through stablecoins_temp
 
-    // reset total metrics
+    // reset global metrics
     totalMCap = 0;
     totalVolume = 0;
+    glb_platform_data = [];
 
-    // reset per-blockchain metrics
-    totalSupplyOnChain = [];
+    // TODO: make this more general as to not require
+    // explicitly listing the coins here.
+    await Promise.all(
+        stablecoins.map(async (scoin) => {
+            // update blockchain specific supply data for stablecoins which
+            // have coins on multiple blockchains
+            switch (scoin.symbol) {
+                // Tether
+                case 'USDT':
+                    {
+                        let eth_platform = scoin.platforms.find(
+                            (pltfm) => pltfm.name === 'Ethereum'
+                        );
+                        let btc_platform = scoin.platforms.find(
+                            (pltfm) => pltfm.name === 'Bitcoin'
+                        );
+                        let tron_platform = scoin.platforms.find(
+                            (pltfm) => pltfm.name === 'Tron'
+                        );
 
-    stablecoins.forEach(async (scoin) => {
-        // update blockchain specific supply data for stablecoins which
-        // have coins on multiple blockchains
-        switch (scoin.symbol) {
-            // Tether
-            case 'USDT':
-                scoin.chain_supply['Bitcoin'] = { num: 0 };
-                scoin.chain_supply['Tron'] = { num: 0 };
-                scoin.chain_supply['Ethereum'] = { num: 0 };
+                        // update Tether on ETH supply
+                        eth_platform.supply = await etherscan.getTokenSupply(
+                            TETHER_CONTRACT_ADDRESS,
+                            TETHER_DECIMALS
+                        );
+                        // update Tether on BTC supply
+                        btc_platform.supply = await omni.getTokenSupply(
+                            TETHER_OMNI_ID
+                        );
+			// TODO: Pull TRON supply from API
+                        // update Tether on TRON supply
+                        tron_platform.supply =
+                            scoin.mcap -
+                            (btc_platform.supply + eth_platform.supply);
+                    }
+                    break;
 
-                // update Tether on ETH supply
-                scoin.chain_supply[
-                    'Ethereum'
-                ].num = await etherscan.getTokenSupply(
-                    TETHER_CONTRACT_ADDRESS,
-                    TETHER_DECIMALS
-                );
-                // update Tether on BTC supply
-                scoin.chain_supply['Bitcoin'].num = await omni.getTokenSupply(
-                    TETHER_OMNI_ID
-                );
+                // Stably Dollar
+                case 'USDS':
+                    {
+                        let eth_platform = scoin.platforms.find(
+                            (pltfm) => pltfm.name === 'Ethereum'
+                        );
+                        let bnb_platform = scoin.platforms.find(
+                            (pltfm) => pltfm.name === 'Binance Chain'
+                        );
+                        // update stably on ETH supply
+                        eth_platform.supply = await etherscan.getTokenSupply(
+                            STABLY_CONTRACT_ADDRESS,
+                            STABLY_DECIMALS
+                        );
+			// TODO: Pull BNB supply from API
+                        // update stably on BNB supply
+                        bnb_platform.supply = scoin.mcap - eth_platform.supply;
+                    }
+                    break;
 
-                // update Tether on TRON supply
-                scoin.chain_supply['Tron'].num =
-                    scoin.mcap -
-                    (scoin.chain_supply['Bitcoin'].num +
-                        scoin.chain_supply['Ethereum'].num);
-                break;
+                default:
+                    //TODO: potential bug here if coins with multiple platforms
+                    // is not listed explicitly above. Add better error handling
+                    if (scoin.platforms.length != 1) {
+                        console.log(
+                            `ERROR: ${scoin.name} ON MULTIPLE PLATFORMS NOT ACCOUNTED FOR.`
+                        );
+                        scoin.platforms.forEach((platform) => {
+                            platform.supply = null;
+                        });
+                    } else {
+                        scoin.platforms[0].supply = scoin.mcap;
+                    }
 
-            // Stably Dollar
-            case 'USDS':
-                scoin.chain_supply['Ethereum'] = { num: 0 };
-                scoin.chain_supply['Binance Chain'] = { num: 0 };
-                // update stably on ETH supply
-                scoin.chain_supply[
-                    'Ethereum'
-                ].num = await etherscan.getTokenSupply(
-                    STABLY_CONTRACT_ADDRESS,
-                    STABLY_DECIMALS
-                );
-                // update stably on BNB supply
-                scoin.chain_supply['Binance Chain'].num =
-                    scoin.mcap - scoin.chain_supply['Ethereum'].num;
-                break;
+                    break;
+            } // end switch
 
-            default:
-                let platform = util.getTokenPlatform(scoin.type);
-                if (platform == 'Native') platform = scoin.name;
-                scoin.chain_supply[platform] = { num: 0 };
-                scoin.chain_supply[platform].num = scoin.mcap;
-                break;
-        } // end switch
+            // populate glb_platform_data
 
-        // populate totalSupplyOnChain
-        for (let key in scoin.chain_supply) {
-            var chain_exists = false;
-            totalSupplyOnChain.forEach((chain_scoin_data) => {
-                // new coin
-                if (chain_scoin_data.name == key) {
-                    chain_scoin_data.scoin_total += scoin.chain_supply[key].num;
-                    chain_scoin_data.scoin_total_s = util.toDollarString(
-                        scoin.chain_supply[key].num
-                    );
-                    chain_exists = true;
-                }
+            // loop through each platform for the current scoin
+            scoin.platforms.forEach((scoin_pltfm) => {
+                var chain_in_gbl_data = false;
+                // check if the current scoin's platform is already in our global data
+                // TODO: Avoid nested for-each loops here.
+                glb_platform_data.forEach((gbl_pltfm) => {
+                    // if this platform is already in our global data (seen before)
+                    // then sum the
+                    if (gbl_pltfm.name == scoin_pltfm.name) {
+                        gbl_pltfm.scoin_total += scoin_pltfm.supply;
+                        // TODO: This should be called once for each platform,
+                        // after the total sum for that platform is calculated.
+                        // No need to call this each time supply is added to the total.
+                        gbl_pltfm.scoin_total_s = util.toDollarString(
+                            scoin_pltfm.supply
+                        );
+                        chain_in_gbl_data = true;
+                    }
+                });
+
+                // if this scoin's platform is not in the global data,
+                // add the new platform to the global data
+                if (!chain_in_gbl_data) {
+                    glb_platform_data.push({
+                        name: scoin_pltfm.name,
+                        scoin_total: scoin_pltfm.supply,
+                        scoin_total_s: util.toDollarString(scoin_pltfm.supply),
+                    });
+                } // end if
             }); // end for each
 
-            // seen before
-            if (!chain_exists) {
-                totalSupplyOnChain.push({
-                    name: key,
-                    scoin_total: scoin.chain_supply[key].num,
-                    scoin_total_s: util.toDollarString(
-                        scoin.chain_supply[key].num
-                    ),
-                });
-            }
-        }
+            // update global total data
+            totalMCap += scoin.mcap;
+            totalVolume += scoin.volume;
+        })
+    ); // end stablecoins loop
 
-        // sort totalSupplyOnChain
-        totalSupplyOnChain = totalSupplyOnChain.sort(function (a, b) {
-            return b.scoin_total - a.scoin_total;
-        });
-
-        // update global total data
-        totalMCap += scoin.mcap;
-        totalVolume += scoin.volume;
-    }); // end stablecoins loop
+    // sort glb_platform_data
+    glb_platform_data = glb_platform_data.sort(function (a, b) {
+        return b.scoin_total - a.scoin_total;
+    });
 }
 
 /*-----------------------------------------------
                     Routes
 -----------------------------------------------*/
 app.get('/', async (req, res) => {
-    let eth_data = totalSupplyOnChain.find(
-        (chain) => chain.name === 'Ethereum'
-    );
+    let eth_data = glb_platform_data.find((chain) => chain.name === 'Ethereum');
 
     res.render('home', {
         coins: stablecoins,
@@ -177,9 +202,7 @@ app.get('/', async (req, res) => {
 }); // home
 
 app.get('/donate', async (req, res) => {
-    let eth_data = totalSupplyOnChain.find(
-        (chain) => chain.name === 'Ethereum'
-    );
+    let eth_data = glb_platform_data.find((chain) => chain.name === 'Ethereum');
     res.render('donate', {
         totalMCap: totalMCap,
         totalMCap_s: util.toDollarString(totalMCap),
@@ -193,9 +216,7 @@ app.get('/donate', async (req, res) => {
 
 // create chains page
 app.get('/chains', async (req, res) => {
-    let eth_data = totalSupplyOnChain.find(
-        (chain) => chain.name === 'Ethereum'
-    );
+    let eth_data = glb_platform_data.find((chain) => chain.name === 'Ethereum');
     res.render('chains', {
         totalMCap: totalMCap,
         totalMCap_s: util.toDollarString(totalMCap),
@@ -203,7 +224,7 @@ app.get('/chains', async (req, res) => {
         totalVolume_s: util.toDollarString(totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
-        totalSupplyOnChain: totalSupplyOnChain,
+        glb_platform_data: glb_platform_data,
         active: 'chains',
     });
 }); // chains

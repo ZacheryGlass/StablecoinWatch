@@ -71,7 +71,6 @@
             }
 
             .expand:hover {
-                /* background-color: rgba(26, 26, 26, 0.9); */
                 height: 105px;
             }
 
@@ -128,7 +127,7 @@
                         <li>Market Cap Dominance</li>
                         <li>Volume (24h)</li>
                         <li>Volume Dominance</li>
-                        <li>Type</li>
+                        <li>Platform</li>
                     </ul>
                 </main>
                 <% coins.forEach( (coin, i) => { %>
@@ -148,44 +147,21 @@
                         <li>
                             <%= ((coin.volume/totalVolume)*100).toFixed(2) %>%
                         </li>
-                        <!-- TODO: Make this dynamic for any cross-chain coin -->
-                        <% if ( coin.name == "Tether" ) { %>
+                        <% if ( coin.platforms.length > 1 ) { %>
                         <li class="type">
                             <ul class="supply_list">
+                                <% coin.platforms.forEach( platform => { %>
                                 <li>
-                                    ERC-20: <%= ( (
-                                    coin.chain_supply.Ethereum.num / coin.mcap )
-                                    * 100 ).toFixed() %>%
-                                </li>
-                                <li>
-                                    Omni: <%= ( ( coin.chain_supply.Bitcoin.num
-                                    / coin.mcap ) * 100 ).toFixed() %>%
-                                </li>
-                                <li>
-                                    TRC-20: <%= ( ( coin.chain_supply.Tron.num /
-                                    coin.mcap ) * 100 ).toFixed() %>%
-                                </li>
-                            </ul>
-                        </li>
-                        <% } else if ( coin.name == "Stably Dollar" ) { %>
-                        <li class="type">
-                            <ul class="supply_list">
-                                <li>
-                                    ERC-20: <%=
-                                    ((coin.chain_supply.Ethereum.num/coin.mcap)*100).toFixed()
+                                    <%= platform.name %>: <%=
+                                    ((platform.supply/coin.mcap)*100).toFixed()
                                     %>%
                                 </li>
-                                <li>
-                                    BEP2: <%= ( 100 -
-                                    (coin.chain_supply.Ethereum.num/coin.mcap)*100).toFixed()
-                                    %>%
-                                </li>
+                                <% }); %>
                             </ul>
                         </li>
-
                         <% } else { %>
                         <li class="type">
-                            <%= coin.type %>
+                            <%= coin.platforms[0].name %>
                         </li>
                         <% } %>
                     </ul>

@@ -17,6 +17,7 @@ exports.toDollarString = (v) => {
             style: 'currency',
             currency: 'USD',
             minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
         }).format(v);
     }
 }; // toDollarString()

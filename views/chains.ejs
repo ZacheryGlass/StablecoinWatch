@@ -35,7 +35,7 @@
         <!-- Header -->
 
         <main>
-            <% if( totalSupplyOnChain && totalSupplyOnChain.length ) { %>
+            <% if( glb_platform_data && glb_platform_data.length ) { %>
             <section class="wrapper">
                 <!-- Row title -->
                 <main class="row title">
@@ -46,7 +46,7 @@
                         <li>% of Total</li>
                     </ul>
                 </main>
-                <% for (var i = 0; i < totalSupplyOnChain.length; i++) { %>
+                <% for (var i = 0; i < glb_platform_data.length; i++) { %>
 
                 <!-- Row X -->
                 <article class="row type<%=i%4+1%>">
@@ -55,14 +55,14 @@
                         <li>
                             <strong
                                 ><a href="#"
-                                    ><%= totalSupplyOnChain[i].name %></a
+                                    ><%= glb_platform_data[i].name %></a
                                 ></strong
                             >
                         </li>
-                        <li><%= totalSupplyOnChain[i].scoin_total_s %></li>
+                        <li><%= glb_platform_data[i].scoin_total_s %></li>
                         <li>
                             <%=
-                            ((totalSupplyOnChain[i].scoin_total/totalMCap)*100).toFixed(2)
+                            ((glb_platform_data[i].scoin_total/totalMCap)*100).toFixed(2)
                             %>%
                         </li>
                     </ul>
