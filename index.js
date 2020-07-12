@@ -93,7 +93,7 @@ async function updateData() {
                         btc_platform.supply = await omni.getTokenSupply(
                             TETHER_OMNI_ID
                         );
-			// TODO: Pull TRON supply from API
+                        // TODO: Pull TRON supply from API
                         // update Tether on TRON supply
                         tron_platform.supply =
                             scoin.mcap -
@@ -115,7 +115,7 @@ async function updateData() {
                             STABLY_CONTRACT_ADDRESS,
                             STABLY_DECIMALS
                         );
-			// TODO: Pull BNB supply from API
+                        // TODO: Pull BNB supply from API
                         // update stably on BNB supply
                         bnb_platform.supply = scoin.mcap - eth_platform.supply;
                     }
@@ -132,6 +132,7 @@ async function updateData() {
                             platform.supply = null;
                         });
                     } else {
+                        // TODO: use total supply instead of market cap here
                         scoin.platforms[0].supply = scoin.mcap;
                     }
 
@@ -147,15 +148,9 @@ async function updateData() {
                 // TODO: Avoid nested for-each loops here.
                 glb_platform_data.forEach((gbl_pltfm) => {
                     // if this platform is already in our global data (seen before)
-                    // then sum the
+                    // then sum the supply to the total
                     if (gbl_pltfm.name == scoin_pltfm.name) {
                         gbl_pltfm.scoin_total += scoin_pltfm.supply;
-                        // TODO: This should be called once for each platform,
-                        // after the total sum for that platform is calculated.
-                        // No need to call this each time supply is added to the total.
-                        gbl_pltfm.scoin_total_s = util.toDollarString(
-                            scoin_pltfm.supply
-                        );
                         chain_in_gbl_data = true;
                     }
                 });
@@ -166,7 +161,6 @@ async function updateData() {
                     glb_platform_data.push({
                         name: scoin_pltfm.name,
                         scoin_total: scoin_pltfm.supply,
-                        scoin_total_s: util.toDollarString(scoin_pltfm.supply),
                     });
                 } // end if
             }); // end for each
@@ -180,6 +174,11 @@ async function updateData() {
     // sort glb_platform_data
     glb_platform_data = glb_platform_data.sort(function (a, b) {
         return b.scoin_total - a.scoin_total;
+    });
+
+    // add string representatoin of supply on platform
+    glb_platform_data.forEach((pltfm) => {
+        pltfm.scoin_total_s = util.toDollarString(pltfm.scoin_total);
     });
 }
 
