@@ -136,24 +136,32 @@
                     <ul class="coinstats">
                         <li class="coinrank"><%= (i+1) %></li>
                         <li class="name">
-                            <strong><a href="#"><%= coin.name %></a></strong>
+                            <strong
+                                ><a href="#"
+                                    ><%= coin.msriData.name %></a
+                                ></strong
+                            >
                         </li>
-                        <li class="symbol"><%= coin.symbol %></li>
-                        <li><%= coin.mcap_s %></li>
+                        <li class="symbol"><%= coin.msriData.symbol %></li>
+                        <li><%= coin.msriData.mcap_s %></li>
                         <li>
-                            <%= ((coin.mcap/totalMCap)*100).toFixed(2) %>%
+                            <%= ((coin.msriData.mcap/totalMCap)*100).toFixed(2)
+                            %>%
                         </li>
-                        <li><%= coin.volume_s %></li>
+                        <li><%= coin.msriData.volume_s %></li>
                         <li>
-                            <%= ((coin.volume/totalVolume)*100).toFixed(2) %>%
+                            <%=
+                            ((coin.msriData.volume/totalVolume)*100).toFixed(2)
+                            %>%
                         </li>
-                        <% if ( coin.platforms.length > 1 ) { %>
+                        <% if ( coin.msriData.platforms.length > 1 ) { %>
                         <li class="type">
                             <ul class="supply_list">
-                                <% coin.platforms.forEach( platform => { %>
+                                <% coin.msriData.platforms.forEach( platform =>
+                                { %>
                                 <li>
                                     <%= platform.name %>: <%=
-                                    ((platform.supply/coin.mcap)*100).toFixed()
+                                    ((platform.supply/coin.msriData.mcap)*100).toFixed()
                                     %>%
                                 </li>
                                 <% }); %>
@@ -161,13 +169,13 @@
                         </li>
                         <% } else { %>
                         <li class="type">
-                            <%= coin.platforms[0].name %>
+                            <%= coin.msriData.platforms[0].name %>
                         </li>
                         <% } %>
                     </ul>
                     <ul class="more-content">
                         <li class="split">
-                            <%= coin.desc %>
+                            <%= coin.msriData.desc %>
                         </li>
                     </ul>
                 </article>

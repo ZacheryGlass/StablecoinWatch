@@ -1,6 +1,6 @@
 const keys = require('../keys');
 const CoinMarketCap = require('coinmarketcap-api');
-const Stablecoin = require('../stablecoin');
+const { Stablecoin, CMCCoin } = require('../stablecoin');
 const Platform = require('../platform');
 const { cmc } = require('../keys');
 const { sleep, toDollarString } = require('./cmn');
@@ -80,19 +80,23 @@ exports.getCMCStablecoins = async (ticker_list) => {
         }
 
         let scoin = new Stablecoin(
-            md.name,
-            md.symbol,
-            md.platform
-                ? new Platform(
-                      md.platform.name,
-                      md.platform.token_addres,
-                      0 // contract total supply - fetch from Etherscan
-                  )
-                : new Platform(md.name, null, q.total_supply),
-            md.description,
-            q.quote ? q.quote.USD.market_cap : null,
-            q.quote ? q.quote.USD.volume_24h : null,
-            md.logo
+            new CMCCoin(
+                md.name,
+                md.symbol,
+                md.platform
+                    ? new Platform(
+                          md.platform.name,
+                          md.platform.token_addres,
+                          0 // contract total supply - fetch from Etherscan
+                      )
+                    : new Platform(md.name, null, q.total_supply), // not correct for multi-platform coins
+                md.description,
+                q.quote ? q.quote.USD.market_cap : null,
+                q.quote ? q.quote.USD.volume_24h : null,
+                md.logo,
+                q.circulating_supply,
+                q.total_supply
+            )
         );
 
         coin_list_ret.push(scoin);

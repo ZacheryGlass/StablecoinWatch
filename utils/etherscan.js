@@ -1,7 +1,7 @@
 const keys = require('../keys');
 const etherscan_api = require('etherscan-api').init(keys.etherscan);
 
-exports.getTokenSupply = async (contract_address, decimals) => {
+exports.getTokenSupply = async (contract_address, decimals = 6) => {
     let total_token_supply = null;
 
     await etherscan_api.stats
