@@ -16,6 +16,26 @@ function cmcCheckError(status) {
     }
 } // end cmcCheckError()
 
+exports.stablecoin_tickers = [
+    'USDT',
+    'USDC',
+    'PAX',
+    'BUSD',
+    'TUSD',
+    'HUSD',
+    'DAI',
+    'LUNA',
+    'RSR',
+    'EURS',
+    'SUSD',
+    'GUSD',
+    'SBD',
+    'USDS',
+    'USDK',
+    'USDQ',
+    'EOSDT',
+];
+
 // This function returns all coins listed as stablecoins on CoinMarketCap
 // NOTE: This includes coins pegged to assets other than the US Dollar,
 // and oddly does not include DAI

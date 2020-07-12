@@ -6,6 +6,7 @@ const messari = require('./utils/messari');
 const etherscan = require('./utils/etherscan');
 const omni = require('./utils/omni');
 const util = require('./utils/cmn');
+const cmc = require('./utils/cmc');
 
 // CONSTANTS
 const MINS_BETWEEN_UPDATE = 5;
@@ -33,10 +34,22 @@ cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, updateData);
 
 async function updateData() {
     // pull new stablecoins data
-    stablecoins_temp = await messari.getAllMessariStablecoins();
+    let fetching_msri = await messari.getAllMessariStablecoins();
+    let fetching_cmc = await cmc.getCMCStablecoins(cmc.stablecoin_tickers);
+
+    // combined data from multiple APIs
+    let new_stablecoin_data = await Promise.all([
+        fetching_msri,
+        fetching_cmc,
+    ]).then((scoins_arr) => {
+        // NOTE:
+        // scoins_arr[0] contains msri stablecoins
+        // scoins_arr[1] contains cmc  stablecoins
+        return scoins_arr[0];
+    });
 
     // update global stablecoin data with newly pulled Messari data
-    stablecoins_temp.forEach((scoin_temp) => {
+    new_stablecoin_data.forEach((scoin_temp) => {
         let scoin_temp_found = false;
 
         stablecoins.forEach((scoin) => {
@@ -57,7 +70,7 @@ async function updateData() {
         if (!scoin_temp_found) {
             stablecoins.push(scoin_temp);
         }
-    }); // end loop through stablecoins_temp
+    }); // end loop through new_stablecoin_data
 
     // reset global metrics
     totalMCap = 0;
