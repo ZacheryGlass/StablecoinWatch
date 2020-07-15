@@ -34,6 +34,7 @@ exports.stablecoin_tickers = [
     'USDK',
     'USDQ',
     'EOSDT',
+    'AMPL',
 ];
 
 // This function returns all coins listed as stablecoins on CoinMarketCap
@@ -78,14 +79,13 @@ exports.getCMCStablecoins = async (ticker_list) => {
         if (quote_resp.data.hasOwnProperty(key)) {
             q = quote_resp.data[key];
         }
-
         let scoin = new Stablecoin(
             md.name,
             md.symbol,
             md.platform
                 ? new Platform(
                       md.platform.name,
-                      md.platform.token_addres,
+                      md.platform.token_address,
                       0 // contract total supply - fetch from Etherscan
                   )
                 : new Platform(md.name, null, q.total_supply),

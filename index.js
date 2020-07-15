@@ -42,18 +42,53 @@ async function updateData() {
         fetching_msri,
         fetching_cmc,
     ]).then((scoins_arr) => {
-        // NOTE:
-        // scoins_arr[0] contains msri stablecoins
-        // scoins_arr[1] contains cmc  stablecoins
-        return scoins_arr[1];
+        let msri_coins_list = scoins_arr[0];
+        let cmc_coins_list = scoins_arr[1];
+
+        // set ret_list to the cmc coin list
+        let ret_coin_list = cmc_coins_list;
+
+        // loop through each messari coin
+        msri_coins_list.forEach((msri_coin) => {
+            // for the current messari coin, check if the same coin
+            // exists in the cmc coin list
+            let ret_coin = ret_coin_list.find(
+                (c) => c.symbol === msri_coin.symbol
+            );
+            if (ret_coin) {
+                // coin found in both Messari and CMC data. Combined the platform data
+
+                // For the final list, use Messari Platform data, but CMC contract address
+                let msri_eth_pltfm = msri_coin.platforms.find(
+                    (pltfm) => pltfm.name === 'Ethereum'
+                );
+                let cmc_eth_pltfm = ret_coin.platforms.find(
+                    (pltfm) => pltfm.name === 'Ethereum'
+                );
+                if (msri_eth_pltfm && cmc_eth_pltfm) {
+                    msri_eth_pltfm.contract_address =
+                        cmc_eth_pltfm.contract_address;
+                }
+                ret_coin.platforms = msri_coin.platforms;
+            } else {
+                // coin found in Messari but not CMC data.
+                console.log(
+                    `${msri_coin.symbol} found in Messari data but not CMC. Consider adding manual CMC ticker list.`
+                );
+                ret_coin_list.push(msri_coin);
+            }
+        }); // end for each messari coin
+        return ret_coin_list;
     });
 
     // update global stablecoin data with newly pulled Messari data
     new_stablecoin_data.forEach((scoin_temp) => {
+        console.log(scoin_temp.name, scoin_temp.platforms);
+
         let scoin_temp_found = false;
 
         glb_stablecoins.forEach((scoin) => {
-            if (scoin.name == scoin_temp.name) {
+            if (scoin.symbol == scoin_temp.symbol) {
                 scoin_temp_found = true;
                 // new data found
                 // replace scoin with scoin_temp in glb_stablecoins list
