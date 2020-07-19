@@ -82,37 +82,32 @@ function combineCoins(msri_coins_list, cmc_coins_list) {
     return cmc_coins_list;
 } // end coinbinedCoins()
 
-async function updateData() {
+async function fetchStablecoins() {
     // pull new stablecoins data
     let fetching_msri = messari.getAllMessariStablecoins();
     let fetching_cmc = cmc.getCMCStablecoins(cmc.stablecoin_tickers);
 
     // combined data from multiple APIs
-    let new_stablecoin_data = await Promise.all([
-        fetching_msri,
-        fetching_cmc,
-    ]).then(async (scoins_arr) => {
-        let msri_coins_list = scoins_arr[0];
-        let cmc_coins_list = scoins_arr[1];
+    return Promise.all([fetching_msri, fetching_cmc]).then(
+        async (scoins_arr) => {
+            let msri_coins_list = scoins_arr[0];
+            let cmc_coins_list = scoins_arr[1];
 
-        let ret_list = combineCoins(msri_coins_list, cmc_coins_list);
+            let ret_list = combineCoins(msri_coins_list, cmc_coins_list);
 
-        // update the platform-specific supply for each coin
-        await Promise.all(
-            ret_list.map(async (coin) => {
-                await coin.updatePlatformsSupply();
-            })
-        );
+            // update the platform-specific supply for each coin
+            await Promise.all(
+                ret_list.map(async (coin) => {
+                    await coin.updatePlatformsSupply();
+                })
+            );
 
-        return ret_list;
-    });
+            return ret_list;
+        }
+    );
+} // fetchStablecoins()
 
-    // new_stablecoin_data.forEach((coin) => {
-    //     if (coin.name === 'Tether') {
-    //         console.log(coin.platforms);
-    //     }
-    // });
-
+function updateGlobalStablecoinData(new_stablecoin_data) {
     // update global stablecoin data with newly pulled Messari data
     new_stablecoin_data.forEach((scoin_temp) => {
         // console.log(scoin_temp.name, scoin_temp.platforms);
@@ -122,13 +117,9 @@ async function updateData() {
         glb_stablecoins.forEach((scoin) => {
             if (scoin.symbol == scoin_temp.symbol) {
                 scoin_temp_found = true;
-                // new data found
-                // replace scoin with scoin_temp in glb_stablecoins list
+                // new data found, replace scoin with scoin_temp in glb_stablecoins list
                 var index = glb_stablecoins.indexOf(scoin);
-
-                if (index !== -1) {
-                    glb_stablecoins[index] = scoin_temp;
-                }
+                if (index !== -1) glb_stablecoins[index] = scoin_temp;
             }
         });
 
@@ -139,6 +130,13 @@ async function updateData() {
         }
     }); // end loop through new_stablecoin_data
 
+    // sort global stablecoins list
+    glb_stablecoins = glb_stablecoins.sort(function (a, b) {
+        return b.mcap - a.mcap;
+    });
+} // updateGlobalStablecoinData()
+
+async function updateGlobalPlatformData() {
     // reset global metrics
     totalMCap = 0;
     totalVolume = 0;
@@ -181,16 +179,24 @@ async function updateData() {
         return b.scoin_total - a.scoin_total;
     });
 
-    // sort global stablecoins list
-    glb_stablecoins = glb_stablecoins.sort(function (a, b) {
-        return b.mcap - a.mcap;
-    });
-
     // add string representatoin of supply on platform
     glb_platform_data.forEach((pltfm) => {
         pltfm.scoin_total_s = util.toDollarString(pltfm.scoin_total);
     });
-}
+} // updateGlobalPlatformData()
+
+async function updateData() {
+    let new_stablecoin_data = await fetchStablecoins();
+
+    // new_stablecoin_data.forEach((coin) => {
+    //     if (coin.name === 'Tether') {
+    //         console.log(coin.platforms);
+    //     }
+    // });
+
+    updateGlobalStablecoinData(new_stablecoin_data);
+    updateGlobalPlatformData();
+} // updateData()
 
 /*-----------------------------------------------
                     Routes
