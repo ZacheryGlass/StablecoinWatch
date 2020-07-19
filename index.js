@@ -1,21 +1,15 @@
 const https = require('https');
 const express = require('express');
 const cron = require('node-cron');
-const Web3 = require('web3');
 
 const messari = require('./utils/messari');
-const eth = require('./utils/eth');
-const omni = require('./utils/omni');
+
 const util = require('./utils/cmn');
 const cmc = require('./utils/cmc');
 
 // CONSTANTS
 const MINS_BETWEEN_UPDATE = 5;
-// const TETHER_DECIMALS = 6;
-// const TETHER_CONTRACT_ADDRESS = '0xdac17f958d2ee523a2206206994597c13d831ec7';
-// const TETHER_OMNI_ID = 31;
-// const STABLY_DECIMALS = 6;
-// const STABLY_CONTRACT_ADDRESS = '0xa4bdb11dc0a2bec88d24a3aa1e6bb17201112ebe';
+const TETHER_OMNI_ID = 31;
 
 // GLOBAL VARS
 let glb_stablecoins = [];
@@ -33,125 +27,91 @@ app.use(express.static(__dirname + '/res'));
 updateData();
 cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, updateData);
 
-async function combinedCoins(msri_coins_list, cmc_coins_list) {
-    const PLATFORMS = [
-        { name: 'Ethereum', api: eth },
-        { name: 'Bitcoin', api: omni },
-        { name: 'EOS', api: null },
-        { name: 'Tron', api: null },
-    ];
-
-    // loop through each messari coin
-    // await Promise.all(
-    // msri_coins_list.map(async (msri_coin) => {
-    msri_coins_list.forEach(async (msri_coin) => {
+function combineCoins(msri_coins_list, cmc_coins_list) {
+    // loop through each CMC coin
+    cmc_coins_list.forEach((cmc_coin) => {
         // for the current messari coin, check if the same coin
         // exists in the cmc coin list
-        let cmc_coin = cmc_coins_list.find(
-            (c) => c.symbol === msri_coin.symbol
+        let msri_coin = msri_coins_list.find(
+            (c) => c.symbol === cmc_coin.symbol
         );
-        if (cmc_coin) {
+        if (msri_coin) {
             // coin found in both Messari and CMC data. Combined the platform data
-            PLATFORMS.forEach(async (pltfm) => {
-                // For the final list, use Messari Platform data, but CMC contract address
-                let msri_coin_pltfm = msri_coin.platforms.find(
-                    (p) => p.name === pltfm.name
-                );
-                let cmc_coin_pltfm = cmc_coin.platforms.find(
-                    (p) => p.name === pltfm.name
-                );
-                if (msri_coin_pltfm && cmc_coin_pltfm) {
-                    msri_coin_pltfm.contract_address =
-                        cmc_coin_pltfm.contract_address;
-                    if (msri_coin_pltfm.contract_address) {
-                        msri_coin_pltfm.supply = await pltfm.api.getTokenSupply(
-                            msri_coin_pltfm.contract_address
-                        );
-                        // await util.sleep(200); // rate limited 5 calls/sec on Etherscan API.
-                        console.log(
-                            msri_coin.name,
-                            msri_coin_pltfm.contract_address
-                        );
-                        console.log(msri_coin_pltfm.supply);
-                    }
-                }
-            });
-            cmc_coin.platforms = msri_coin.platforms;
 
-            // For the final list, use Messari Platform data, but CMC contract address
-            // let msri_eth_pltfm = msri_coin.platforms.find(
-            //     (pltfm) => pltfm.name === 'Ethereum'
-            // );
-            // let cmc_eth_pltfm = cmc_coin.platforms.find(
-            //     (pltfm) => pltfm.name === 'Ethereum'
-            // );
-            // if (msri_eth_pltfm && cmc_eth_pltfm) {
-            //     msri_eth_pltfm.contract_address =
-            //         cmc_eth_pltfm.contract_address;
-            // }
-            // cmc_coin.platforms = msri_coin.platforms;
-            // pull Etherscan here
-        } else {
-            // coin found in Messari but not CMC data.
-            console.log(
-                `${msri_coin.symbol} found in Messari data but not CMC. Consider adding manual CMC ticker list.`
+            // if any platforms found from Messari API are not found by the CMC api, copy the CMC coin's platform list.
+            msri_coin.platforms.forEach((msri_pltfm) => {
+                let cmc_pltfm = cmc_coin.platforms.find(
+                    (p) => p.name === msri_pltfm.name
+                );
+
+                if (!cmc_pltfm) {
+                    // this platform was found in Messari API for this coin, but not CMC api
+                    // add platform to CMC coin, which will be used as the final combined data.
+                    cmc_coin.platforms.push(msri_pltfm);
+                    console.log(
+                        `Adding ${msri_pltfm.name} platform to ${cmc_coin.name}`
+                    );
+                }
+            }); // for each platform found for this coin in the messari data
+        } // if this cmc coins also exists in the messari coin list
+
+        // at this point, the current cmc coin should have all platforms, from both APIs.
+
+        // STOP GAP SOLUTION - Repace with 3rd data source, custom hard-coded data
+        if (cmc_coin.name == 'Tether') {
+            let tether_btc_pltfm = cmc_coin.platforms.find(
+                (p) => p.name === 'Bitcoin'
             );
-            cmc_coin_list.push(msri_coin);
+            if (tether_btc_pltfm)
+                tether_btc_pltfm.contract_address = TETHER_OMNI_ID;
         }
     });
+
+    // here, check for coins that exist in Messari data but not CMC, if found - push to cmc_coin_list
+    /*
+    if(){
+
+        console.log(
+            `${msri_coin.symbol} found in Messari data but not CMC. Consider adding manual CMC ticker list.`
+        );
+        cmc_coin_list.push(msri_coin);
+    }
+    */
+    // return updated cmc coin list
+
     return cmc_coins_list;
 } // end coinbinedCoins()
 
 async function updateData() {
     // pull new stablecoins data
-    let fetching_msri = /*await*/ messari.getAllMessariStablecoins();
-    let fetching_cmc = /*await*/ cmc.getCMCStablecoins(cmc.stablecoin_tickers);
+    let fetching_msri = messari.getAllMessariStablecoins();
+    let fetching_cmc = cmc.getCMCStablecoins(cmc.stablecoin_tickers);
 
     // combined data from multiple APIs
     let new_stablecoin_data = await Promise.all([
         fetching_msri,
         fetching_cmc,
-    ]).then((scoins_arr) => {
+    ]).then(async (scoins_arr) => {
         let msri_coins_list = scoins_arr[0];
         let cmc_coins_list = scoins_arr[1];
 
-        return combinedCoins(msri_coins_list, cmc_coins_list);
-        // set ret_list to the cmc coin list
-        // let ret_coin_list = cmc_coins_list;
+        let ret_list = combineCoins(msri_coins_list, cmc_coins_list);
 
-        // // loop through each messari coin
-        // msri_coins_list.forEach((msri_coin) => {
-        //     // for the current messari coin, check if the same coin
-        //     // exists in the cmc coin list
-        //     let ret_coin = ret_coin_list.find(
-        //         (c) => c.symbol === msri_coin.symbol
-        //     );
-        //     if (ret_coin) {
-        //         // coin found in both Messari and CMC data. Combined the platform data
+        // update the platform-specific supply for each coin
+        await Promise.all(
+            ret_list.map(async (coin) => {
+                await coin.updatePlatformsSupply();
+            })
+        );
 
-        //         // For the final list, use Messari Platform data, but CMC contract address
-        //         let msri_eth_pltfm = msri_coin.platforms.find(
-        //             (pltfm) => pltfm.name === 'Ethereum'
-        //         );
-        //         let cmc_eth_pltfm = ret_coin.platforms.find(
-        //             (pltfm) => pltfm.name === 'Ethereum'
-        //         );
-        //         if (msri_eth_pltfm && cmc_eth_pltfm) {
-        //             msri_eth_pltfm.contract_address =
-        //                 cmc_eth_pltfm.contract_address;
-        //         }
-        //         ret_coin.platforms = msri_coin.platforms;
-        //         // pull Etherscan here
-        //     } else {
-        //         // coin found in Messari but not CMC data.
-        //         console.log(
-        //             `${msri_coin.symbol} found in Messari data but not CMC. Consider adding manual CMC ticker list.`
-        //         );
-        //         ret_coin_list.push(msri_coin);
-        //     }
-        // }); // end for each messari coin
-        // return ret_coin_list;
+        return ret_list;
     });
+
+    // new_stablecoin_data.forEach((coin) => {
+    //     if (coin.name === 'Tether') {
+    //         console.log(coin.platforms);
+    //     }
+    // });
 
     // update global stablecoin data with newly pulled Messari data
     new_stablecoin_data.forEach((scoin_temp) => {
@@ -184,95 +144,8 @@ async function updateData() {
     totalVolume = 0;
     glb_platform_data = [];
 
-    // TODO: make this more general as to not require
-    // explicitly listing the coins here.
     await Promise.all(
         glb_stablecoins.map(async (scoin) => {
-            //         // update blockchain specific supply data for stablecoins which
-            //         // have coins on multiple blockchains
-            //         switch (scoin.symbol) {
-            //             // Tether
-            //             case 'USDT':
-            //                 {
-            //                     let eth_platform = scoin.platforms.find(
-            //                         (pltfm) => pltfm.name === 'Ethereum'
-            //                     );
-            //                     let btc_platform = scoin.platforms.find(
-            //                         (pltfm) => pltfm.name === 'Bitcoin'
-            //                     );
-            //                     let tron_platform = scoin.platforms.find(
-            //                         (pltfm) => pltfm.name === 'Tron'
-            //                     );
-
-            //                     // update Tether on ETH supply
-            //                     if (eth_platform) {
-            //                         eth_platform.supply = await eth.getTokenSupply(
-            //                             TETHER_CONTRACT_ADDRESS,
-            //                             TETHER_DECIMALS
-            //                         );
-            //                     }
-            //                     // update Tether on BTC supply
-            //                     if (btc_platform) {
-            //                         btc_platform.supply = await omni.getTokenSupply(
-            //                             TETHER_OMNI_ID
-            //                         );
-            //                     }
-            //                     // TODO: Pull TRON supply from API
-            //                     // update Tether on TRON supply
-            //                     if (tron_platform) {
-            //                         tron_platform.supply =
-            //                             scoin.mcap -
-            //                             (btc_platform.supply + eth_platform.supply);
-            //                     }
-            //                 }
-            //                 break;
-
-            //             // Stably Dollar
-            //             case 'USDS':
-            //                 {
-            //                     let eth_platform = scoin.platforms.find(
-            //                         (pltfm) => pltfm.name === 'Ethereum'
-            //                     );
-            //                     let bnb_platform = scoin.platforms.find(
-            //                         (pltfm) => pltfm.name === 'Binance Chain'
-            //                     );
-            //                     // update stably on ETH supply
-            //                     if (eth_platform) {
-            //                         eth_platform.supply = await eth.getTokenSupply(
-            //                             STABLY_CONTRACT_ADDRESS,
-            //                             STABLY_DECIMALS
-            //                         );
-            //                     }
-
-            //                     // TODO: Pull BNB supply from API
-            //                     // update stably on BNB supply
-            //                     if (bnb_platform) {
-            //                         bnb_platform.supply =
-            //                             scoin.mcap - eth_platform.supply;
-            //                     }
-            //                 }
-            //                 break;
-
-            //             default:
-            //                 //TODO: potential bug here if coins with multiple platforms
-            //                 // is not listed explicitly above. Add better error handling
-            //                 if (scoin.platforms.length != 1) {
-            //                     console.log(
-            //                         `ERROR: ${scoin.name} ON MULTIPLE PLATFORMS NOT ACCOUNTED FOR.`
-            //                     );
-            //                     scoin.platforms.forEach((platform) => {
-            //                         platform.supply = null;
-            //                     });
-            //                 } else {
-            //                     // TODO: use total supply instead of market cap here
-            //                     scoin.platforms[0].supply = scoin.mcap;
-            //                 }
-
-            //                 break;
-            //         } // end switch
-
-            // populate glb_platform_data
-
             // loop through each platform for the current scoin
             scoin.platforms.forEach((scoin_pltfm) => {
                 var chain_in_gbl_data = false;

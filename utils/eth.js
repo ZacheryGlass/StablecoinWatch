@@ -11,12 +11,15 @@ const web3 = new Web3(
 exports.getTokenSupply = async (contract_address) => {
     const erc20Contract = new ERC20Contract(web3, contract_address);
 
-    return Promise.all([
+    let x = Promise.all([
         erc20Contract.totalSupply().call(),
         erc20Contract.decimals().call(),
-    ]).then((data) => {
+    ]).then(async (data) => {
         const totalSupply = data[0];
         const decimals = data[1];
+        // console.log(totalSupply / 10 ** decimals);
         return totalSupply / 10 ** decimals;
     });
+    // console.log(x);
+    return x;
 };
