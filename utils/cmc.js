@@ -24,7 +24,7 @@ exports.stablecoin_tickers = [
     'TUSD',
     'HUSD',
     'DAI',
-    'LUNA',
+    // 'LUNA', -- not pegged to USD, but a basket of currencies
     'EURS',
     'SUSD',
     'GUSD',
@@ -96,7 +96,7 @@ exports.getCMCStablecoins = async (ticker_list) => {
                     q.quote ? q.quote.USD.market_cap : null,
                     q.quote ? q.quote.USD.volume_24h : null,
                     md.logo,
-                    q.quote ? q.quote.USD.price : null
+                    q.quote ? q.quote.USD.price.toFixed(3) : null
                 );
 
                 coin_list_ret.push(scoin);

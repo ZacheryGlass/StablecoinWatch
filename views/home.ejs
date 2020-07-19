@@ -41,6 +41,12 @@
                 text-align: left !important;
             }
 
+            img.coin_logo {
+                width: 20px;
+                height: 20px;
+                padding-right: 5px;
+            }
+
             .coinrank {
                 width: 5% !important;
                 text-align: center;
@@ -123,10 +129,11 @@
                         <li class="coinrank">#</li>
                         <li class="name">Name</li>
                         <li class="symbol">Symbol</li>
+                        <li>Price</li>
                         <li>Market Cap</li>
                         <li>Market Cap Dominance</li>
                         <li>Volume (24h)</li>
-                        <li>Volume Dominance</li>
+                        <!-- <li>Volume Dominance</li> -->
                         <li>Platform</li>
                     </ul>
                 </main>
@@ -134,19 +141,37 @@
                 <!-- Row X -->
                 <article class="row expand type<%=i%4+1%>">
                     <ul class="coinstats">
+                        <!-- rank -->
                         <li class="coinrank"><%= (i+1) %></li>
+                        <!-- name -->
                         <li class="name">
                             <strong><a href="#"><%= coin.name %></a></strong>
                         </li>
-                        <li class="symbol"><%= coin.symbol %></li>
+                        <!-- symbol -->
+                        <li class="symbol">
+                            <img
+                                class="coin_logo"
+                                src="<%= coin.img_url %>"
+                                alt=""
+                            />
+                            <%= coin.symbol %>
+                        </li>
+                        <!-- price -->
+                        <li>$<%= coin.price %></li>
+                        <!-- market cap -->
                         <li><%= coin.mcap_s %></li>
+                        <!-- market cap dominance -->
                         <li>
                             <%= ((coin.mcap/totalMCap)*100).toFixed(2) %>%
                         </li>
+                        <!-- volume -->
                         <li><%= coin.volume_s %></li>
-                        <li>
-                            <%= ((coin.volume/totalVolume)*100).toFixed(2) %>%
-                        </li>
+                        <!-- volume dominance -->
+                        <!-- <li>
+                            <%#= ((coin.volume/totalVolume)*100).toFixed(2) %>%
+                        </li> -->
+
+                        <!-- platforms -->
                         <% if ( coin.platforms.length > 1 ) { %>
                         <li class="type">
                             <ul class="supply_list">
