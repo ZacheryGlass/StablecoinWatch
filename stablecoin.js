@@ -11,7 +11,8 @@ class Stablecoin {
         desc = 'No description available.',
         mcap = null,
         volume = null,
-        img_url = null
+        img_url = null,
+        price = null
     ) {
         this.name = name;
         this.symbol = symbol;
@@ -28,6 +29,7 @@ class Stablecoin {
         this.volume = volume;
         this.volume_s = util.toDollarString(volume);
         this.img_url = img_url;
+        this.price = price;
     } // constructor
 
     async updatePlatformsSupply() {

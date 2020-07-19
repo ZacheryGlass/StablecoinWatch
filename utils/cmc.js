@@ -63,40 +63,45 @@ exports.getAllCMCStablecoins = async () => {
 
 // Get a list of Stablecoin Objects from a list of tickers
 exports.getCMCStablecoins = async (ticker_list) => {
-    // TODO: retreive metadata and quote asynchronously
-    let metadata_resp = await cmc_api.getMetadata({ symbol: ticker_list });
-    cmcCheckError(metadata_resp.status);
+    let fetching_metadata = cmc_api.getMetadata({ symbol: ticker_list });
+    let fetching_quote = cmc_api.getQuotes({ symbol: ticker_list });
 
-    let quote_resp = await cmc_api.getQuotes({ symbol: ticker_list });
-    cmcCheckError(quote_resp.status);
+    return Promise.all([fetching_metadata, fetching_quote]).then(
+        async (scoins_arr) => {
+            let metadata_resp = scoins_arr[0];
+            let quote_resp = scoins_arr[1];
+            cmcCheckError(metadata_resp.status);
+            cmcCheckError(metadata_resp.status);
 
-    // build return list
-    let coin_list_ret = [];
-    Object.keys(metadata_resp.data).forEach(function (key, i) {
-        let md = metadata_resp.data[key];
-        let q = null;
-        if (quote_resp.data.hasOwnProperty(key)) {
-            q = quote_resp.data[key];
-        }
-        let scoin = new Stablecoin(
-            md.name,
-            md.symbol,
-            md.platform
-                ? new Platform(
-                      md.platform.name,
-                      md.platform.token_address,
-                      0 // contract total supply - fetch from Etherscan
-                  )
-                : new Platform(md.name, null, q.total_supply),
-            md.description,
-            q.quote ? q.quote.USD.market_cap : null,
-            q.quote ? q.quote.USD.volume_24h : null,
-            md.logo
-        );
+            // build return list
+            let coin_list_ret = [];
+            Object.keys(metadata_resp.data).forEach(function (key, i) {
+                let md = metadata_resp.data[key];
+                let q = null;
 
-        coin_list_ret.push(scoin);
-        // TODO: return Promise.all()
-    }); // for each (build return list)
+                if (quote_resp.data.hasOwnProperty(key))
+                    q = quote_resp.data[key];
 
-    return coin_list_ret;
+                let scoin = new Stablecoin(
+                    md.name,
+                    md.symbol,
+                    md.platform
+                        ? new Platform(
+                              md.platform.name,
+                              md.platform.token_address,
+                              null // platform total supply - fetched from Blockchain
+                          )
+                        : new Platform(md.name, null, q.total_supply),
+                    md.description,
+                    q.quote ? q.quote.USD.market_cap : null,
+                    q.quote ? q.quote.USD.volume_24h : null,
+                    md.logo,
+                    q.quote ? q.quote.USD.price : null
+                );
+
+                coin_list_ret.push(scoin);
+            });
+            return coin_list_ret;
+        } // then
+    );
 }; // end getCMCStablecoins()

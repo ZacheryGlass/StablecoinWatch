@@ -48,9 +48,6 @@ function combineCoins(msri_coins_list, cmc_coins_list) {
                     // this platform was found in Messari API for this coin, but not CMC api
                     // add platform to CMC coin, which will be used as the final combined data.
                     cmc_coin.platforms.push(msri_pltfm);
-                    console.log(
-                        `Adding ${msri_pltfm.name} platform to ${cmc_coin.name}`
-                    );
                 }
             }); // for each platform found for this coin in the messari data
         } // if this cmc coins also exists in the messari coin list
@@ -110,8 +107,6 @@ async function fetchStablecoins() {
 function updateGlobalStablecoinData(new_stablecoin_data) {
     // update global stablecoin data with newly pulled Messari data
     new_stablecoin_data.forEach((scoin_temp) => {
-        // console.log(scoin_temp.name, scoin_temp.platforms);
-
         let scoin_temp_found = false;
 
         glb_stablecoins.forEach((scoin) => {
@@ -144,9 +139,6 @@ async function updateGlobalPlatformData() {
     glb_stablecoins.forEach((scoin) => {
         // loop through each platform for the current scoin
         scoin.platforms.forEach((scoin_pltfm) => {
-            // console.log(
-            //     `Coin: ${scoin.name}\n\tPlatform: ${scoin_pltfm.name}\n\tSupply: ${scoin_pltfm.supply}`
-            // );
             var chain_in_gbl_data = false;
             // check if the current scoin's platform is already in our global data
             // TODO: Avoid nested for-each loops here.
@@ -201,6 +193,7 @@ async function updateData() {
     updateGlobalStablecoinData(new_stablecoin_data);
     updateGlobalPlatformData();
     updateGlobalMetrics();
+    console.log('Data Updated.');
 } // updateData()
 
 /*-----------------------------------------------
