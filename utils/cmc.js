@@ -25,7 +25,6 @@ exports.stablecoin_tickers = [
     'HUSD',
     'DAI',
     'LUNA',
-    'RSR',
     'EURS',
     'SUSD',
     'GUSD',

@@ -138,41 +138,41 @@ function updateGlobalStablecoinData(new_stablecoin_data) {
 
 async function updateGlobalPlatformData() {
     // reset global metrics
-    totalMCap = 0;
-    totalVolume = 0;
+
     glb_platform_data = [];
 
-    await Promise.all(
-        glb_stablecoins.map(async (scoin) => {
-            // loop through each platform for the current scoin
-            scoin.platforms.forEach((scoin_pltfm) => {
-                var chain_in_gbl_data = false;
-                // check if the current scoin's platform is already in our global data
-                // TODO: Avoid nested for-each loops here.
-                glb_platform_data.forEach((gbl_pltfm) => {
-                    // if this platform is already in our global data (seen before)
-                    // then sum the supply to the total
-                    if (gbl_pltfm.name == scoin_pltfm.name) {
-                        gbl_pltfm.scoin_total += scoin_pltfm.supply;
-                        chain_in_gbl_data = true;
-                    }
+    glb_stablecoins.forEach((scoin) => {
+        // loop through each platform for the current scoin
+        scoin.platforms.forEach((scoin_pltfm) => {
+            // console.log(
+            //     `Coin: ${scoin.name}\n\tPlatform: ${scoin_pltfm.name}\n\tSupply: ${scoin_pltfm.supply}`
+            // );
+            var chain_in_gbl_data = false;
+            // check if the current scoin's platform is already in our global data
+            // TODO: Avoid nested for-each loops here.
+            glb_platform_data.forEach((gbl_pltfm) => {
+                // if this platform is already in our global data (seen before)
+                // then sum the supply to the total
+                if (gbl_pltfm.name == scoin_pltfm.name) {
+                    gbl_pltfm.scoin_total += scoin_pltfm.supply;
+                    chain_in_gbl_data = true;
+                }
+            });
+
+            // if this scoin's platform is not in the global data,
+            // add the new platform to the global data
+            if (!chain_in_gbl_data) {
+                glb_platform_data.push({
+                    name: scoin_pltfm.name,
+                    scoin_total: scoin_pltfm.supply,
                 });
+            } // end if
+        }); // end for each
 
-                // if this scoin's platform is not in the global data,
-                // add the new platform to the global data
-                if (!chain_in_gbl_data) {
-                    glb_platform_data.push({
-                        name: scoin_pltfm.name,
-                        scoin_total: scoin_pltfm.supply,
-                    });
-                } // end if
-            }); // end for each
-
-            // update global total data
-            totalMCap += scoin.mcap;
-            totalVolume += scoin.volume;
-        })
-    ); // end glb_stablecoins loop
+        // update global total data
+        totalMCap += scoin.mcap;
+        totalVolume += scoin.volume;
+    });
 
     // sort global platform list
     glb_platform_data = glb_platform_data.sort(function (a, b) {
@@ -185,17 +185,22 @@ async function updateGlobalPlatformData() {
     });
 } // updateGlobalPlatformData()
 
+function updateGlobalMetrics() {
+    totalMCap = 0;
+    totalVolume = 0;
+
+    glb_stablecoins.forEach(async (scoin) => {
+        // update global total data
+        totalMCap += scoin.mcap;
+        totalVolume += scoin.volume;
+    });
+} // updateGlobalMetrics()
+
 async function updateData() {
     let new_stablecoin_data = await fetchStablecoins();
-
-    // new_stablecoin_data.forEach((coin) => {
-    //     if (coin.name === 'Tether') {
-    //         console.log(coin.platforms);
-    //     }
-    // });
-
     updateGlobalStablecoinData(new_stablecoin_data);
     updateGlobalPlatformData();
+    updateGlobalMetrics();
 } // updateData()
 
 /*-----------------------------------------------
