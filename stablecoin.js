@@ -2,6 +2,8 @@ const util = require('./utils/cmn');
 const Platform = require('./platform');
 const eth = require('./utils/eth');
 const omni = require('./utils/omni');
+const tron = require('./utils/tron');
+const bnb = require('./utils/bnb');
 
 class Stablecoin {
     constructor(
@@ -12,7 +14,9 @@ class Stablecoin {
         mcap = null,
         volume = null,
         img_url = null,
-        price = null
+        price = null,
+        cmc_total_supply = null,
+        cmc_circulating_supply = null
     ) {
         this.name = name;
         this.symbol = symbol;
@@ -30,6 +34,8 @@ class Stablecoin {
         this.volume_s = util.toDollarString(volume);
         this.img_url = img_url;
         this.price = price;
+        this.cmc_total_supply = cmc_total_supply;
+        this.cmc_circulating_supply = cmc_circulating_supply;
     } // constructor
 
     async updatePlatformsSupply() {
@@ -37,8 +43,10 @@ class Stablecoin {
             Ethereum: { name: 'Ethereum', api: eth },
             Bitcoin: { name: 'Bitcoin', api: omni },
             // EOS: { name: 'EOS', api: null },
-            // Tron: { name: 'Tron', api: null },
+            Tron: { name: 'Tron', api: tron },
         };
+        PLATFORM_API['BNB Chain'] = { name: 'BNB Chain', api: bnb };
+
         await Promise.all(
             this.platforms.map(async (platform) => {
                 try {

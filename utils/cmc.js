@@ -16,26 +16,6 @@ function cmcCheckError(status) {
     }
 } // end cmcCheckError()
 
-exports.stablecoin_tickers = [
-    'USDT',
-    'USDC',
-    'PAX',
-    'BUSD',
-    'TUSD',
-    'HUSD',
-    'DAI',
-    // 'LUNA', -- not pegged to USD, but a basket of currencies
-    'EURS',
-    'SUSD',
-    'GUSD',
-    'SBD',
-    'USDS',
-    'USDK',
-    'USDQ',
-    'EOSDT',
-    'AMPL',
-];
-
 // This function returns all coins listed as stablecoins on CoinMarketCap
 // NOTE: This includes coins pegged to assets other than the US Dollar,
 // and oddly does not include DAI
@@ -87,16 +67,20 @@ exports.getCMCStablecoins = async (ticker_list) => {
                     md.symbol,
                     md.platform
                         ? new Platform(
-                              md.platform.name,
+                              md.platform.name == 'Binance Coin'
+                                  ? 'BNB Chain'
+                                  : md.platform.name,
                               md.platform.token_address,
                               null // platform total supply - fetched from Blockchain
                           )
-                        : new Platform(md.name, null, q.total_supply),
+                        : new Platform(md.name, null, null),
                     md.description,
                     q.quote ? q.quote.USD.market_cap : null,
                     q.quote ? q.quote.USD.volume_24h : null,
                     md.logo,
-                    q.quote ? q.quote.USD.price.toFixed(3) : null
+                    q.quote ? q.quote.USD.price.toFixed(3) : null,
+                    q.total_supply,
+                    q.circulating_supply
                 );
 
                 coin_list_ret.push(scoin);

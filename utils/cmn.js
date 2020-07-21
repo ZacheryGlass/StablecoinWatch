@@ -37,7 +37,7 @@ exports.getTokenPlatform = (token) => {
     } else if (token.toUpperCase().startsWith('TRC')) {
         return 'Tron';
     } else if (token.toUpperCase().startsWith('BEP')) {
-        return 'Binance Chain';
+        return 'BNB Chain';
     } else if (token.toLowerCase() == 'omni') {
         return 'Bitcoin';
     } else if (token.toLowerCase() == 'native') {

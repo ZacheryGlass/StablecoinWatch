@@ -6,15 +6,38 @@ const messari = require('./utils/messari');
 
 const util = require('./utils/cmn');
 const cmc = require('./utils/cmc');
+const tron = require('./utils/tron');
 
 // CONSTANTS
 const MINS_BETWEEN_UPDATE = 5;
 const TETHER_OMNI_ID = 31;
+// const TETHER_TRON_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+const TETHER_TRON_CONTRACT_OWNER = '41fde74827168724bdafdaf8896dc90afc0fa6641d';
+
+const COIN_TICKER_LIST = [
+    'USDT',
+    'USDC',
+    'PAX',
+    'BUSD',
+    'TUSD',
+    'HUSD',
+    'DAI',
+    // 'LUNA', -- not pegged to USD, but a basket of currencies
+    'EURS',
+    'SUSD',
+    'GUSD',
+    'SBD',
+    'USDS',
+    'USDK',
+    'USDQ',
+    'EOSDT',
+    'AMPL',
+];
 
 // GLOBAL VARS
 let glb_stablecoins = [];
-let totalMCap = 0;
-let totalVolume = 0;
+let glb_totalMCap = 0;
+let glb_totalVolume = 0;
 let glb_platform_data = [];
 
 // set up express app.
@@ -61,6 +84,12 @@ function combineCoins(msri_coins_list, cmc_coins_list) {
             );
             if (tether_btc_pltfm)
                 tether_btc_pltfm.contract_address = TETHER_OMNI_ID;
+
+            let tether_tron_pltfm = cmc_coin.platforms.find(
+                (p) => p.name === 'Tron'
+            );
+            if (tether_tron_pltfm)
+                tether_tron_pltfm.contract_address = TETHER_TRON_CONTRACT_OWNER;
         }
     });
 
@@ -82,7 +111,7 @@ function combineCoins(msri_coins_list, cmc_coins_list) {
 async function fetchStablecoins() {
     // pull new stablecoins data
     let fetching_msri = messari.getAllMessariStablecoins();
-    let fetching_cmc = cmc.getCMCStablecoins(cmc.stablecoin_tickers);
+    let fetching_cmc = cmc.getCMCStablecoins(COIN_TICKER_LIST);
 
     // combined data from multiple APIs
     return Promise.all([fetching_msri, fetching_cmc]).then(
@@ -162,8 +191,8 @@ async function updateGlobalPlatformData() {
         }); // end for each
 
         // update global total data
-        totalMCap += scoin.mcap;
-        totalVolume += scoin.volume;
+        glb_totalMCap += scoin.mcap;
+        glb_totalVolume += scoin.volume;
     });
 
     // sort global platform list
@@ -178,13 +207,13 @@ async function updateGlobalPlatformData() {
 } // updateGlobalPlatformData()
 
 function updateGlobalMetrics() {
-    totalMCap = 0;
-    totalVolume = 0;
+    glb_totalMCap = 0;
+    glb_totalVolume = 0;
 
     glb_stablecoins.forEach(async (scoin) => {
         // update global total data
-        totalMCap += scoin.mcap;
-        totalVolume += scoin.volume;
+        glb_totalMCap += scoin.mcap;
+        glb_totalVolume += scoin.volume;
     });
 } // updateGlobalMetrics()
 
@@ -204,10 +233,10 @@ app.get('/', async (req, res) => {
 
     res.render('home', {
         coins: glb_stablecoins,
-        totalMCap: totalMCap,
-        totalMCap_s: util.toDollarString(totalMCap),
-        totalVolume: totalVolume,
-        totalVolume_s: util.toDollarString(totalVolume),
+        totalMCap: glb_totalMCap,
+        totalMCap_s: util.toDollarString(glb_totalMCap),
+        totalVolume: glb_totalVolume,
+        totalVolume_s: util.toDollarString(glb_totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
         active: 'home',
@@ -217,10 +246,10 @@ app.get('/', async (req, res) => {
 app.get('/donate', async (req, res) => {
     let eth_data = glb_platform_data.find((chain) => chain.name === 'Ethereum');
     res.render('donate', {
-        totalMCap: totalMCap,
-        totalMCap_s: util.toDollarString(totalMCap),
-        totalVolume: totalVolume,
-        totalVolume_s: util.toDollarString(totalVolume),
+        totalMCap: glb_totalMCap,
+        totalMCap_s: util.toDollarString(glb_totalMCap),
+        totalVolume: glb_totalVolume,
+        totalVolume_s: util.toDollarString(glb_totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
         active: 'donate',
@@ -231,10 +260,10 @@ app.get('/donate', async (req, res) => {
 app.get('/chains', async (req, res) => {
     let eth_data = glb_platform_data.find((chain) => chain.name === 'Ethereum');
     res.render('chains', {
-        totalMCap: totalMCap,
-        totalMCap_s: util.toDollarString(totalMCap),
-        totalVolume: totalVolume,
-        totalVolume_s: util.toDollarString(totalVolume),
+        totalMCap: glb_totalMCap,
+        totalMCap_s: util.toDollarString(glb_totalMCap),
+        totalVolume: glb_totalVolume,
+        totalVolume_s: util.toDollarString(glb_totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
         glb_platform_data: glb_platform_data,

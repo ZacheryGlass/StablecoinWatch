@@ -37,5 +37,6 @@ exports.getAllMessariStablecoins = async () => {
             ret_list.push(scoin);
         } // if is stablecoin
     }); // for each
+
     return ret_list;
 }; // getAllMessariStablecoins()

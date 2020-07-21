@@ -1,143 +1,146 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8" />
-        <title>Stablecoin Watch</title>
-        <link rel="stylesheet" type="text/css" href="/common.css" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <style>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Stablecoin Watch</title>
+    <link rel="stylesheet" type="text/css" href="/common.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        .supply_list li {
+            padding: 0;
+            top: 0;
+            font-size: 14px;
+            list-style: none;
+            transform: translateY(-20px);
+        }
+
+        @media only screen and (max-width: 767px) {
             .supply_list li {
-                padding: 0;
-                top: 0;
-                font-size: 14px;
-                list-style: none;
-                transform: translateY(-20px);
+                font-size: 10px !important;
             }
+        }
 
-            @media only screen and (max-width: 767px) {
-                .supply_list li {
-                    font-size: 10px !important;
-                }
-            }
-            .row ul.coinstats > li {
-                margin: 0;
-                font-size: 16px;
-                font-weight: normal;
-                list-style: none;
-                display: inline-block;
-                width: 13%;
-                box-sizing: border-box;
-                display: inline-flex;
-                padding: 5px 10px;
-            }
+        .row ul.coinstats>li {
+            margin: 0;
+            font-size: 16px;
+            font-weight: normal;
+            list-style: none;
+            display: inline-block;
+            width: 13%;
+            box-sizing: border-box;
+            display: inline-flex;
+            padding: 5px 10px;
+        }
 
-            .title ul.coinstats li {
-                padding: 15px 13px;
-                font-weight: bold;
-            }
+        .title ul.coinstats li {
+            padding: 15px 13px;
+            font-weight: bold;
+        }
 
-            .name {
-                width: 17% !important;
-                text-align: left !important;
-            }
+        .name {
+            width: 17% !important;
+            text-align: left !important;
+        }
 
-            img.coin_logo {
-                width: 20px;
-                height: 20px;
-                padding-right: 5px;
-            }
+        img.coin_logo {
+            width: 20px;
+            height: 20px;
+            padding-right: 5px;
+        }
 
-            .coinrank {
-                width: 5% !important;
-                text-align: center;
-            }
+        .coinrank {
+            width: 5% !important;
+            text-align: center;
+        }
 
-            .type {
-                font-size: 12px;
-                text-align: right;
-            }
+        .type {
+            font-size: 12px;
+            text-align: right;
+        }
 
-            /* expand more content */
+        /* expand more content */
+        ul.more-content li.split {
+            position: relative;
+            top: 13px;
+            font-size: 13px;
+            margin: 0;
+            padding: 6px 13px;
+            /* padding: 0 10px; */
+            display: block;
+            height: 50px;
+            /* width: 100%; */
+        }
+
+        @media only screen and (max-width: 767px) {
             ul.more-content li.split {
-                position: relative;
-                top: 13px;
-                font-size: 13px;
-                margin: 0;
-                padding: 6px 13px;
-                /* padding: 0 10px; */
-                display: block;
-                height: 50px;
-                /* width: 100%; */
+                font-size: 11px;
             }
+        }
 
-            @media only screen and (max-width: 767px) {
-                ul.more-content li.split {
-                    font-size: 11px;
-                }
-            }
+        .expand:hover {
+            height: 105px;
+        }
 
+        .more-content {
+            display: none;
+        }
+
+        .more-content li {
+            padding: 0px;
+            text-align: inherit;
+        }
+
+        .expand:hover>.more-content {
+            display: block;
+        }
+
+        @media only screen and (max-width: 767px) {
             .expand:hover {
-                height: 105px;
+                height: 125px;
             }
+        }
 
-            .more-content {
-                display: none;
+        @media only screen and (max-width: 359px) {
+            .expand:hover {
+                height: 145px;
             }
+        }
 
-            .more-content li {
-                padding: 0px;
-                text-align: inherit;
-            }
+        .split * {
+            box-sizing: border-box;
+        }
 
-            .expand:hover > .more-content {
-                display: block;
-            }
+        .split:after {
+            content: '';
+            display: table;
+            clear: both;
+        }
+    </style>
+</head>
 
-            @media only screen and (max-width: 767px) {
-                .expand:hover {
-                    height: 125px;
-                }
-            }
-
-            @media only screen and (max-width: 359px) {
-                .expand:hover {
-                    height: 145px;
-                }
-            }
-
-            .split * {
-                box-sizing: border-box;
-            }
-
-            .split:after {
-                content: '';
-                display: table;
-                clear: both;
-            }
-        </style>
-    </head>
-    <body>
-        <!-- Header -->
-        <%- include('partials/header') %>
-        <!-- Header -->
-        <main>
-            <% if( coins ) { %>
-            <section class="wrapper">
-                <!-- Row title -->
-                <main class="row title">
-                    <ul class="coinstats">
-                        <li class="coinrank">#</li>
-                        <li class="name">Name</li>
-                        <li class="symbol">Symbol</li>
-                        <li>Price</li>
-                        <li>Market Cap</li>
-                        <li>Market Cap Dominance</li>
-                        <li>Volume (24h)</li>
-                        <!-- <li>Volume Dominance</li> -->
-                        <li>Platform</li>
-                    </ul>
-                </main>
-                <% coins.forEach( (coin, i) => { %>
+<body>
+    <!-- Header -->
+    <%- include('partials/header') %>
+    <!-- Header -->
+    <main>
+        <% if( coins ) { %>
+        <section class="wrapper">
+            <!-- Row title -->
+            <main class="row title">
+                <ul class="coinstats">
+                    <li class="coinrank">#</li>
+                    <li class="name">Name</li>
+                    <li class="symbol">Symbol</li>
+                    <li>Price</li>
+                    <li>Market Cap</li>
+                    <li>Market Cap Dominance</li>
+                    <li>Volume (24h)</li>
+                    <!-- <li>Volume Dominance</li> -->
+                    <li>Platform</li>
+                </ul>
+            </main>
+            <% coins.forEach( (coin, i) => { %>
                 <!-- Row X -->
                 <article class="row expand type<%=i%4+1%>">
                     <ul class="coinstats">
@@ -149,11 +152,7 @@
                         </li>
                         <!-- symbol -->
                         <li class="symbol">
-                            <img
-                                class="coin_logo"
-                                src="<%= coin.img_url %>"
-                                alt=""
-                            />
+                            <img class="coin_logo" src="<%= coin.img_url %>" alt="" />
                             <%= coin.symbol %>
                         </li>
                         <!-- price -->
@@ -168,27 +167,30 @@
                         <li><%= coin.volume_s %></li>
                         <!-- volume dominance -->
                         <!-- <li>
-                            <%#= ((coin.volume/totalVolume)*100).toFixed(2) %>%
-                        </li> -->
+                                <%#= ((coin.volume/totalVolume)*100).toFixed(2) %>%
+                            </li> -->
 
                         <!-- platforms -->
                         <% if ( coin.platforms.length > 1 ) { %>
-                        <li class="type">
-                            <ul class="supply_list">
-                                <% coin.platforms.forEach( platform => { %>
-                                <li>
-                                    <%= platform.name %>: <%=
-                                    ((platform.supply/coin.mcap)*100).toFixed()
-                                    %>%
-                                </li>
-                                <% }); %>
-                            </ul>
-                        </li>
-                        <% } else { %>
-                        <li class="type">
-                            <%= coin.platforms[0].name %>
-                        </li>
-                        <% } %>
+                            <li class="type">
+                                <ul class="supply_list">
+                                    <% coin.platforms.forEach( platform => { %>
+                                        <li>
+                                            <%= platform.name %> :
+                                            <% if (platform.supply) { %>
+                                                <%=( ( platform.supply / coin.cmc_total_supply ) * 100 ).toFixed() %>%
+                                            <% } else { %>
+                                                ? 
+                                            <% } %>
+                                        </li>
+                                    <% }); %>
+                                </ul>
+                            </li>
+                        <% } else { %> <!-- if more than 1 platform -->
+                            <li class="type">
+                                <%= coin.platforms[0].name %>
+                            </li>
+                        <% } %> 
                     </ul>
                     <ul class="more-content">
                         <li class="split">
@@ -196,14 +198,14 @@
                         </li>
                     </ul>
                 </article>
-                <% }) %>
+                <% }) %> <!-- forEach coin -->
             </section>
-            <% } else { %>
-            <p>Something went wrong.</p>
-            <% } %>
-        </main>
-        <!-- Footer -->
-        <%- include('partials/footer') %>
-        <!-- Footer -->
-    </body>
+    <% } else { %>
+        <p>Something went wrong.</p>
+    <% } %>
+    </main>
+    <!-- Footer -->
+    <%- include('partials/footer') %>
+    <!-- Footer -->
+</body>
 </html>
