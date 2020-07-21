@@ -85,13 +85,16 @@ exports.getCMCStablecoins = async (ticker_list) => {
                 let scoin = new Stablecoin(
                     md.name,
                     md.symbol,
+                    null,
                     md.platform
-                        ? new Platform(
-                              md.platform.name,
-                              md.platform.token_address,
-                              null // platform total supply - fetched from Blockchain
-                          )
-                        : new Platform(md.name, null, q.total_supply),
+                        ? [
+                              new Platform(
+                                  md.platform.name,
+                                  md.platform.token_address,
+                                  null // platform total supply - fetched from Blockchain
+                              ),
+                          ]
+                        : [new Platform(md.name, null, q.total_supply)],
                     md.description,
                     q.quote ? q.quote.USD.market_cap : null,
                     q.quote ? q.quote.USD.volume_24h : null,

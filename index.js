@@ -1,20 +1,18 @@
 const https = require('https');
 const express = require('express');
 const cron = require('node-cron');
-
 const messari = require('./utils/messari');
-
+const scw = require('./utils/scw');
 const util = require('./utils/cmn');
 const cmc = require('./utils/cmc');
 
 // CONSTANTS
-const MINS_BETWEEN_UPDATE = 5;
-const TETHER_OMNI_ID = 31;
+const MINS_BETWEEN_UPDATE = 10;
 
 // GLOBAL VARS
 let glb_stablecoins = [];
-let totalMCap = 0;
-let totalVolume = 0;
+let glb_totalMCap = 0;
+let glb_totalVolume = 0;
 let glb_platform_data = [];
 
 // set up express app.
@@ -27,7 +25,7 @@ app.use(express.static(__dirname + '/res'));
 updateData();
 cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, updateData);
 
-function combineCoins(msri_coins_list, cmc_coins_list) {
+function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
     // loop through each CMC coin
     cmc_coins_list.forEach((cmc_coin) => {
         // for the current messari coin, check if the same coin
@@ -53,44 +51,75 @@ function combineCoins(msri_coins_list, cmc_coins_list) {
         } // if this cmc coins also exists in the messari coin list
 
         // at this point, the current cmc coin should have all platforms, from both APIs.
+        // next, update each coin with the custom data that we couldn't retreive from an API.
 
-        // STOP GAP SOLUTION - Repace with 3rd data source, custom hard-coded data
-        if (cmc_coin.name == 'Tether') {
-            let tether_btc_pltfm = cmc_coin.platforms.find(
-                (p) => p.name === 'Bitcoin'
-            );
-            if (tether_btc_pltfm)
-                tether_btc_pltfm.contract_address = TETHER_OMNI_ID;
-        }
+        let scw_coin = scw_coins_list.find((c) => c.symbol === cmc_coin.symbol);
+
+        if (scw_coin) {
+            for (let key in cmc_coin) {
+                if (key == 'platforms') continue;
+
+                if (scw_coin[key]) {
+                    cmc_coin[key] = scw_coin[key];
+                }
+            } // for (let key in cmc_coin)
+
+            if (scw_coin.platforms)
+                scw_coin.platforms.forEach((scw_pltfm) => {
+                    let cmc_pltfm = cmc_coin.platforms.find(
+                        (p) => p.name === scw_pltfm.name
+                    );
+
+                    if (cmc_pltfm) {
+                        if (scw_pltfm.contract_address)
+                            cmc_pltfm.contract_address =
+                                scw_pltfm.contract_address;
+                    } else {
+                        // this platform was found in SCW data for this coin, but not CMC api
+                        // add platform to CMC coin, which will be used as the final combined data.
+                        cmc_coin.platforms.push(scw_pltfm);
+                    }
+                }); // for each platform found for this coin in the messari data
+        } //  if (scw_coin)
     });
+    // do not add this yet, as we need to exclude RSR, which incorrectly shows up as a stablecoin on both
+    // CMC and Messari API.
+    // here, check for coins that exist in Messari data but not CMC, if found - push to cmc_coins_list
+    // msri_coins_list.forEach((mcoin) => {
+    //     let cmc_coin = cmc_coins_list.find((c) => c.symbol == mcoin.symbol);
+    //     if (!cmc_coin) {
+    //         console.log('did not find', mcoin.symbol, 'in cmc list');
+    //         cmc_coins_list.push(mcoin);
+    //     }
+    // });
 
-    // here, check for coins that exist in Messari data but not CMC, if found - push to cmc_coin_list
-    /*
-    if(){
-
-        console.log(
-            `${msri_coin.symbol} found in Messari data but not CMC. Consider adding manual CMC ticker list.`
-        );
-        cmc_coin_list.push(msri_coin);
-    }
-    */
-    // return updated cmc coin list
-
+    // here, check for coins that exist in SCW data but not CMC, if found - push to cmc_coins_list
+    scw_coins_list.forEach((scwcoin) => {
+        let cmc_coin = cmc_coins_list.find((c) => c.symbol === scwcoin.symbol);
+        if (!cmc_coin) cmc_coins_list.push(scwcoin);
+    });
     return cmc_coins_list;
 } // end coinbinedCoins()
 
 async function fetchStablecoins() {
     // pull new stablecoins data
     let fetching_msri = messari.getAllMessariStablecoins();
-    let fetching_cmc = cmc.getCMCStablecoins(cmc.stablecoin_tickers);
+    let fetching_cmc = cmc.getAllCMCStablecoins();
+    // let fetching_cmc = cmc.getCMCStablecoins(COIN_TICKER_LIST);
+    let fetching_scw = scw.getSCWStablecoins();
 
     // combined data from multiple APIs
-    return Promise.all([fetching_msri, fetching_cmc]).then(
+    return Promise.all([fetching_msri, fetching_cmc, fetching_scw]).then(
         async (scoins_arr) => {
             let msri_coins_list = scoins_arr[0];
             let cmc_coins_list = scoins_arr[1];
+            let scw_coins_list = scoins_arr[2];
 
-            let ret_list = combineCoins(msri_coins_list, cmc_coins_list);
+            let ret_list = combineCoins(
+                msri_coins_list,
+                cmc_coins_list,
+                scw_coins_list
+            );
 
             // update the platform-specific supply for each coin
             await Promise.all(
@@ -146,7 +175,7 @@ async function updateGlobalPlatformData() {
                 // if this platform is already in our global data (seen before)
                 // then sum the supply to the total
                 if (gbl_pltfm.name == scoin_pltfm.name) {
-                    gbl_pltfm.scoin_total += scoin_pltfm.supply;
+                    gbl_pltfm.scoin_total += scoin_pltfm.supply * scoin.price;
                     chain_in_gbl_data = true;
                 }
             });
@@ -156,14 +185,15 @@ async function updateGlobalPlatformData() {
             if (!chain_in_gbl_data) {
                 glb_platform_data.push({
                     name: scoin_pltfm.name,
-                    scoin_total: scoin_pltfm.supply,
+                    scoin_total: scoin_pltfm.supply * scoin.price,
                 });
             } // end if
-        }); // end for each
+            glb_totalMCap += scoin_pltfm.supply * scoin.price;
+        }); // end for each platform
 
         // update global total data
-        totalMCap += scoin.mcap;
-        totalVolume += scoin.volume;
+        // glb_totalMCap += scoin.mcap;
+        glb_totalVolume += scoin.volume;
     });
 
     // sort global platform list
@@ -178,13 +208,13 @@ async function updateGlobalPlatformData() {
 } // updateGlobalPlatformData()
 
 function updateGlobalMetrics() {
-    totalMCap = 0;
-    totalVolume = 0;
+    glb_totalMCap = 0;
+    glb_totalVolume = 0;
 
     glb_stablecoins.forEach(async (scoin) => {
         // update global total data
-        totalMCap += scoin.mcap;
-        totalVolume += scoin.volume;
+        glb_totalMCap += scoin.mcap;
+        glb_totalVolume += scoin.volume;
     });
 } // updateGlobalMetrics()
 
@@ -204,10 +234,10 @@ app.get('/', async (req, res) => {
 
     res.render('home', {
         coins: glb_stablecoins,
-        totalMCap: totalMCap,
-        totalMCap_s: util.toDollarString(totalMCap),
-        totalVolume: totalVolume,
-        totalVolume_s: util.toDollarString(totalVolume),
+        totalMCap: glb_totalMCap,
+        totalMCap_s: util.toDollarString(glb_totalMCap),
+        totalVolume: glb_totalVolume,
+        totalVolume_s: util.toDollarString(glb_totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
         active: 'home',
@@ -217,10 +247,10 @@ app.get('/', async (req, res) => {
 app.get('/donate', async (req, res) => {
     let eth_data = glb_platform_data.find((chain) => chain.name === 'Ethereum');
     res.render('donate', {
-        totalMCap: totalMCap,
-        totalMCap_s: util.toDollarString(totalMCap),
-        totalVolume: totalVolume,
-        totalVolume_s: util.toDollarString(totalVolume),
+        totalMCap: glb_totalMCap,
+        totalMCap_s: util.toDollarString(glb_totalMCap),
+        totalVolume: glb_totalVolume,
+        totalVolume_s: util.toDollarString(glb_totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
         active: 'donate',
@@ -231,10 +261,10 @@ app.get('/donate', async (req, res) => {
 app.get('/chains', async (req, res) => {
     let eth_data = glb_platform_data.find((chain) => chain.name === 'Ethereum');
     res.render('chains', {
-        totalMCap: totalMCap,
-        totalMCap_s: util.toDollarString(totalMCap),
-        totalVolume: totalVolume,
-        totalVolume_s: util.toDollarString(totalVolume),
+        totalMCap: glb_totalMCap,
+        totalMCap_s: util.toDollarString(glb_totalMCap),
+        totalVolume: glb_totalVolume,
+        totalVolume_s: util.toDollarString(glb_totalVolume),
         totalETHMCap: eth_data.scoin_total,
         totalETHMCap_s: eth_data.scoin_total_s,
         glb_platform_data: glb_platform_data,

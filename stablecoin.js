@@ -7,8 +7,9 @@ class Stablecoin {
     constructor(
         name = null,
         symbol = null,
-        platforms = [new Platform()],
-        desc = 'No description available.',
+        peg = null,
+        platforms = [],
+        desc = null,
         mcap = null,
         volume = null,
         img_url = null,
@@ -16,13 +17,8 @@ class Stablecoin {
     ) {
         this.name = name;
         this.symbol = symbol;
-        if (!Array.isArray(platforms)) {
-            // passing in a single Platform object
-            // make it an array for consistancy
-            this.platforms = [platforms];
-        } else {
-            this.platforms = platforms;
-        }
+        this.peg = peg;
+        this.platforms = platforms;
         this.desc = util.stripHTML(desc);
         this.mcap = mcap;
         this.mcap_s = util.toDollarString(mcap);
@@ -33,12 +29,17 @@ class Stablecoin {
     } // constructor
 
     async updatePlatformsSupply() {
+        if (this.platforms.length == 0) {
+            console.log(this);
+            console.log(typeof this.platforms);
+        }
         const PLATFORM_API = {
             Ethereum: { name: 'Ethereum', api: eth },
             Bitcoin: { name: 'Bitcoin', api: omni },
             // EOS: { name: 'EOS', api: null },
             // Tron: { name: 'Tron', api: null },
         };
+        // console.log(this.platforms);
         await Promise.all(
             this.platforms.map(async (platform) => {
                 try {
@@ -51,6 +52,10 @@ class Stablecoin {
                 }
             })
         );
+
+        this.platforms = this.platforms.sort(function (a, b) {
+            return b.supply - a.supply;
+        });
     } // updatePlatformsSupply()
 }
 

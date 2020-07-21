@@ -20,15 +20,13 @@ exports.getAllMessariStablecoins = async () => {
                 if (platform_name == 'Native') platform_name = coin.name;
                 platforms.push(new Platform(platform_name));
             });
-            // format description
-            let descrip = coin.profile.overview;
-            if (!descrip) descrip = 'No description available.';
 
             let scoin = new Stablecoin(
                 /* name         */ coin.name,
                 /* symbol       */ coin.symbol,
+                /* target peg   */ null,
                 /* platforms    */ platforms,
-                /* desc         */ descrip,
+                /* desc         */ coin.profile.overview,
                 /* mcap         */ coin.metrics.marketcap.current_marketcap_usd,
                 /* volume       */ coin.metrics.market_data.volume_last_24_hours,
                 // /* volume       */ coin.metrics.market_data.real_volume_last_24_hours,
@@ -37,5 +35,6 @@ exports.getAllMessariStablecoins = async () => {
             ret_list.push(scoin);
         } // if is stablecoin
     }); // for each
+
     return ret_list;
 }; // getAllMessariStablecoins()
