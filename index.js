@@ -1,19 +1,13 @@
 const https = require('https');
 const express = require('express');
 const cron = require('node-cron');
-
 const messari = require('./utils/messari');
-
+const scw = require('./utils/scw');
 const util = require('./utils/cmn');
 const cmc = require('./utils/cmc');
-const tron = require('./utils/tron');
 
 // CONSTANTS
 const MINS_BETWEEN_UPDATE = 5;
-const TETHER_OMNI_ID = 31;
-// const TETHER_TRON_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
-const TETHER_TRON_CONTRACT_OWNER = '41fde74827168724bdafdaf8896dc90afc0fa6641d';
-
 const COIN_TICKER_LIST = [
     'USDT',
     'USDC',
@@ -50,7 +44,7 @@ app.use(express.static(__dirname + '/res'));
 updateData();
 cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, updateData);
 
-function combineCoins(msri_coins_list, cmc_coins_list) {
+function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
     // loop through each CMC coin
     cmc_coins_list.forEach((cmc_coin) => {
         // for the current messari coin, check if the same coin
@@ -76,20 +70,24 @@ function combineCoins(msri_coins_list, cmc_coins_list) {
         } // if this cmc coins also exists in the messari coin list
 
         // at this point, the current cmc coin should have all platforms, from both APIs.
+        // next, update each coin with the custom data that we couldn't retreive from an API.
 
-        // STOP GAP SOLUTION - Repace with 3rd data source, custom hard-coded data
-        if (cmc_coin.name == 'Tether') {
-            let tether_btc_pltfm = cmc_coin.platforms.find(
-                (p) => p.name === 'Bitcoin'
-            );
-            if (tether_btc_pltfm)
-                tether_btc_pltfm.contract_address = TETHER_OMNI_ID;
+        let scw_coin = scw_coins_list.find((c) => c.symbol === cmc_coin.symbol);
+        if (scw_coin) {
+            scw_coin.platforms.forEach((scw_pltfm) => {
+                let cmc_pltfm = cmc_coin.platforms.find(
+                    (p) => p.name === scw_pltfm.name
+                );
 
-            let tether_tron_pltfm = cmc_coin.platforms.find(
-                (p) => p.name === 'Tron'
-            );
-            if (tether_tron_pltfm)
-                tether_tron_pltfm.contract_address = TETHER_TRON_CONTRACT_OWNER;
+                if (cmc_pltfm) {
+                    if (scw_pltfm.contract_address)
+                        cmc_pltfm.contract_address = scw_pltfm.contract_address;
+                } else {
+                    // this platform was found in SCW data for this coin, but not CMC api
+                    // add platform to CMC coin, which will be used as the final combined data.
+                    cmc_coin.platforms.push(scw_pltfm);
+                }
+            }); // for each platform found for this coin in the messari data
         }
     });
 
@@ -112,14 +110,20 @@ async function fetchStablecoins() {
     // pull new stablecoins data
     let fetching_msri = messari.getAllMessariStablecoins();
     let fetching_cmc = cmc.getCMCStablecoins(COIN_TICKER_LIST);
+    let fetching_scw = scw.getSCWStablecoins();
 
     // combined data from multiple APIs
-    return Promise.all([fetching_msri, fetching_cmc]).then(
+    return Promise.all([fetching_msri, fetching_cmc, fetching_scw]).then(
         async (scoins_arr) => {
             let msri_coins_list = scoins_arr[0];
             let cmc_coins_list = scoins_arr[1];
+            let scw_coins_list = scoins_arr[2];
 
-            let ret_list = combineCoins(msri_coins_list, cmc_coins_list);
+            let ret_list = combineCoins(
+                msri_coins_list,
+                cmc_coins_list,
+                scw_coins_list
+            );
 
             // update the platform-specific supply for each coin
             await Promise.all(

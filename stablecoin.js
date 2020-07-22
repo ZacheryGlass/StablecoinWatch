@@ -58,7 +58,11 @@ class Stablecoin {
                     // consider a throw, or console log here
                 }
             })
-        );
+        ); // await Promise.all
+
+        this.platforms = this.platforms.sort(function (a, b) {
+            return b.supply - a.supply;
+        });
     } // updatePlatformsSupply()
 }
 
