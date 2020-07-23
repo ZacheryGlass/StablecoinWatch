@@ -47,7 +47,7 @@
             font-weight: normal;
             list-style: none;
             display: inline-block;
-            width: 11%;
+            width: 12%;
             box-sizing: border-box;
             display: inline-flex;
             padding: 5px 10px;
@@ -61,15 +61,15 @@
         }
         
         .row ul.coinstats > li.name {
-            width: 15%;
+            width: 17% !important;
             justify-content: left;
-            text-align: left;
+            text-align: left !important;
         }
 
         .row ul.coinstats > li.platform {
-            width: 14%;
+            width: 17% !important;
             justify-content: left;
-            text-align: left;
+            text-align: left !important;
         }
 
         /* .row ul.coinstats > li.mcap_dom {
@@ -160,7 +160,6 @@
                         <li class="coinrank">#</li>
                         <li class="name">Name</li>
                         <li class="symbol">Symbol</li>
-                        <li>Target Peg</li>
                         <li>Price</li>
                         <li>Market Cap</li>
                         <li class='mcap_dom'>Market Cap Dominance</li>
@@ -184,8 +183,6 @@
                                 <img class="coin_logo" src="<%= coin.img_url %>" alt="" />
                                 <%= coin.symbol %>
                             </li>
-                            <!-- Target Peg -->
-                            <li> <%= coin.peg %></li>
                             <!-- price -->
                             <li>$<%= coin.price %></li>
                             <!-- market cap -->
