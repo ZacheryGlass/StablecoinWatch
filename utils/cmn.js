@@ -3,7 +3,7 @@ exports.sleep = (ms) => {
 }; // sleep()
 
 exports.toDollarString = (v) => {
-    if (!v) return '$0';
+    if (!v) return v;
 
     const BILLION = 1000000000;
     const MILLION = 1000000;

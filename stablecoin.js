@@ -9,8 +9,9 @@ class Stablecoin {
     constructor(
         name = null,
         symbol = null,
-        platforms = [new Platform()],
-        desc = 'No description available.',
+        peg = null,
+        platforms = [],
+        desc = null,
         mcap = null,
         volume = null,
         img_url = null,
@@ -20,13 +21,14 @@ class Stablecoin {
     ) {
         this.name = name;
         this.symbol = symbol;
-        if (!Array.isArray(platforms)) {
-            // passing in a single Platform object
-            // make it an array for consistancy
-            this.platforms = [platforms];
-        } else {
-            this.platforms = platforms;
-        }
+        this.peg = peg;
+        // if (!Array.isArray(platforms)) {
+        //     // passing in a single Platform object
+        //     // make it an array for consistancy
+        //     this.platforms = [platforms];
+        // } else {
+        this.platforms = platforms;
+        // }
         this.desc = util.stripHTML(desc);
         this.mcap = mcap;
         this.mcap_s = util.toDollarString(mcap);
@@ -39,26 +41,29 @@ class Stablecoin {
     } // constructor
 
     async updatePlatformsSupply() {
-        const PLATFORM_API = {
-            Ethereum: { name: 'Ethereum', api: eth },
-            Bitcoin: { name: 'Bitcoin', api: omni },
-            // EOS: { name: 'EOS', api: null },
-            Tron: { name: 'Tron', api: tron },
-        };
-        PLATFORM_API['BNB Chain'] = { name: 'BNB Chain', api: bnb };
+        let PLATFORM_API = {};
+        PLATFORM_API['Ethereum'] = eth;
+        PLATFORM_API['Bitcoin'] = omni;
+        PLATFORM_API['Tron'] = tron;
+        PLATFORM_API['BNB Chain'] = bnb;
+        // PLATFORM_API['EOS'] = null;
 
-        await Promise.all(
-            this.platforms.map(async (platform) => {
-                try {
-                    platform.supply = await PLATFORM_API[
-                        platform.name
-                    ].api.getTokenSupply(platform.contract_address);
-                } catch {
-                    /* intentionally empty */
-                    // consider a throw, or console log here
-                }
-            })
-        ); // await Promise.all
+        if (this.platforms.length == 1) {
+            this.platforms[0].supply = this.cmc_total_supply;
+        } else {
+            await Promise.all(
+                this.platforms.map(async (platform) => {
+                    try {
+                        platform.supply = await PLATFORM_API[
+                            platform.name
+                        ].getTokenSupply(platform.contract_address);
+                    } catch {
+                        /* intentionally empty */
+                        // consider a throw, or console log here
+                    }
+                })
+            ); // await Promise.all
+        }
 
         this.platforms = this.platforms.sort(function (a, b) {
             return b.supply - a.supply;

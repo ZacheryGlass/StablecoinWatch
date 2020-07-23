@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="utf-8" />
     <title>Stablecoin Watch</title>
@@ -38,7 +37,7 @@
 
         @media only screen and (max-width: 767px) {
             .supply_list li {
-                font-size: 10px !important;
+                font-size: 10px;
             }
         }
 
@@ -48,43 +47,48 @@
             font-weight: normal;
             list-style: none;
             display: inline-block;
-            width: 12%;
+            width: 11%;
             box-sizing: border-box;
             display: inline-flex;
             padding: 5px 10px;
-        }
-
-        .row ul.coinstats > li.name {
-            width: 17% !important;
-            text-align: left !important;
-        }
-
-        .row ul.coinstats > li.platform {
-            width: 17% !important;
-            text-align: left !important;
+            text-align: center;
+            justify-content: center;
         }
 
         .row ul.coinstats > li.coinrank {
-            width: 5% !important;
+            width: 5%;
             text-align: center;
         }
+        
+        .row ul.coinstats > li.name {
+            width: 15%;
+            justify-content: left;
+            text-align: left;
+        }
+
+        .row ul.coinstats > li.platform {
+            width: 14%;
+            justify-content: left;
+            text-align: left;
+        }
+
+        /* .row ul.coinstats > li.mcap_dom {
+            width: 15%;
+            text-align: left;
+        } */
+
+
 
         .title ul.coinstats li {
             padding: 15px 13px;
             font-weight: bold;
         }
 
-        
-
         img.coin_logo {
             width: 20px;
             height: 20px;
             padding-right: 5px;
         }
-
-        
-
-
 
         /* expand more content */
         ul.more-content li.split {
@@ -104,7 +108,7 @@
         }
 
         .expand:hover {
-            height: 105px;
+            /* height: 105px; */
         }
 
         .more-content {
@@ -143,95 +147,97 @@
         }
     </style>
 </head>
-
 <body>
     <!-- Header -->
     <%- include('partials/header') %>
     <!-- Header -->
     <main>
         <% if( coins ) { %>
-        <section class="wrapper">
-            <!-- Row title -->
-            <main class="row title">
-                <ul class="coinstats">
-                    <li class="coinrank">#</li>
-                    <li class="name">Name</li>
-                    <li class="symbol">Symbol</li>
-                    <li>Price</li>
-                    <li>Market Cap</li>
-                    <li>Market Cap Dominance</li>
-                    <li>Volume (24h)</li>
-                    <!-- <li>Volume Dominance</li> -->
-                    <li>Platform</li>
-                </ul>
-            </main>
-            <% coins.forEach( (coin, i) => { %>
-                <!-- Row X -->
-                <article class="row expand type<%=i%4+1%>">
+            <section class="wrapper">
+                <!-- Row title -->
+                <main class="row title">
                     <ul class="coinstats">
-                        <!-- rank -->
-                        <li class="coinrank"><%= (i+1) %></li>
-                        <!-- name -->
-                        <li class="name">
-                            <strong><a href="#"><%= coin.name %></a></strong>
-                        </li>
-                        <!-- symbol -->
-                        <li class="symbol">
-                            <img class="coin_logo" src="<%= coin.img_url %>" alt="" />
-                            <%= coin.symbol %>
-                        </li>
-                        <!-- price -->
-                        <li>$<%= coin.price %></li>
-                        <!-- market cap -->
-                        <li><%= coin.mcap_s %></li>
-                        <!-- market cap dominance -->
-                        <li>
-                            <%= ((coin.mcap/totalMCap)*100).toFixed(2) %>%
-                        </li>
-                        <!-- volume -->
-                        <li><%= coin.volume_s %></li>
-                        <!-- volume dominance -->
-                        <!-- <li>
-                                <%#= ((coin.volume/totalVolume)*100).toFixed(2) %>%
-                            </li> -->
+                        <li class="coinrank">#</li>
+                        <li class="name">Name</li>
+                        <li class="symbol">Symbol</li>
+                        <li>Target Peg</li>
+                        <li>Price</li>
+                        <li>Market Cap</li>
+                        <li class='mcap_dom'>Market Cap Dominance</li>
+                        <li>Volume (24h)</li>
+                        <!-- <li>Volume Dominance</li> -->
+                        <li class="platform">Platform</li>
+                    </ul>
+                </main>
+                <% coins.forEach( (coin, i) => { %>
+                    <!-- Row X -->
+                    <article class="row expand type<%=i%4+1%>">
+                        <ul class="coinstats">
+                            <!-- rank -->
+                            <li class="coinrank"><%= (i+1) %></li>
+                            <!-- name -->
+                            <li class="name">
+                                <strong><a href="#"><%= coin.name %></a></strong>
+                            </li>
+                            <!-- symbol -->
+                            <li class="symbol">
+                                <img class="coin_logo" src="<%= coin.img_url %>" alt="" />
+                                <%= coin.symbol %>
+                            </li>
+                            <!-- Target Peg -->
+                            <li> <%= coin.peg %></li>
+                            <!-- price -->
+                            <li>$<%= coin.price %></li>
+                            <!-- market cap -->
+                            <li><%= coin.mcap_s %></li>
+                            <!-- market cap dominance -->
+                            <li class='mcap_dom'>
+                                <%= ((coin.mcap/totalMCap)*100).toFixed(2) %>%
+                            </li>
+                            <!-- volume -->
+                            <li><%= coin.volume_s %></li>
+                            <!-- volume dominance -->
+                            <!-- <li>
+                                    <%#= ((coin.volume/totalVolume)*100).toFixed(2) %>%
+                                </li> -->
 
-                        <!-- platforms -->
-                        <% if ( coin.platforms.length > 1 ) { %>
-                            <li class="platform">
-                                <ul class="supply_list">
-                                    <% coin.platforms.forEach( platform => { %>
-                                        <li class="grid_container">
-                                            <div class="grid_left">
-                                                <%= platform.name %>: 
-                                            </div>
-                                            <div class="grid_right">
-                                                <% if (platform.supply) { %>
-                                                    <%=Math.min( 100, ( ( platform.supply / coin.cmc_circulating_supply ) * 100 )).toFixed() %>%
-                                                <% } else { %>
-                                                    ? 
-                                                <% } %>
-                                            </div>
-                                        </li>
-                                    <% }); %>
-                                </ul>
+                            <!-- platforms -->
+                            <% if ( coin.platforms.length > 1 ) { %>
+                                <li class="platform">
+                                    <ul class="supply_list">
+                                        <% coin.platforms.forEach( platform => { %>
+                                            <li class="grid_container">
+                                                <div class="grid_left">
+                                                    <%= platform.name %>: 
+                                                </div>
+                                                <div class="grid_right">
+                                                    <% if (platform.supply) { %>
+                                                        <%=Math.min( 100, ( ( platform.supply / coin.cmc_circulating_supply ) * 100 )).toFixed() %>%
+                                                    <% } else { %>
+                                                        ? 
+                                                    <% } %>
+                                                </div>
+                                            </li>
+                                        <% }); %>
+                                    </ul>
+                                </li>
+                            <% } else { %> <!-- if more than 1 platform -->
+                                <li class="platform">
+                                    <%= coin.platforms[0].name %>
+                                </li>
+                            <% } %> 
+                        </ul>
+                        <ul class="more-content">
+                            <li class="split">
+                                <%= coin.desc %>
                             </li>
-                        <% } else { %> <!-- if more than 1 platform -->
-                            <li class="platform">
-                                <%= coin.platforms[0].name %>
-                            </li>
-                        <% } %> 
-                    </ul>
-                    <ul class="more-content">
-                        <li class="split">
-                            <%= coin.desc %>
-                        </li>
-                    </ul>
-                </article>
+                        </ul>
+                    </article>
                 <% }) %> <!-- forEach coin -->
             </section>
-    <% } else { %>
-        <p>Something went wrong.</p>
-    <% } %>
+        <% } else { %>
+            <p>Something went wrong.</p>
+        <% } %>
     </main>
     <!-- Footer -->
     <%- include('partials/footer') %>

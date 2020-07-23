@@ -6,6 +6,10 @@ const { cmc } = require('../keys');
 const { sleep, toDollarString } = require('./cmn');
 const cmc_api = new CoinMarketCap(keys.cmc);
 
+/* CMC API will list some coins as Stablecoins that are
+ * not actually stablecoins. Manually exclude these mistakes. */
+const EXCLUDE_COINS = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC'];
+
 function cmcCheckError(status) {
     if (status.error_code) {
         let code = status.error_code;
@@ -30,10 +34,16 @@ exports.getAllCMCStablecoins = async () => {
         .getTickers({ limit: 1000 })
         .then((resp) => {
             resp.data.forEach((coin) => {
-                if (coin.tags.includes('stablecoin-asset-backed')) {
-                    ret_list.push(coin.symbol);
+                if (
+                    coin.tags.includes('stablecoin-asset-backed') ||
+                    coin.tags.includes('stablecoin')
+                ) {
+                    if (!EXCLUDE_COINS.includes(coin.symbol))
+                        ret_list.push(coin.symbol);
                 }
             });
+            // console.log(ret_list);
+            // return ret_list;
             return exports.getCMCStablecoins(ret_list);
         })
         .catch((err) => {
@@ -65,15 +75,18 @@ exports.getCMCStablecoins = async (ticker_list) => {
                 let scoin = new Stablecoin(
                     md.name,
                     md.symbol,
+                    null,
                     md.platform
-                        ? new Platform(
-                              md.platform.name == 'Binance Coin'
-                                  ? 'BNB Chain'
-                                  : md.platform.name,
-                              md.platform.token_address,
-                              null // platform total supply - fetched from Blockchain
-                          )
-                        : new Platform(md.name, null, null),
+                        ? [
+                              new Platform(
+                                  md.platform.name == 'Binance Coin'
+                                      ? 'BNB Chain'
+                                      : md.platform.name,
+                                  md.platform.token_address,
+                                  null // platform total supply - fetched from Blockchain
+                              ),
+                          ]
+                        : [new Platform(md.name, null, null)],
                     md.description,
                     q.quote ? q.quote.USD.market_cap : null,
                     q.quote ? q.quote.USD.volume_24h : null,

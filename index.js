@@ -7,26 +7,12 @@ const util = require('./utils/cmn');
 const cmc = require('./utils/cmc');
 
 // CONSTANTS
-const MINS_BETWEEN_UPDATE = 5;
-const COIN_TICKER_LIST = [
-    'USDT',
-    'USDC',
-    'PAX',
-    'BUSD',
-    'TUSD',
-    'HUSD',
-    'DAI',
-    // 'LUNA', -- not pegged to USD, but a basket of currencies
-    'EURS',
-    'SUSD',
-    'GUSD',
-    'SBD',
-    'USDS',
-    'USDK',
-    'USDQ',
-    'EOSDT',
-    'AMPL',
-];
+const MINS_BETWEEN_UPDATE = 10;
+
+// cmc.getAllCMCStablecoins((data) => {
+//     console.log(data);
+//     process.exit();
+// });
 
 // GLOBAL VARS
 let glb_stablecoins = [];
@@ -73,21 +59,38 @@ function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
         // next, update each coin with the custom data that we couldn't retreive from an API.
 
         let scw_coin = scw_coins_list.find((c) => c.symbol === cmc_coin.symbol);
-        if (scw_coin) {
-            scw_coin.platforms.forEach((scw_pltfm) => {
-                let cmc_pltfm = cmc_coin.platforms.find(
-                    (p) => p.name === scw_pltfm.name
-                );
 
-                if (cmc_pltfm) {
-                    if (scw_pltfm.contract_address)
-                        cmc_pltfm.contract_address = scw_pltfm.contract_address;
-                } else {
-                    // this platform was found in SCW data for this coin, but not CMC api
-                    // add platform to CMC coin, which will be used as the final combined data.
-                    cmc_coin.platforms.push(scw_pltfm);
+        if (scw_coin) {
+            for (let key in cmc_coin) {
+                if (
+                    key == 'platforms'
+                    // key == 'desc' ||
+                    // key == 'mcap_s' ||
+                    // key == 'volume_s'
+                )
+                    continue;
+
+                if (scw_coin[key]) {
+                    cmc_coin[key] = scw_coin[key];
                 }
-            }); // for each platform found for this coin in the messari data
+            }
+
+            if (scw_coin.platforms)
+                scw_coin.platforms.forEach((scw_pltfm) => {
+                    let cmc_pltfm = cmc_coin.platforms.find(
+                        (p) => p.name === scw_pltfm.name
+                    );
+
+                    if (cmc_pltfm) {
+                        if (scw_pltfm.contract_address)
+                            cmc_pltfm.contract_address =
+                                scw_pltfm.contract_address;
+                    } else {
+                        // this platform was found in SCW data for this coin, but not CMC api
+                        // add platform to CMC coin, which will be used as the final combined data.
+                        cmc_coin.platforms.push(scw_pltfm);
+                    }
+                }); // for each platform found for this coin in the messari data
         }
     });
 
@@ -109,7 +112,8 @@ function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
 async function fetchStablecoins() {
     // pull new stablecoins data
     let fetching_msri = messari.getAllMessariStablecoins();
-    let fetching_cmc = cmc.getCMCStablecoins(COIN_TICKER_LIST);
+    let fetching_cmc = cmc.getAllCMCStablecoins();
+    // let fetching_cmc = cmc.getCMCStablecoins(COIN_TICKER_LIST);
     let fetching_scw = scw.getSCWStablecoins();
 
     // combined data from multiple APIs
