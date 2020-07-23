@@ -2,6 +2,9 @@ const util = require('./utils/cmn');
 const Platform = require('./platform');
 const eth = require('./utils/eth');
 const omni = require('./utils/omni');
+const tron = require('./utils/tron');
+const bnb = require('./utils/bnb');
+const slp = require('./utils/bch');
 
 class Stablecoin {
     constructor(
@@ -36,7 +39,9 @@ class Stablecoin {
         let PLATFORM_API = {};
         PLATFORM_API['Ethereum'] = eth;
         PLATFORM_API['Bitcoin'] = omni;
-        // PLATFORM_API['Tron'] = tron;
+        PLATFORM_API['Tron'] = tron;
+        PLATFORM_API['BNB Chain'] = bnb;
+        PLATFORM_API['Bitcoin Cash (SLP)'] = slp;
         // PLATFORM_API['EOS'] = null;
 
         if (this.platforms.length == 1) {
