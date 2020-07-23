@@ -79,7 +79,9 @@ exports.getCMCStablecoins = async (ticker_list) => {
                     md.platform
                         ? [
                               new Platform(
-				  md.platform.name,
+                                  md.platform.name == 'Binance Coin'
+                                      ? 'BNB Chain'
+                                      : md.platform.name,
                                   md.platform.token_address,
                                   null // platform total supply - fetched from Blockchain
                               ),
