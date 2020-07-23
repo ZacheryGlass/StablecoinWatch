@@ -36,39 +36,33 @@
 
         <main>
             <% if( glb_platform_data && glb_platform_data.length ) { %>
-            <section class="wrapper">
-                <!-- Row title -->
-                <main class="row title">
-                    <ul class="chainstats">
-                        <li class="chainrank">Rank</li>
-                        <li>Blockchain</li>
-                        <li>Dollars on Chain (USD)</li>
-                        <li>% of Total</li>
-                    </ul>
-                </main>
-                <% for (var i = 0; i < glb_platform_data.length; i++) { %>
-
-                <!-- Row X -->
-                <article class="row type<%=i%4+1%>">
-                    <ul class="chainstats">
-                        <li class="chainrank"><%= i+1 %></li>
-                        <li>
-                            <strong
-                                ><a href="#"
-                                    ><%= glb_platform_data[i].name %></a
-                                ></strong
-                            >
-                        </li>
-                        <li><%= glb_platform_data[i].scoin_total_s %></li>
-                        <li>
-                            <%=
-                            ((glb_platform_data[i].scoin_total/totalMCap)*100).toFixed(2)
-                            %>%
-                        </li>
-                    </ul>
-                </article>
-                <% } } %>
-            </section>
+                <section class="wrapper">
+                    <!-- Row title -->
+                    <main class="row title">
+                        <ul class="chainstats">
+                            <li class="chainrank">Rank</li>
+                            <li>Blockchain</li>
+                            <li>Dollars on Chain (USD)</li>
+                            <li>% of Total</li>
+                        </ul>
+                    </main>
+                    <% for (var i = 0; i < glb_platform_data.length; i++) { %>
+                        <!-- Row X -->
+                        <article class="row type<%=i%4+1%>">
+                            <ul class="chainstats">
+                                <li class="chainrank"><%= i+1 %></li>
+                                <li>
+                                    <strong>
+                                        <a href="#"><%= glb_platform_data[i].name %></a>
+                                    </strong>
+                                </li>
+                                <li><%= glb_platform_data[i].scoin_total_s %></li>
+                                <li><%=((glb_platform_data[i].scoin_total/totalMCap)*100).toFixed(2)%>%</li>
+                            </ul>
+                        </article>
+                    <% } %><!-- for -->
+                </section>
+            <% } %><!-- if -->
         </main>
         <!-- Footer -->
         <%- include('partials/footer') %>

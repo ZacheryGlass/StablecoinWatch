@@ -73,7 +73,7 @@ function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
                 if (scw_coin[key]) {
                     cmc_coin[key] = scw_coin[key];
                 }
-            }
+            } // for (let key in cmc_coin)
 
             if (scw_coin.platforms)
                 scw_coin.platforms.forEach((scw_pltfm) => {
@@ -91,21 +91,24 @@ function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
                         cmc_coin.platforms.push(scw_pltfm);
                     }
                 }); // for each platform found for this coin in the messari data
-        }
+        } //  if (scw_coin)
     });
+    // do not add this yet, as we need to exclude RSR, which incorrectly shows up as a stablecoin on both
+    // CMC and Messari API.
+    // here, check for coins that exist in Messari data but not CMC, if found - push to cmc_coins_list
+    // msri_coins_list.forEach((mcoin) => {
+    //     let cmc_coin = cmc_coins_list.find((c) => c.symbol == mcoin.symbol);
+    //     if (!cmc_coin) {
+    //         console.log('did not find', mcoin.symbol, 'in cmc list');
+    //         cmc_coins_list.push(mcoin);
+    //     }
+    // });
 
-    // here, check for coins that exist in Messari data but not CMC, if found - push to cmc_coin_list
-    /*
-    if(){
-
-        console.log(
-            `${msri_coin.symbol} found in Messari data but not CMC. Consider adding manual CMC ticker list.`
-        );
-        cmc_coin_list.push(msri_coin);
-    }
-    */
-    // return updated cmc coin list
-
+    // here, check for coins that exist in SCW data but not CMC, if found - push to cmc_coins_list
+    scw_coins_list.forEach((scwcoin) => {
+        let cmc_coin = cmc_coins_list.find((c) => c.symbol === scwcoin.symbol);
+        if (!cmc_coin) cmc_coins_list.push(scwcoin);
+    });
     return cmc_coins_list;
 } // end coinbinedCoins()
 
@@ -183,7 +186,7 @@ async function updateGlobalPlatformData() {
                 // if this platform is already in our global data (seen before)
                 // then sum the supply to the total
                 if (gbl_pltfm.name == scoin_pltfm.name) {
-                    gbl_pltfm.scoin_total += scoin_pltfm.supply;
+                    gbl_pltfm.scoin_total += scoin_pltfm.supply * scoin.price;
                     chain_in_gbl_data = true;
                 }
             });
@@ -193,13 +196,15 @@ async function updateGlobalPlatformData() {
             if (!chain_in_gbl_data) {
                 glb_platform_data.push({
                     name: scoin_pltfm.name,
-                    scoin_total: scoin_pltfm.supply,
+                    scoin_total: scoin_pltfm.supply * scoin.price,
                 });
             } // end if
-        }); // end for each
+            glb_totalMCap += scoin_pltfm.supply * scoin.price;
+            // console.log(glb_totalMCap);
+        }); // end for each platform
 
         // update global total data
-        glb_totalMCap += scoin.mcap;
+        // glb_totalMCap += scoin.mcap;
         glb_totalVolume += scoin.volume;
     });
 

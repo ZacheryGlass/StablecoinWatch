@@ -9,6 +9,7 @@ const cmc_api = new CoinMarketCap(keys.cmc);
 /* CMC API will list some coins as Stablecoins that are
  * not actually stablecoins. Manually exclude these mistakes. */
 const EXCLUDE_COINS = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC'];
+const ADDITIONAL_COINS = ['DAI', 'AMPL', 'SUSD'];
 
 function cmcCheckError(status) {
     if (status.error_code) {
@@ -29,9 +30,9 @@ exports.getAllCMCStablecoins = async () => {
     // rather than using getMetadata() in getCMCStablecoins()...
     // Make ticker_list option, default returns all CMCStablecois
     // so reduce to a single function.
-    let ret_list = [];
+    let ret_list = ADDITIONAL_COINS;
     return cmc_api
-        .getTickers({ limit: 1000 })
+        .getTickers({ limit: 3000 })
         .then((resp) => {
             resp.data.forEach((coin) => {
                 if (
