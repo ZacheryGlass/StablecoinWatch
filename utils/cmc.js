@@ -6,6 +6,11 @@ const { cmc } = require('../keys');
 const { sleep, toDollarString } = require('./cmn');
 const cmc_api = new CoinMarketCap(keys.cmc);
 
+/* CMC API will list some coins as Stablecoins that are
+ * not actually stablecoins. Manually exclude these mistakes. */
+const EXCLUDE_COINS = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC'];
+const ADDITIONAL_COINS = ['DAI', 'AMPL', 'SUSD'];
+
 function cmcCheckError(status) {
     if (status.error_code) {
         let code = status.error_code;
@@ -16,26 +21,6 @@ function cmcCheckError(status) {
     }
 } // end cmcCheckError()
 
-exports.stablecoin_tickers = [
-    'USDT',
-    'USDC',
-    'PAX',
-    'BUSD',
-    'TUSD',
-    'HUSD',
-    'DAI',
-    // 'LUNA', -- not pegged to USD, but a basket of currencies
-    'EURS',
-    'SUSD',
-    'GUSD',
-    'SBD',
-    'USDS',
-    'USDK',
-    'USDQ',
-    'EOSDT',
-    'AMPL',
-];
-
 // This function returns all coins listed as stablecoins on CoinMarketCap
 // NOTE: This includes coins pegged to assets other than the US Dollar,
 // and oddly does not include DAI
@@ -45,15 +30,20 @@ exports.getAllCMCStablecoins = async () => {
     // rather than using getMetadata() in getCMCStablecoins()...
     // Make ticker_list option, default returns all CMCStablecois
     // so reduce to a single function.
-    let ret_list = [];
+    let ret_list = ADDITIONAL_COINS;
     return cmc_api
-        .getTickers({ limit: 1000 })
+        .getTickers({ limit: 3000 })
         .then((resp) => {
             resp.data.forEach((coin) => {
-                if (coin.tags.includes('stablecoin-asset-backed')) {
-                    ret_list.push(coin.symbol);
+                if (
+                    coin.tags.includes('stablecoin-asset-backed') ||
+                    coin.tags.includes('stablecoin')
+                ) {
+                    if (!EXCLUDE_COINS.includes(coin.symbol))
+                        ret_list.push(coin.symbol);
                 }
             });
+
             return exports.getCMCStablecoins(ret_list);
         })
         .catch((err) => {
@@ -89,17 +79,19 @@ exports.getCMCStablecoins = async (ticker_list) => {
                     md.platform
                         ? [
                               new Platform(
-                                  md.platform.name,
+				  md.platform.name,
                                   md.platform.token_address,
                                   null // platform total supply - fetched from Blockchain
                               ),
                           ]
-                        : [new Platform(md.name, null, q.total_supply)],
+                        : [new Platform(md.name, null, null)],
                     md.description,
                     q.quote ? q.quote.USD.market_cap : null,
                     q.quote ? q.quote.USD.volume_24h : null,
                     md.logo,
-                    q.quote ? q.quote.USD.price.toFixed(3) : null
+                    q.quote ? q.quote.USD.price.toFixed(3) : null,
+                    q.total_supply,
+                    q.circulating_supply
                 );
 
                 coin_list_ret.push(scoin);
