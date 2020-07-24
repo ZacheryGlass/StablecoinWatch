@@ -46,18 +46,20 @@
                             <li>% of Total</li>
                         </ul>
                     </main>
-                    <% for (var i = 0; i < glb_platform_data.length; i++) { %>
+                    <% for (let i = 0; i < glb_platform_data.length; i++) { %>
+                        <% let p = glb_platform_data[i] %>
                         <!-- Row X -->
                         <article class="row type<%=i%4+1%>">
                             <ul class="chainstats">
                                 <li class="chainrank"><%= i+1 %></li>
                                 <li>
                                     <strong>
-                                        <a href="#"><%= glb_platform_data[i].name %></a>
+                                        <a href="#"><%= p.name %></a>
                                     </strong>
                                 </li>
-                                <li><%= glb_platform_data[i].scoin_total_s %></li>
-                                <li><%=((glb_platform_data[i].scoin_total/totalMCap)*100).toFixed(2)%>%</li>
+                                <li><%= p.total_mcap_s %></li>
+                                <% let pct = ( p.total_mcap / totalMCap ) * 100; %>
+                                <li><%=(pct).toFixed(2)%>%</li>
                             </ul>
                         </article>
                     <% } %><!-- for -->

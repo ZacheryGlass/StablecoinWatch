@@ -28,9 +28,7 @@ exports.stripHTML = (str) => {
 }; // stripHTML()
 
 exports.getTokenPlatform = (token) => {
-    if (typeof token !== 'string') {
-        return 'Unknown';
-    }
+    if (typeof token !== 'string') return 'Unknown';
 
     if (token.toUpperCase().startsWith('ERC')) {
         return 'Ethereum';

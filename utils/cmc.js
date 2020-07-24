@@ -80,12 +80,8 @@ async function buildCMCStablecoinList() {
             console.log('Built CMC Coin List');
             cmcCheckError(resp.status);
             resp.data.forEach((coin) => {
-                if (
-                    coin.tags.includes('stablecoin-asset-backed') ||
-                    coin.tags.includes('stablecoin')
-                ) {
-                    if (!EXCLUDE_COINS.includes(coin.symbol))
-                        glb_cmc_tickers.push(coin.symbol);
+                if (coin.tags.includes('stablecoin-asset-backed') || coin.tags.includes('stablecoin')) {
+                    if (!EXCLUDE_COINS.includes(coin.symbol)) glb_cmc_tickers.push(coin.symbol);
                 }
             });
         })
@@ -122,32 +118,29 @@ exports.getCMCStablecoins = async (ticker_list) => {
                 let md = metadata_resp.data[key];
                 let q = {};
 
-                if (quote_resp.data.hasOwnProperty(key))
-                    q = quote_resp.data[key];
+                if (quote_resp.data.hasOwnProperty(key)) q = quote_resp.data[key];
 
-                let scoin = new Stablecoin(
-                    md.name,
-                    md.symbol,
-                    null,
-                    md.platform
-                        ? [
-                              new Platform(
-                                  md.platform.name == 'Binance Coin'
-                                      ? 'BNB Chain'
-                                      : md.platform.name,
-                                  md.platform.token_address,
-                                  null // platform total supply - fetched from Blockchain
-                              ),
-                          ]
-                        : [new Platform(md.name, null, null)],
-                    md.description,
-                    q.quote ? q.quote.USD.market_cap : null,
-                    q.quote ? q.quote.USD.volume_24h : null,
-                    md.logo,
-                    q.quote ? q.quote.USD.price.toFixed(3) : null,
-                    q.total_supply,
-                    q.circulating_supply
-                );
+                let scoin = new Stablecoin();
+                scoin.name = md.name;
+                scoin.symbol = md.symbol;
+                scoin.platforms = md.platform
+                    ? [
+                          new Platform(
+                              md.platform.name == 'Binance Coin' ? 'BNB Chain' : md.platform.name,
+                              md.platform.token_address,
+                              null // platform total supply - fetched from Blockchain
+                          ),
+                      ]
+                    : [new Platform(md.name)];
+                scoin.cmc.desc = md.description;
+                scoin.cmc.mcap = q.quote ? q.quote.USD.market_cap : null;
+                scoin.cmc.mcap_s = toDollarString(scoin.cmc.mcap);
+                scoin.cmc.volume = q.quote ? q.quote.USD.volume_24h : null;
+                scoin.cmc.volume_s = toDollarString(scoin.cmc.volume);
+                scoin.img_url = md.logo;
+                scoin.cmc.price = q.quote ? q.quote.USD.price.toFixed(3) : null;
+                scoin.cmc.total_supply = q.total_supply;
+                scoin.cmc.circulating_supply = q.circulating_supply;
 
                 coin_list_ret.push(scoin);
             });

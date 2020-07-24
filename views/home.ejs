@@ -162,7 +162,7 @@
     <%- include('partials/header') %>
     <!-- Header -->
     <main>
-        <% if( coins ) { %>
+        <% if (coins) { %>
             <section class="wrapper">
                 <!-- Row title -->
                 <main class="row title">
@@ -178,70 +178,88 @@
                         <li class="platform">Platform</li>
                     </ul>
                 </main>
-                <% coins.forEach( (coin, i) => { %>
-                    <% if( !coin.name || !coin.symbol ) return; %>
 
+                <!-- for each coin -->
+                <% coins.forEach((coin, i) => {  %>
+                    <!-- if no data, skip this coin -->
+                    <% if (!coin.name || !coin.symbol) return; %>
                     <!-- Row X -->
                     <article class="row expand type<%=i%4+1%>">
+
                         <ul class="coinstats">
+
                             <!-- rank -->
                             <li class="coinrank"><%= (i+1) %></li>
+
                             <!-- name -->
                             <li class="name">
                                 <strong><a href="#"><%= coin.name %></a></strong>
                             </li>
+
                             <!-- symbol -->
                             <li class="symbol">
                                 <img class="coin_logo" src="<%= coin.img_url %>" alt="" />
                                 <%= coin.symbol %>
                             </li>
+
                             <!-- price -->
-                            <% if( coin.price ) { %>
-                                <li>$<%= coin.price %></li>
+                            <% if (coin.main.price) { %>
+                                <li>$<%= coin.main.price %></li>
                             <% } else { %>
                                 <li>No data</li>
                             <% } %>
+
                             <!-- market cap -->
-                            <% if( coin.mcap_s ) { %>
-                                <li><%= coin.mcap_s %></li>
+                            <% if (coin.main.mcap_s) { %>
+                                <li><%= coin.main.mcap_s %></li>
                             <% } else { %>
                                 <li>No data</li>
                             <% } %>
+
                             <!-- market cap dominance -->
-                            <li class='mcap_dom'>
-                                <%= ((coin.mcap/totalMCap)*100).toFixed(2) %>%
-                            </li>
+                            <% if (coin.main.mcap && totalMCap) { %>
+                                <li class='mcap_dom'>
+                                    <%= ((coin.main.mcap/totalMCap)*100).toFixed(2) %>%
+                                </li>
+                            <% } else { %>
+                                <li class='mcap_dom'>
+                                    No data
+                                </li>
+                            <% } %>
+                            
+
                             <!-- volume -->
-                            <% if( coin.volume_s ) { %>
-                                <li><%= coin.volume_s %></li>
+                            <% if (coin.main.volume_s) { %>
+                                <li><%= coin.main.volume_s %></li>
                             <% } else { %>
                                 <li>No data</li>
                             <% } %>
-                            <!-- volume dominance -->
-                            <!-- <li>
-                                    <%#= ((coin.volume/totalVolume)*100).toFixed(2) %>%
-                                </li> -->
+
+                            <!-- volume dominance
+                            <li>
+                                <%#= ((coin.main.volume/totalVolume)*100).toFixed(2) %>%
+                            </li> -->
 
                             <!-- platforms -->
-                            <% if ( coin.platforms.length > 1 ) { %>
+                            <% if (coin.platforms.length > 1) { %>
                                 <li class="platform">
                                     <ul class="supply_list">
-                                        <% let sum = 0; coin.platforms.forEach( (platform, i) => { %>
+                                        <% let sum = 0; coin.platforms.forEach((platform, i) => { %>
                                             <li class="p_gridy">
-                                                <% if ( i < 2 ) { %>
+                                                <% if (i < 2) { %>
                                                     <div class="a">
                                                         <%= platform.name %>: 
                                                     </div>
                                                     <div class="b">
-                                                        <% if (platform.supply && coin.cmc_total_supply) { %>
-                                                            <% let pct =  Math.min( 100, ( ( platform.supply / coin.cmc_total_supply ) * 100 ))%>
+                                                        <% if (platform.supply && coin.main.total_supply) { %>
+                                                            <% let pct =  Math.min(100, ((platform.supply / coin.main.total_supply) * 100))%>
                                                             <% sum += pct; %>
                                                             <%=pct.toFixed() %>%
                                                         <% } else { %>
                                                             ?%
                                                         <% } %>
                                                     </div>
-                                                <% } else if ( i == 2 ) { %>
+                                                <% } else if (i == 2) { %>
                                                     <!-- <a href=""> -->
                                                         <div class="a">Other:</div>
                                                         <div class="b"><%= (100-sum).toFixed()%>%</div>
@@ -257,11 +275,13 @@
                                 </li>
                             <% } %> 
                         </ul>
+                        <!--
                         <ul class="more-content">
                             <li class="split">
-                                <%= coin.desc %>
+                                <%#= coin.main.desc %>
                             </li>
                         </ul>
+                        -->
                     </article>
                 <% }) %> <!-- forEach coin -->
             </section>
