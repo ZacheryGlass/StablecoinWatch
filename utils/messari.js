@@ -13,13 +13,17 @@ exports.getAllMessariStablecoins = async () => {
     allCoins.forEach((coin) => {
         if (coin.profile.sector == 'Stablecoins') {
             // format platforms
-            let token_types = coin.profile.token_details.type.split(', ');
             let platforms = [];
-            token_types.forEach((token_type) => {
-                let platform_name = util.getTokenPlatform(token_type);
-                if (platform_name == 'Native') platform_name = coin.name;
-                platforms.push(new Platform(platform_name));
-            });
+            try {
+                let token_types = coin.profile.token_details.type.split(', ');
+                token_types.forEach((token_type) => {
+                    let platform_name = util.getTokenPlatform(token_type);
+                    if (platform_name == 'Native') platform_name = coin.name;
+                    platforms.push(new Platform(platform_name));
+                });
+            } catch {
+                console.log(`No platforms for Messari coin ${coin.name}`);
+            }
 
             let scoin = new Stablecoin(
                 /* name         */ coin.name,

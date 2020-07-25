@@ -1,54 +1,107 @@
 const keys = require('../keys');
 const CoinMarketCap = require('coinmarketcap-api');
+const cmc_api = new CoinMarketCap(keys.cmc);
 const Stablecoin = require('../stablecoin');
 const Platform = require('../platform');
 const { cmc } = require('../keys');
 const { sleep, toDollarString } = require('./cmn');
-const cmc_api = new CoinMarketCap(keys.cmc);
+const cron = require('node-cron');
 
-/* CMC API will list some coins as Stablecoins that are
- * not actually stablecoins. Manually exclude these mistakes. */
+// CONSTANTS
+const MINS_BETWEEN_UPDATE = 60 * 8; /* 8 hours */
+const DEBUGING = true;
+// CMC API will list some coins as Stablecoins that are
+// not actually stablecoins. Manually exclude these mistakes.
 const EXCLUDE_COINS = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC'];
 const ADDITIONAL_COINS = ['DAI', 'AMPL', 'SUSD'];
+const DEBUG_COIN_LIST = [
+    'USDT',
+    'USDC',
+    'AMPL',
+    'DAI',
+    'PAX',
+    'TUSD',
+    'BUSD',
+    'HUSD',
+    'EURS',
+    'USDK',
+    'SUSD',
+    'GUSD',
+    'DGX',
+    'SBD',
+    'USDQ',
+    'XCHF',
+    'BITCNY',
+    'XAUR',
+    'IDRT',
+    'EOSDT',
+    'CONST',
+    'BITUSD',
+    'XPD',
+    'USDS',
+    'HGT',
+    'BITEUR',
+    'ITL',
+    'BITGOLD',
+    'XEUR',
+    '1GOLD',
+    'CNHT',
+    'XAUT',
+];
 
 function cmcCheckError(status) {
+    console.log(`${status.timestamp}: Used ${status.credit_count} CMC Credits`);
+
     if (status.error_code) {
         let code = status.error_code;
         let msg = status.error_message;
-        // console.log('CMC API ERROR CODE: ', code);
-        // console.log('CMC API ERROR MSG: ', msg);
         throw `CMC API ERROR ${code}: ${msg}`;
     }
 } // end cmcCheckError()
 
-// This function returns all coins listed as stablecoins on CoinMarketCap
-// NOTE: This includes coins pegged to assets other than the US Dollar,
-// and oddly does not include DAI
-exports.getAllCMCStablecoins = async () => {
-    // TODO: This function can be reduced to two API calles by using
-    // using getTickers() and looping through each coin manually
-    // rather than using getMetadata() in getCMCStablecoins()...
-    // Make ticker_list option, default returns all CMCStablecois
-    // so reduce to a single function.
-    let ret_list = ADDITIONAL_COINS;
+/* Global variables */
+let glb_cmc_tickers = [];
+
+/* scheduled tasks */
+cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, buildCMCStablecoinList);
+
+/* Functions */
+async function buildCMCStablecoinList() {
+    if (DEBUGING) {
+        glb_cmc_tickers = DEBUG_COIN_LIST;
+        return;
+    }
+
+    glb_cmc_tickers = ADDITIONAL_COINS;
+
     return cmc_api
         .getTickers({ limit: 3000 })
         .then((resp) => {
+            console.log('Built CMC Coin List');
+            cmcCheckError(resp.status);
             resp.data.forEach((coin) => {
                 if (
                     coin.tags.includes('stablecoin-asset-backed') ||
                     coin.tags.includes('stablecoin')
                 ) {
                     if (!EXCLUDE_COINS.includes(coin.symbol))
-                        ret_list.push(coin.symbol);
+                        glb_cmc_tickers.push(coin.symbol);
                 }
             });
-
-            return exports.getCMCStablecoins(ret_list);
         })
         .catch((err) => {
             console.log('ERROR: ', err);
         });
+} // buildCMCStablecoinList()
+
+// This function returns all coins listed as stablecoins on CoinMarketCap
+// NOTE: This includes coins pegged to assets other than the US Dollar,
+// and oddly does not include DAI
+exports.getAllCMCStablecoins = async () => {
+    if (!glb_cmc_tickers || glb_cmc_tickers.length == 0) {
+        await buildCMCStablecoinList();
+    }
+    return exports.getCMCStablecoins(glb_cmc_tickers);
 }; // end getCMCStablecoins()
 
 // Get a list of Stablecoin Objects from a list of tickers
@@ -61,13 +114,13 @@ exports.getCMCStablecoins = async (ticker_list) => {
             let metadata_resp = scoins_arr[0];
             let quote_resp = scoins_arr[1];
             cmcCheckError(metadata_resp.status);
-            cmcCheckError(metadata_resp.status);
+            cmcCheckError(quote_resp.status);
 
             // build return list
             let coin_list_ret = [];
             Object.keys(metadata_resp.data).forEach(function (key, i) {
                 let md = metadata_resp.data[key];
-                let q = null;
+                let q = {};
 
                 if (quote_resp.data.hasOwnProperty(key))
                     q = quote_resp.data[key];

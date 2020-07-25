@@ -7,7 +7,7 @@ const util = require('./utils/cmn');
 const cmc = require('./utils/cmc');
 
 // CONSTANTS
-const MINS_BETWEEN_UPDATE = 10;
+const MINS_BETWEEN_UPDATE = 15;
 
 // GLOBAL VARS
 let glb_stablecoins = [];
@@ -109,8 +109,8 @@ async function fetchStablecoins() {
     let fetching_scw = scw.getSCWStablecoins();
 
     // combined data from multiple APIs
-    return Promise.all([fetching_msri, fetching_cmc, fetching_scw]).then(
-        async (scoins_arr) => {
+    return Promise.all([fetching_msri, fetching_cmc, fetching_scw])
+        .then(async (scoins_arr) => {
             let msri_coins_list = scoins_arr[0];
             let cmc_coins_list = scoins_arr[1];
             let scw_coins_list = scoins_arr[2];
@@ -129,8 +129,10 @@ async function fetchStablecoins() {
             );
 
             return ret_list;
-        }
-    );
+        })
+        .catch((e) => {
+            console.log(e);
+        });
 } // fetchStablecoins()
 
 function updateGlobalStablecoinData(new_stablecoin_data) {
