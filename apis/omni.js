@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-const util = require('./cmn');
+const util = require('../cmn');
 
 exports.getTokenSupply = async (token_id) => {
     const omni_api_url = `https://api.omniexplorer.info/v1/property/${token_id}`;

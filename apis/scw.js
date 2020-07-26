@@ -1,7 +1,7 @@
-const Stablecoin = require('./stablecoin');
-const Platform = require('./platform');
+const Stablecoin = require('../stablecoin');
+const Platform = require('../platform');
 
-let sc = [];
+let glb_sc = [];
 
 /*-----------------------------------------------
     USDC
@@ -9,7 +9,7 @@ let sc = [];
 let coin = new Stablecoin();
 coin.symbol = 'USDC';
 coin.scw.peg = '1 USD';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     IDRT
@@ -17,7 +17,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'IDRT ;';
 coin.scw.peg = '1 Rupiah';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     PAX
@@ -25,7 +25,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'PAX';
 coin.scw.peg = '1 USD';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     HUSD
@@ -33,7 +33,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'HUSD';
 coin.scw.peg = '1 USD';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     EURS
@@ -41,7 +41,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'EURS';
 coin.scw.peg = '1 EUR';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     USDK
@@ -49,7 +49,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'USDK';
 coin.scw.peg = '1 USD';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     GUSD
@@ -57,7 +57,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'GUSD';
 coin.scw.peg = '1 USD';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     Digix Gold token
@@ -65,7 +65,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'DGX';
 coin.scw.peg = '1g Gold';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     SBD
@@ -73,7 +73,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'SBD';
 coin.scw.peg = '1 USD';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     USDQ
@@ -81,7 +81,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'USDQ';
 coin.scw.peg = '1 USD';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     XCHF
@@ -89,7 +89,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'XCHF';
 coin.scw.peg = '1 CHF';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     BITCNY
@@ -97,7 +97,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'BITCNY';
 coin.scw.peg = '1 CNY';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     XAUR
@@ -105,7 +105,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'XAUR';
 coin.scw.peg = '.001g Gold';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     EOSDT
@@ -113,7 +113,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'EOSDT';
 coin.scw.peg = '1 USD';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     CONST
@@ -121,7 +121,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'CONST';
 coin.scw.peg = '1 USD';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     BITUSD
@@ -129,7 +129,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'BITUSD';
 coin.scw.peg = '1 USD';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     XPD
@@ -137,7 +137,7 @@ sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'XPD';
 coin.scw.peg = '1 USD';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     StableUSD / Stably
@@ -146,7 +146,7 @@ coin = new Stablecoin();
 coin.symbol = 'USDS';
 coin.scw.peg = '1 USD';
 coin.platforms.push(new Platform('Ethereum', '0xa4bdb11dc0a2bec88d24a3aa1e6bb17201112ebe'));
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     TrueUSD
@@ -155,7 +155,7 @@ coin = new Stablecoin();
 coin.symbol = 'TUSD';
 coin.scw.peg = '1 USD';
 coin.platforms.push(new Platform('Ethereum', '0x0000000000085d4780B73119b644AE5ecd22b376'));
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     Binance USD
@@ -164,7 +164,7 @@ coin = new Stablecoin();
 coin.symbol = 'BUSD';
 coin.scw.peg = '1 USD';
 coin.platforms.push(new Platform('Ethereum', '0x4fabb145d64652a948d72533023f6e7a623c7c53'));
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     Tether
@@ -180,7 +180,7 @@ coin.platforms.push(new Platform('Algorand', 'XIU7HGGAJ3QOTATPDSIIHPFVKMICXKHMOR
 coin.platforms.push(
     new Platform('Bitcoin Cash (SLP)', '9fc89d6b7d5be2eac0b3787c5b8236bca5de641b5bafafc8f450727b63615c11')
 );
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     Tether EUR
@@ -193,7 +193,7 @@ coin.platforms.push(new Platform('Ethereum', '0xabdf147870235fcfc34153828c769a70
 coin.platforms.push(new Platform('Bitcoin', 41));
 coin.scw.desc = 'https://wallet.tether.to/transparency';
 coin.img_url = '/tether.png';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     Tether CNH
@@ -205,7 +205,7 @@ coin.scw.peg = '1 CNH';
 coin.platforms.push(new Platform('Ethereum', '0x6e109e9dd7fa1a58bc3eff667e8e41fc3cc07aef'));
 coin.scw.desc = 'https://wallet.tether.to/transparency';
 coin.img_url = '/tether.png';
-sc.push(coin);
+glb_sc.push(coin);
 
 /*-----------------------------------------------
     Token Gold
@@ -223,7 +223,8 @@ currencies like the US dollar, the Euro, and the Yen. Tether Gold (XAUT) is \
 issued on the Ethereum blockchain. For details on the issuance please refer to: \
 https://wallet.tether.to/transparency';
 coin.img_url = '/tether-gold-logo.svg';
-sc.push(coin);
+glb_sc.push(coin);
 
-// exports
-module.exports = sc;
+exports.getSCWStablecoins = async () => {
+    return glb_sc;
+}; // getSCWStablecoins()

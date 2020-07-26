@@ -1,10 +1,10 @@
 const https = require('https');
 const express = require('express');
 const cron = require('node-cron');
-const messari = require('./utils/messari');
-const scw = require('./utils/scw');
-const util = require('./utils/cmn');
-const cmc = require('./utils/cmc');
+const messari = require('./apis/messari');
+const scw = require('./apis/scw');
+const util = require('./cmn');
+const cmc = require('./apis/cmc');
 
 // CONSTANTS
 const MINS_BETWEEN_UPDATE = 15;

@@ -4,7 +4,7 @@ const cmc_api = new CoinMarketCap(keys.cmc);
 const Stablecoin = require('../stablecoin');
 const Platform = require('../platform');
 const { cmc } = require('../keys');
-const { sleep, toDollarString } = require('./cmn');
+const { sleep, toDollarString } = require('../cmn');
 const cron = require('node-cron');
 
 // CONSTANTS
