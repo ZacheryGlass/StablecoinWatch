@@ -5,6 +5,7 @@ const omni = require('./apis/omni');
 const tron = require('./apis/tron');
 const bnb = require('./apis/bnb');
 const slp = require('./apis/bch');
+const algo = require('./apis/algo');
 
 class Stablecoin {
     /*----------------------------------------------
@@ -85,6 +86,7 @@ class Stablecoin {
         PLATFORM_API['BNB Chain'] = bnb;
         PLATFORM_API['Bitcoin Cash (SLP)'] = slp;
         PLATFORM_API['EOS'] = null;
+        PLATFORM_API['Algorand'] = algo;
 
         await Promise.all(
             this.platforms.map(async (platform) => {
