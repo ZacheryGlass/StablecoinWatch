@@ -1,11 +1,11 @@
-const util = require('./cmn');
+const util = require('./util');
 const Platform = require('./platform');
-const eth = require('./apis/eth');
-const omni = require('./apis/omni');
-const tron = require('./apis/tron');
-const bnb = require('./apis/bnb');
-const slp = require('./apis/bch');
-const algo = require('./apis/algo');
+const eth = require('./api/eth');
+const omni = require('./api/omni');
+const tron = require('./api/tron');
+const bnb = require('./api/bnb');
+const slp = require('./api/bch');
+const algo = require('./api/algo');
 
 class Stablecoin {
     /*----------------------------------------------

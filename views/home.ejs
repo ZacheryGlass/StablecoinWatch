@@ -162,7 +162,7 @@
     <%- include('partials/header') %>
     <!-- Header -->
     <main>
-        <% if (coins) { %>
+        <% if (data.stablecoins) { %>
             <section class="wrapper">
                 <!-- Row title -->
                 <main class="row title">
@@ -180,7 +180,7 @@
                 </main>
 
                 <!-- for each coin -->
-                <% coins.forEach((coin, i) => {  %>
+                <% data.stablecoins.forEach((coin, i) => {  %>
                     <!-- if no data, skip this coin -->
                     <% if (!coin.name || !coin.symbol) return; %>
                     <!-- Row X -->
@@ -217,9 +217,9 @@
                             <% } %>
 
                             <!-- market cap dominance -->
-                            <% if (coin.main.mcap && totalMCap) { %>
+                            <% if (coin.main.mcap && data.totalMCap) { %>
                                 <li class='mcap_dom'>
-                                    <%= ((coin.main.mcap/totalMCap)*100).toFixed(2) %>%
+                                    <%= ((coin.main.mcap/data.totalMCap)*100).toFixed(2) %>%
                                 </li>
                             <% } else { %>
                                 <li class='mcap_dom'>

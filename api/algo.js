@@ -23,7 +23,6 @@ async function getAccountInfo(address) {
 
 async function getTokenSupplyByAddress(address) {
     let info = await getAccountInfo(address);
-    // console.log(info)
     coin_ids = Object.keys(info.thisassettotal);
 
     if (coin_ids.length > 1) {
@@ -37,25 +36,3 @@ async function getTokenSupplyByAddress(address) {
 }
 
 exports.getTokenSupply = getTokenSupplyByAddress;
-
-
-
-
-
-
-// const algosdk = require('algosdk');
-// const indexer_token = "";
-// const indexer_server = "http://localhost";
-// const indexer_port = 8980;
-
-// //let indexerClient = algodclient;
-
-// (async () => {
-//     let currencyGreater = 10;
-//     let transactionInfo = await indexerClient.searchForTransactions()
-//         .currencyGreaterThan(currencyGreater).do();
-//     console.log("Information for Transaction search: " + JSON.stringify(transactionInfo, undefined, 2));
-// })().catch(e => {
-//     console.log(e);
-//     console.trace();
-// });
