@@ -1,6 +1,12 @@
+/*---------------------------------------------------------
+    IMPORTS
+---------------------------------------------------------*/
 const fetch = require('node-fetch');
-const util = require('../cmn');
+const util = require('../util');
 
+/*---------------------------------------------------------
+    FUNCTIONS
+---------------------------------------------------------*/
 exports.getTokenSupply = async (token_id) => {
     const slp_api_url = `https://rest.bitcoin.com/v2/slp/list/${token_id}`;
     const response = await fetch(slp_api_url);

@@ -4,10 +4,12 @@ const cmc_api = new CoinMarketCap(keys.cmc);
 const Stablecoin = require('../stablecoin');
 const Platform = require('../platform');
 const { cmc } = require('../keys');
-const { sleep, toDollarString } = require('../cmn');
+const { sleep, toDollarString } = require('../util');
 const cron = require('node-cron');
 
-// CONSTANTS
+/*---------------------------------------------------------
+    CONSTANTS
+---------------------------------------------------------*/
 const MINS_BETWEEN_UPDATE = 60 * 8; /* 8 hours */
 const DEBUGING = true;
 // CMC API will list some coins as Stablecoins that are
@@ -49,6 +51,27 @@ const DEBUG_COIN_LIST = [
     'XAUT',
 ];
 
+/*---------------------------------------------------------
+    MODULE VARIABLES
+---------------------------------------------------------*/
+let glb_cmc_tickers = [];
+
+/*---------------------------------------------------------
+    SCHEDULED TASKS
+---------------------------------------------------------*/
+cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, buildCMCStablecoinList);
+
+/*---------------------------------------------------------
+    FUNCTIONS
+---------------------------------------------------------*/
+
+/*---------------------------------------------------------
+Function:
+        cmcCheckError
+Description:
+        Checks the return status of an CoinMarketCap API
+        reponse to see if an error code was set.
+---------------------------------------------------------*/
 function cmcCheckError(status) {
     console.log(`${status.timestamp}: Used ${status.credit_count} CMC Credits`);
 
@@ -59,13 +82,13 @@ function cmcCheckError(status) {
     }
 } // end cmcCheckError()
 
-/* Global variables */
-let glb_cmc_tickers = [];
-
-/* scheduled tasks */
-cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, buildCMCStablecoinList);
-
-/* Functions */
+/*---------------------------------------------------------
+Function:
+        buildCMCStablecoinList
+Description:
+        This pulls the CoinMarketCap API to build a list of
+        Stablecoins.
+---------------------------------------------------------*/
 async function buildCMCStablecoinList() {
     if (DEBUGING) {
         glb_cmc_tickers = DEBUG_COIN_LIST;
@@ -90,9 +113,15 @@ async function buildCMCStablecoinList() {
         });
 } // buildCMCStablecoinList()
 
-// This function returns all coins listed as stablecoins on CoinMarketCap
-// NOTE: This includes coins pegged to assets other than the US Dollar,
-// and oddly does not include DAI
+/*---------------------------------------------------------
+Function:
+        cmc.getCMCStablecoins()
+Description:
+        This function returns all coins listed as stablecoins
+        on CoinMarketCap API.
+Note:   This includes coins pegged to assets other than the
+        US Dollar, but oddly does not some coins such as DAI
+---------------------------------------------------------*/
 exports.getAllCMCStablecoins = async () => {
     if (!glb_cmc_tickers || glb_cmc_tickers.length == 0) {
         await buildCMCStablecoinList();
@@ -100,7 +129,12 @@ exports.getAllCMCStablecoins = async () => {
     return exports.getCMCStablecoins(glb_cmc_tickers);
 }; // end getCMCStablecoins()
 
-// Get a list of Stablecoin Objects from a list of tickers
+/*---------------------------------------------------------
+Function:
+        cmc.getCMCStablecoins()
+Description:
+        Get a list of Stablecoin Objects from a list of tickers
+---------------------------------------------------------*/
 exports.getCMCStablecoins = async (ticker_list) => {
     let fetching_metadata = cmc_api.getMetadata({ symbol: ticker_list });
     let fetching_quote = cmc_api.getQuotes({ symbol: ticker_list });

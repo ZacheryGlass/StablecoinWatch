@@ -1,8 +1,18 @@
+/*---------------------------------------------------------
+    IMPORTS
+---------------------------------------------------------*/
 const keys = require('../keys');
 const Web3 = require('web3');
-const ERC20Contract = require('erc20-contract-js');
 
+/*---------------------------------------------------------
+    MODULE VARIABLES
+---------------------------------------------------------*/
+const ERC20Contract = require('erc20-contract-js');
 const web3 = new Web3(new Web3.providers.HttpProvider(`https://mainnet.infura.io/v3/${keys.infura.project_id}`));
+
+/*---------------------------------------------------------
+    FUNCTIONS
+---------------------------------------------------------*/
 
 exports.getTokenSupply = async (contract_address) => {
     const erc20Contract = new ERC20Contract(web3, contract_address);

@@ -1,34 +1,30 @@
+/*---------------------------------------------------------
+    IMPORTS
+---------------------------------------------------------*/
 const https = require('https');
 const express = require('express');
 const cron = require('node-cron');
-const messari = require('./apis/messari');
-const scw = require('./apis/scw');
-const util = require('./cmn');
-const cmc = require('./apis/cmc');
+const messari = require('./api/messari');
+const scw = require('./api/scw');
+const util = require('./util');
+const cmc = require('./api/cmc');
 
-// CONSTANTS
-const MINS_BETWEEN_UPDATE = 15;
-
-// GLOBAL VARS
+/*---------------------------------------------------------
+    MODULE VARIABLES
+---------------------------------------------------------*/
 let glb_stablecoins = [];
 let glb_totalMCap = 0;
 let glb_totalVolume = 0;
 let glb_platform_data = [];
 
-// set up express app.
-const app = express();
+/*---------------------------------------------------------
+    FUNCTIONS
+---------------------------------------------------------*/
 
-app.set('view engine', 'ejs');
-app.use(express.static(__dirname + '/styles'));
-app.use(express.static(__dirname + '/res'));
-
-updateData();
-cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, updateData);
-
-/*----------------------------------------------
+/*---------------------------------------------------------
 Function:       combineCoins
 Description: 
-------------------------------------------------*/
+---------------------------------------------------------*/
 function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
     // loop through each CMC coin
     cmc_coins_list.forEach((cmc_coin) => {
@@ -56,7 +52,7 @@ function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
                         cmc_coin.platforms.push(scw_pltfm);
                     }
                 });
-        } //  if (scw_coin)
+        } // if (scw_coin)
     });
 
     // here, check for coins that exist in SCW data but not CMC, if found - push to cmc_coins_list
@@ -68,10 +64,10 @@ function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
     return cmc_coins_list;
 } // end coinbinedCoins()
 
-/*----------------------------------------------
+/*---------------------------------------------------------
 Function:       fetchStablecoins
 Description: 
-------------------------------------------------*/
+---------------------------------------------------------*/
 async function fetchStablecoins() {
     // pull new stablecoins data
     let fetching_msri = messari.getAllMessariStablecoins();
@@ -100,10 +96,10 @@ async function fetchStablecoins() {
         });
 } // fetchStablecoins()
 
-/*----------------------------------------------
+/*---------------------------------------------------------
 Function:       updateGlobalStablecoinData
 Description: 
-------------------------------------------------*/
+---------------------------------------------------------*/
 function updateGlobalStablecoinData(new_stablecoin_data) {
     new_stablecoin_data.forEach((scoin_temp) => {
         let scoin_temp_found = false;
@@ -130,10 +126,10 @@ function updateGlobalStablecoinData(new_stablecoin_data) {
     });
 } // updateGlobalStablecoinData()
 
-/*----------------------------------------------
+/*---------------------------------------------------------
 Function:       updateGlobalPlatformData
 Description: 
-------------------------------------------------*/
+---------------------------------------------------------*/
 async function updateGlobalPlatformData() {
     glb_platform_data = [];
 
@@ -141,12 +137,15 @@ async function updateGlobalPlatformData() {
 
     glb_stablecoins.forEach((scoin) => {
         if (!scoin.platforms) return;
+        if (!scoin.main.total_supply) return;
         if (!scoin.main) scoin.setMainDataSrc();
 
         // loop through each platform of the current scoin
         scoin.platforms.forEach((pltfm) => {
             // calculate the market cap of this coin on this platform only.
-            let mcap_on_pltfm = (pltfm.supply / scoin.main.total_supply) * scoin.main.mcap;
+            // let mcap_on_pltfm = (pltfm.supply / scoin.main.total_supply) * scoin.main.mcap;
+            let mcap_on_pltfm = pltfm.supply * scoin.main.price;
+
             if (!mcap_on_pltfm) return;
             sum += mcap_on_pltfm;
 
@@ -182,10 +181,10 @@ async function updateGlobalPlatformData() {
     });
 } // updateGlobalPlatformData()
 
-/*----------------------------------------------
+/*---------------------------------------------------------
 Function:       updateGlobalMetrics
 Description: 
-------------------------------------------------*/
+---------------------------------------------------------*/
 function updateGlobalMetrics() {
     glb_totalMCap = 0;
     glb_totalVolume = 0;
@@ -197,10 +196,10 @@ function updateGlobalMetrics() {
     });
 } // updateGlobalMetrics()
 
-/*----------------------------------------------
+/*---------------------------------------------------------
 Function:       updateData
 Description: 
-------------------------------------------------*/
+---------------------------------------------------------*/
 async function updateData() {
     // these functions must be called in this order
     let new_stablecoin_data = await fetchStablecoins();
@@ -209,59 +208,3 @@ async function updateData() {
     updateGlobalPlatformData();
     console.log('Data Updated.');
 } // updateData()
-
-/*-----------------------------------------------
-                    Routes
------------------------------------------------*/
-app.get('/', async (req, res) => {
-    let eth_data = glb_platform_data.find((chain) => chain.name === 'Ethereum');
-    // console.debug(glb_platform_data);
-    res.render('home', {
-        coins: glb_stablecoins,
-        totalMCap: glb_totalMCap,
-        totalMCap_s: util.toDollarString(glb_totalMCap),
-        totalVolume: glb_totalVolume,
-        totalVolume_s: util.toDollarString(glb_totalVolume),
-        totalETHMCap: eth_data.total_mcap,
-        totalETHMCap_s: eth_data.total_mcap_s,
-        active: 'home',
-    });
-}); // home
-
-app.get('/donate', async (req, res) => {
-    let eth_data = glb_platform_data.find((chain) => chain.name === 'Ethereum');
-    res.render('donate', {
-        totalMCap: glb_totalMCap,
-        totalMCap_s: util.toDollarString(glb_totalMCap),
-        totalVolume: glb_totalVolume,
-        totalVolume_s: util.toDollarString(glb_totalVolume),
-        totalETHMCap: eth_data.total_mcap,
-        totalETHMCap_s: eth_data.total_mcap_s,
-        active: 'donate',
-    });
-}); // donate
-
-// create chains page
-app.get('/chains', async (req, res) => {
-    let eth_data = glb_platform_data.find((chain) => chain.name === 'Ethereum');
-    res.render('chains', {
-        totalMCap: glb_totalMCap,
-        totalMCap_s: util.toDollarString(glb_totalMCap),
-        totalVolume: glb_totalVolume,
-        totalVolume_s: util.toDollarString(glb_totalVolume),
-        totalETHMCap: eth_data.total_mcap,
-        totalETHMCap_s: eth_data.total_mcap_s,
-        glb_platform_data: glb_platform_data,
-        active: 'chains',
-    });
-}); // chains
-
-// parses json request and attach to route handler
-// (order of app.use matters here)
-app.use(express.json());
-
-// process is a global variable.
-// Use the eviroment variable if it's set, otherwise use port 3000.
-const port = process.env.PORT || 3000;
-
-app.listen(port, () => console.log(`Listening on port ${port}`));

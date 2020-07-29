@@ -1,174 +1,142 @@
+/*---------------------------------------------------------
+    IMPORTS
+---------------------------------------------------------*/
 const Stablecoin = require('../stablecoin');
 const Platform = require('../platform');
 
+/*---------------------------------------------------------
+    MODULE VARIABLES
+---------------------------------------------------------*/
 let glb_sc = [];
 
-/*-----------------------------------------------
-    USDC
------------------------------------------------*/
+/*---------------------------------------------------------
+    DATA
+---------------------------------------------------------*/
+
+/* USDC */
 let coin = new Stablecoin();
 coin.symbol = 'USDC';
 coin.scw.peg = '1 USD';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    IDRT
------------------------------------------------*/
+/* IDRT */
 coin = new Stablecoin();
 coin.symbol = 'IDRT ;';
 coin.scw.peg = '1 Rupiah';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    PAX
------------------------------------------------*/
+/* PAX */
 coin = new Stablecoin();
 coin.symbol = 'PAX';
 coin.scw.peg = '1 USD';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    HUSD
------------------------------------------------*/
+/* HUSD */
 coin = new Stablecoin();
 coin.symbol = 'HUSD';
 coin.scw.peg = '1 USD';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    EURS
------------------------------------------------*/
+/* EURS */
 coin = new Stablecoin();
 coin.symbol = 'EURS';
 coin.scw.peg = '1 EUR';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    USDK
------------------------------------------------*/
+/* USDK */
 coin = new Stablecoin();
 coin.symbol = 'USDK';
 coin.scw.peg = '1 USD';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    GUSD
------------------------------------------------*/
+/* GUSD */
 coin = new Stablecoin();
 coin.symbol = 'GUSD';
 coin.scw.peg = '1 USD';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    Digix Gold token
------------------------------------------------*/
+/* Digix Gold token */
 coin = new Stablecoin();
 coin.symbol = 'DGX';
 coin.scw.peg = '1g Gold';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    SBD
------------------------------------------------*/
+/* SBD */
 coin = new Stablecoin();
 coin.symbol = 'SBD';
 coin.scw.peg = '1 USD';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    USDQ
------------------------------------------------*/
+/* USDQ */
 coin = new Stablecoin();
 coin.symbol = 'USDQ';
 coin.scw.peg = '1 USD';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    XCHF
------------------------------------------------*/
+/* XCHF */
 coin = new Stablecoin();
 coin.symbol = 'XCHF';
 coin.scw.peg = '1 CHF';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    BITCNY
------------------------------------------------*/
+/* BITCNY */
 coin = new Stablecoin();
 coin.symbol = 'BITCNY';
 coin.scw.peg = '1 CNY';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    XAUR
------------------------------------------------*/
+/* XAUR */
 coin = new Stablecoin();
 coin.symbol = 'XAUR';
 coin.scw.peg = '.001g Gold';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    EOSDT
------------------------------------------------*/
+/* EOSDT */
 coin = new Stablecoin();
 coin.symbol = 'EOSDT';
 coin.scw.peg = '1 USD';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    CONST
------------------------------------------------*/
+/* CONST */
 coin = new Stablecoin();
 coin.symbol = 'CONST';
 coin.scw.peg = '1 USD';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    BITUSD
------------------------------------------------*/
+/* BITUSD */
 coin = new Stablecoin();
 coin.symbol = 'BITUSD';
 coin.scw.peg = '1 USD';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    XPD
------------------------------------------------*/
+/* XPD */
 coin = new Stablecoin();
 coin.symbol = 'XPD';
 coin.scw.peg = '1 USD';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    StableUSD / Stably
------------------------------------------------*/
+/* StableUSD / Stably */
 coin = new Stablecoin();
 coin.symbol = 'USDS';
 coin.scw.peg = '1 USD';
 coin.platforms.push(new Platform('Ethereum', '0xa4bdb11dc0a2bec88d24a3aa1e6bb17201112ebe'));
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    TrueUSD
------------------------------------------------*/
+/* TrueUSD */
 coin = new Stablecoin();
 coin.symbol = 'TUSD';
 coin.scw.peg = '1 USD';
 coin.platforms.push(new Platform('Ethereum', '0x0000000000085d4780B73119b644AE5ecd22b376'));
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    Binance USD
------------------------------------------------*/
+/* Binance USD */
 coin = new Stablecoin();
 coin.symbol = 'BUSD';
 coin.scw.peg = '1 USD';
 coin.platforms.push(new Platform('Ethereum', '0x4fabb145d64652a948d72533023f6e7a623c7c53'));
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    Tether
------------------------------------------------*/
+/* Tether */
 coin = new Stablecoin();
 coin.symbol = 'USDT';
 coin.scw.peg = '1 USD';
@@ -182,9 +150,7 @@ coin.platforms.push(
 );
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    Tether EUR
------------------------------------------------*/
+/* Tether EUR */
 coin = new Stablecoin();
 coin.name = 'Tether EUR';
 coin.symbol = 'EURT';
@@ -195,9 +161,7 @@ coin.scw.desc = 'https://wallet.tether.to/transparency';
 coin.img_url = '/tether.png';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    Tether CNH
------------------------------------------------*/
+/* Tether CNH */
 coin = new Stablecoin();
 coin.name = 'Tether CNH';
 coin.symbol = 'CNHT';
@@ -207,9 +171,7 @@ coin.scw.desc = 'https://wallet.tether.to/transparency';
 coin.img_url = '/tether.png';
 glb_sc.push(coin);
 
-/*-----------------------------------------------
-    Token Gold
------------------------------------------------*/
+/* Token Gold */
 coin = new Stablecoin();
 coin.name = 'Token Gold';
 coin.symbol = 'XAUT';
@@ -225,6 +187,9 @@ https://wallet.tether.to/transparency';
 coin.img_url = '/tether-gold-logo.svg';
 glb_sc.push(coin);
 
+/*---------------------------------------------------------
+    FUNCTIONS
+---------------------------------------------------------*/
 exports.getSCWStablecoins = async () => {
     return glb_sc;
 }; // getSCWStablecoins()

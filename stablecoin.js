@@ -1,26 +1,35 @@
-const util = require('./cmn');
+const util = require('./util');
 const Platform = require('./platform');
-const eth = require('./apis/eth');
-const omni = require('./apis/omni');
-const tron = require('./apis/tron');
-const bnb = require('./apis/bnb');
-const slp = require('./apis/bch');
-const algo = require('./apis/algo');
+const eth = require('./api/eth');
+const omni = require('./api/omni');
+const tron = require('./api/tron');
+const bnb = require('./api/bnb');
+const slp = require('./api/bch');
+const algo = require('./api/algo');
 
 class Stablecoin {
-    /*----------------------------------------------
-    Function:       constructor
+    /*---------------------------------------------------------
+    Function:
+            constructor
+    Description:
+            Creates a blank Stablecoin object.
     ------------------------------------------------*/
     constructor() {
+        /* basic properties */
+        this.name = null;
+        this.symbol = null;
+        this.platforms = [];
+        /* coin metrics per-data source */
         this.cmc = {};
         this.msri = {};
         this.scw = {};
-        this.platforms = [];
-    } // constructor
+    } // constructor()
 
-    /*----------------------------------------------
-    Function:       updateStrings
-    Description: 
+    /*---------------------------------------------------------
+    Function:
+            updateStrings
+    Description:
+            Build dollar formated string for coin metrics
     ------------------------------------------------*/
     async updateStrings() {
         this.cmc.mcap_s = util.toDollarString(this.cmc.mcap);
@@ -33,9 +42,12 @@ class Stablecoin {
         }
     } // updateStrings()
 
-    /*----------------------------------------------
-    Function:       setMainDataSrc
-    Description: 
+    /*---------------------------------------------------------
+    Function:
+            setMainDataSrc
+    Description:
+            Set the values to be used as the main
+            source of data for each metric
     ------------------------------------------------*/
     setMainDataSrc() {
         this.main = {};
@@ -60,19 +72,29 @@ class Stablecoin {
         this.main.volume = this.cmc.volume ? this.cmc.volume : this.msri.volume;
     } // setMainDataSrc()
 
-    /*----------------------------------------------
-    Function:       updateMetrics
-    Description: 
+    /*---------------------------------------------------------
+    Function:
+            updateDerivedMetrics
+    Description:
+            Update metric that require computation
+            on prior set metrics
+    Note:
+            Many metrics for a Stablecoin are step from
+            API return values. Derived metrics are
+            computed from these base-metrics. 
     ------------------------------------------------*/
-    async updateMetrics() {
+    async updateDerivedMetrics() {
         this.setMainDataSrc();
         this.updateStrings();
         return this.updatePlatformsSupply();
     }
 
-    /*----------------------------------------------
-    Function:       updatePlatformsSupply
-    Description: 
+    /*---------------------------------------------------------
+    Function:
+            updatePlatformsSupply
+    Description:
+            Update the total-supply on this coin for
+            each platform this coin is issued on.
     ------------------------------------------------*/
     async updatePlatformsSupply() {
         if (!this.platforms) {
