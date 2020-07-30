@@ -1,7 +1,7 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const TronGrid = require('trongrid');
+// const TronGrid = require('trongrid');
 const TronWeb = require('tronweb');
 
 /*---------------------------------------------------------
@@ -11,12 +11,13 @@ const tronWeb = new TronWeb({
     fullHost: 'https://api.trongrid.io',
 });
 
-const tronGrid = new TronGrid(tronWeb);
+// const tronGrid = new TronGrid(tronWeb);
 // tronGrid.setExperimental('experimental key');
 
 /*---------------------------------------------------------
     FUNCTIONS
 ---------------------------------------------------------*/
+/*
 exports.getAccount = async (address) => {
     const options = {
         showAssets: true,
@@ -41,10 +42,13 @@ exports.getAssets = async (address) => {
     const options = {};
     return tronGrid.asset.get(address);
 };
+*/
 
 exports.getTokenSupply = async (address) => {
-    const account = await tronGrid.asset.get(address);
-    const total_supply = account.data[0].total_supply;
-    const decimals = account.data[0].precision;
-    return total_supply / 10 ** decimals;
+    tronWeb.setAddress(address);
+    return tronWeb
+        .contract()
+        .at(address)
+        .then((contract) => Promise.all([contract.totalSupply().call(), contract.decimals().call()]))
+        .then(([supply, decimals]) => parseInt(supply._hex, 16) / 10 ** decimals);
 };

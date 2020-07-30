@@ -1,9 +1,6 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const https = require('https');
-const express = require('express');
-const cron = require('node-cron');
 const messari = require('./api/messari');
 const scw = require('./api/scw');
 const util = require('./util');
@@ -12,18 +9,46 @@ const cmc = require('./api/cmc');
 /*---------------------------------------------------------
     MODULE VARIABLES
 ---------------------------------------------------------*/
-let glb_stablecoins = [];
-let glb_totalMCap = 0;
-let glb_totalVolume = 0;
-let glb_platform_data = [];
+let data = {};
+data.stablecoins = [];
+data.totalMCap = 0;
+data.totalVolume = 0;
+data.platform_data = [];
 
 /*---------------------------------------------------------
     FUNCTIONS
 ---------------------------------------------------------*/
 
 /*---------------------------------------------------------
-Function:       combineCoins
-Description: 
+Function: console.warn
+Description: Print warnings to the console
+---------------------------------------------------------*/
+console.warn = function (s) {
+    console.log('WARNING:', s);
+};
+
+/*---------------------------------------------------------
+Function: console.info
+Description: Print info to the console
+---------------------------------------------------------*/
+console.info = function (s) {
+    console.log('INFO:', s);
+};
+
+/*---------------------------------------------------------
+Function: console.error
+Description: Print errors to the console
+---------------------------------------------------------*/
+console.error = function (s) {
+    console.log('ERROR:', s);
+};
+
+/*---------------------------------------------------------
+Function:
+        combineCoins
+Description:
+        Combine the data from mutlipe sources into a
+        a single Stablecoin object.
 ---------------------------------------------------------*/
 function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
     // loop through each CMC coin
@@ -65,8 +90,12 @@ function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
 } // end coinbinedCoins()
 
 /*---------------------------------------------------------
-Function:       fetchStablecoins
-Description: 
+Function:
+        fetchStablecoins
+Description:
+        Pull Stablecoin data from various supported APIs.
+        This function will build and return a list of
+        Stablecoin objects.
 ---------------------------------------------------------*/
 async function fetchStablecoins() {
     // pull new stablecoins data
@@ -84,11 +113,7 @@ async function fetchStablecoins() {
             let ret_list = combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list);
 
             // update the platform-specific supply for each coin
-            await Promise.all(
-                ret_list.map(async (coin) => {
-                    await coin.updateMetrics();
-                })
-            );
+            await Promise.all(ret_list.map(async (coin) => coin.updateDerivedMetrics()));
             return ret_list;
         })
         .catch((e) => {
@@ -97,45 +122,46 @@ async function fetchStablecoins() {
 } // fetchStablecoins()
 
 /*---------------------------------------------------------
-Function:       updateGlobalStablecoinData
-Description: 
+Function:
+        updateStablecoinData
+Description:
 ---------------------------------------------------------*/
-function updateGlobalStablecoinData(new_stablecoin_data) {
+function updateStablecoinData(new_stablecoin_data) {
     new_stablecoin_data.forEach((scoin_temp) => {
         let scoin_temp_found = false;
 
-        glb_stablecoins.forEach((scoin) => {
+        data.stablecoins.forEach((scoin) => {
             if (scoin.symbol == scoin_temp.symbol) {
                 scoin_temp_found = true;
-                // new data found, replace scoin with scoin_temp in glb_stablecoins list
-                var index = glb_stablecoins.indexOf(scoin);
-                if (index !== -1) glb_stablecoins[index] = scoin_temp;
+                // new data found, replace scoin with scoin_temp in data.stablecoins list
+                var index = data.stablecoins.indexOf(scoin);
+                if (index !== -1) data.stablecoins[index] = scoin_temp;
             }
         });
 
         // new coin found in data that wasn't already in global stablecoins list.
         // Add new coin to global stablecoins list
         if (!scoin_temp_found) {
-            glb_stablecoins.push(scoin_temp);
+            data.stablecoins.push(scoin_temp);
         }
     }); // end loop through new_stablecoin_data
 
     // sort global stablecoins list
-    glb_stablecoins = glb_stablecoins.sort(function (a, b) {
-        return b.cmc.mcap - a.cmc.mcap;
+    data.stablecoins = data.stablecoins.sort(function (a, b) {
+        return b.main.mcap - a.main.mcap;
     });
-} // updateGlobalStablecoinData()
+} // updateStablecoinData()
 
 /*---------------------------------------------------------
-Function:       updateGlobalPlatformData
-Description: 
+Function: updatePlatformData
+Description:
 ---------------------------------------------------------*/
-async function updateGlobalPlatformData() {
-    glb_platform_data = [];
+async function updatePlatformData() {
+    data.platform_data = [];
 
     let sum = 0;
 
-    glb_stablecoins.forEach((scoin) => {
+    data.stablecoins.forEach((scoin) => {
         if (!scoin.platforms) return;
         if (!scoin.main.total_supply) return;
         if (!scoin.main) scoin.setMainDataSrc();
@@ -143,21 +169,21 @@ async function updateGlobalPlatformData() {
         // loop through each platform of the current scoin
         scoin.platforms.forEach((pltfm) => {
             // calculate the market cap of this coin on this platform only.
-            // let mcap_on_pltfm = (pltfm.supply / scoin.main.total_supply) * scoin.main.mcap;
-            let mcap_on_pltfm = pltfm.supply * scoin.main.price;
+            let mcap_on_pltfm = (pltfm.supply / scoin.scw.total_supply) * scoin.main.mcap;
+            // let mcap_on_pltfm = pltfm.supply * scoin.main.price;
 
             if (!mcap_on_pltfm) return;
             sum += mcap_on_pltfm;
 
             // check if the current scoin's platform is already in our global data
-            let gbl_pltfm = glb_platform_data.find((p) => p.name == pltfm.name);
+            let gbl_pltfm = data.platform_data.find((p) => p.name == pltfm.name);
 
             if (gbl_pltfm) {
                 // this platform is already in our global data (seen before)
                 gbl_pltfm.total_mcap += mcap_on_pltfm;
             } else {
                 // this platform is not in the global data, add the new platform to the global data
-                glb_platform_data.push({
+                data.platform_data.push({
                     name: pltfm.name,
                     total_mcap: mcap_on_pltfm,
                 });
@@ -165,46 +191,56 @@ async function updateGlobalPlatformData() {
         }); // end for each platform
     }); // end for each scoin
 
-    glb_platform_data.push({
-        name: 'Other / Unknown',
-        total_mcap: glb_totalMCap - sum,
-    });
+    if (data.totalMCap - sum > 1000000)
+        data.platform_data.push({
+            name: 'Other / Unknown',
+            total_mcap: data.totalMCap - sum,
+        });
 
     // sort global platform list
-    glb_platform_data = glb_platform_data.sort(function (a, b) {
+    data.platform_data = data.platform_data.sort(function (a, b) {
         return b.total_mcap - a.total_mcap;
     });
 
     // add string representatoin of supply on platform
-    glb_platform_data.forEach((pltfm) => {
+    data.platform_data.forEach((pltfm) => {
         pltfm.total_mcap_s = util.toDollarString(pltfm.total_mcap);
     });
-} // updateGlobalPlatformData()
+} // updatePlatformData()
 
 /*---------------------------------------------------------
-Function:       updateGlobalMetrics
-Description: 
+Function: updateMetrics
+Description:
 ---------------------------------------------------------*/
-function updateGlobalMetrics() {
-    glb_totalMCap = 0;
-    glb_totalVolume = 0;
+function updateMetrics() {
+    data.totalMCap = 0;
+    data.totalVolume = 0;
 
-    glb_stablecoins.forEach(async (scoin) => {
+    data.stablecoins.forEach(async (scoin) => {
         // update global total data
-        if (scoin.cmc.mcap) glb_totalMCap += scoin.cmc.mcap;
-        if (scoin.cmc.volume) glb_totalVolume += scoin.cmc.volume;
+        if (scoin.main.mcap) data.totalMCap += scoin.main.mcap;
+        if (scoin.main.volume) data.totalVolume += scoin.main.volume;
     });
-} // updateGlobalMetrics()
+
+    data.totalMCap_s = util.toDollarString(data.totalMCap);
+    data.totalVolume_s = util.toDollarString(data.totalVolume);
+} // updateMetrics()
 
 /*---------------------------------------------------------
-Function:       updateData
-Description: 
+Function: updateData
+Description:
 ---------------------------------------------------------*/
 async function updateData() {
     // these functions must be called in this order
     let new_stablecoin_data = await fetchStablecoins();
-    updateGlobalStablecoinData(new_stablecoin_data);
-    updateGlobalMetrics();
-    updateGlobalPlatformData();
-    console.log('Data Updated.');
+    updateStablecoinData(new_stablecoin_data);
+    updateMetrics();
+    updatePlatformData();
+    console.info('Data Updated.');
 } // updateData()
+
+/*---------------------------------------------------------
+    EXPORTS
+---------------------------------------------------------*/
+exports.updateData = updateData;
+exports.data = data;

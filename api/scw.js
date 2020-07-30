@@ -140,14 +140,12 @@ glb_sc.push(coin);
 coin = new Stablecoin();
 coin.symbol = 'USDT';
 coin.scw.peg = '1 USD';
-coin.platforms.push(new Platform('Tron', '41fde74827168724bdafdaf8896dc90afc0fa6641d'));
-coin.platforms.push(new Platform('Bitcoin', 31));
+coin.platforms.push(new Platform('Tron', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'));
+coin.platforms.push(new Platform('Bitcoin (Omni)', 31));
 coin.platforms.push(new Platform('Bitcoin (Liquid)'));
 coin.platforms.push(new Platform('EOS', 'tethertether'));
 coin.platforms.push(new Platform('Algorand', 'XIU7HGGAJ3QOTATPDSIIHPFVKMICXKHMOR2FJKHTVLII4FAOA3CYZQDLG4'));
-coin.platforms.push(
-    new Platform('Bitcoin Cash (SLP)', '9fc89d6b7d5be2eac0b3787c5b8236bca5de641b5bafafc8f450727b63615c11')
-);
+coin.platforms.push(new Platform('Bitcoin Cash', '9fc89d6b7d5be2eac0b3787c5b8236bca5de641b5bafafc8f450727b63615c11'));
 glb_sc.push(coin);
 
 /* Tether EUR */
@@ -176,7 +174,7 @@ coin = new Stablecoin();
 coin.name = 'Token Gold';
 coin.symbol = 'XAUT';
 coin.scw.peg = '1oz Gold';
-coin.platforms.push(new Platform('Ethereum', '0x6e109e9dd7fa1a58bc3eff667e8e41fc3cc07aef'));
+coin.platforms.push(new Platform('Ethereum', '0x4922a015c4407F87432B179bb209e125432E4a2A'));
 coin.scw.desc =
     'Tether Gold (XAUT) is a cryptocurrency with a value meant to mirror the value of \
 the Gold. According to their site, Tether converts  cash into digital currency, to \
@@ -185,6 +183,17 @@ currencies like the US dollar, the Euro, and the Yen. Tether Gold (XAUT) is \
 issued on the Ethereum blockchain. For details on the issuance please refer to: \
 https://wallet.tether.to/transparency';
 coin.img_url = '/tether-gold-logo.svg';
+glb_sc.push(coin);
+
+/* HonestCoin */
+coin = new Stablecoin();
+coin.name = 'HonestCoin';
+coin.symbol = 'USDH';
+coin.scw.peg = '1 USD';
+coin.scw.desc =
+    'HonestCoin (USDH) describes themsleves as a fully regulated, 1 to 1 U.S. Dollar-backed \
+stablecoin that can be bought, sold, invested in or spent as freely as you wish.';
+coin.platforms.push(new Platform('Bitcoin Cash', 'c4b0d62156b3fa5c8f3436079b5394f7edc1bef5dc1cd2f9d0c4d46f82cca479'));
 glb_sc.push(coin);
 
 /*---------------------------------------------------------

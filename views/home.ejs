@@ -162,7 +162,7 @@
     <%- include('partials/header') %>
     <!-- Header -->
     <main>
-        <% if (coins) { %>
+        <% if (data.stablecoins) { %>
             <section class="wrapper">
                 <!-- Row title -->
                 <main class="row title">
@@ -180,7 +180,7 @@
                 </main>
 
                 <!-- for each coin -->
-                <% coins.forEach((coin, i) => {  %>
+                <% data.stablecoins.forEach((coin, i) => {  %>
                     <!-- if no data, skip this coin -->
                     <% if (!coin.name || !coin.symbol) return; %>
                     <!-- Row X -->
@@ -193,7 +193,7 @@
 
                             <!-- name -->
                             <li class="name">
-                                <strong><a href="#"><%= coin.name %></a></strong>
+                                <strong><a href="/coins/<%= coin.symbol %>"><%= coin.name %></a></strong>
                             </li>
 
                             <!-- symbol -->
@@ -212,14 +212,16 @@
                             <!-- market cap -->
                             <% if (coin.main.mcap_s) { %>
                                 <li><%= coin.main.mcap_s %></li>
+                            <% } else if (coin.scw.mcap_s) { %>
+                                <li><%= coin.scw.mcap_s %></li>
                             <% } else { %>
-                                <li>No data</li>
+                                    <li>No data</li>
                             <% } %>
 
                             <!-- market cap dominance -->
-                            <% if (coin.main.mcap && totalMCap) { %>
+                            <% if (coin.main.mcap && data.totalMCap) { %>
                                 <li class='mcap_dom'>
-                                    <%= ((coin.main.mcap/totalMCap)*100).toFixed(2) %>%
+                                    <%= ((coin.main.mcap/data.totalMCap)*100).toFixed(2) %>%
                                 </li>
                             <% } else { %>
                                 <li class='mcap_dom'>
@@ -252,7 +254,7 @@
                                                     </div>
                                                     <div class="b">
                                                         <% if (platform.supply && coin.main.total_supply) { %>
-                                                            <% let pct =  Math.min(100, ((platform.supply / coin.main.total_supply) * 100))%>
+                                                            <% let pct =  Math.min(100, ((platform.supply / coin.scw.total_supply) * 100))%>
                                                             <% sum += pct; %>
                                                             <%=pct.toFixed() %>%
                                                         <% } else { %>

@@ -35,7 +35,7 @@
         <!-- Header -->
 
         <main>
-            <% if( glb_platform_data && glb_platform_data.length ) { %>
+            <% if( data.platform_data && data.platform_data.length ) { %>
                 <section class="wrapper">
                     <!-- Row title -->
                     <main class="row title">
@@ -46,19 +46,19 @@
                             <li>% of Total</li>
                         </ul>
                     </main>
-                    <% for (let i = 0; i < glb_platform_data.length; i++) { %>
-                        <% let p = glb_platform_data[i] %>
+                    <% for (let i = 0; i < data.platform_data.length; i++) { %>
+                        <% let p = data.platform_data[i] %>
                         <!-- Row X -->
                         <article class="row type<%=i%4+1%>">
                             <ul class="chainstats">
                                 <li class="chainrank"><%= i+1 %></li>
                                 <li>
                                     <strong>
-                                        <a href="#"><%= p.name %></a>
+                                        <a href="/platforms/<%= encodeURI(p.name) %>"><%= p.name %></a>
                                     </strong>
                                 </li>
                                 <li><%= p.total_mcap_s %></li>
-                                <% let pct = ( p.total_mcap / totalMCap ) * 100; %>
+                                <% let pct = ( p.total_mcap / data.totalMCap ) * 100; %>
                                 <li><%=(pct).toFixed(2)%>%</li>
                             </ul>
                         </article>

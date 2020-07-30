@@ -5,7 +5,7 @@ const httpClient = createHttpClient('', 'https://mainnet.eos.dfuse.io/');
 
 const client = createDfuseClient({
     apiKey: keys.dfuse,
-    network: 'mainnet.eos.dfuse.io',
+    network: 'https://mainnet.eos.dfuse.io/',
     httpClient: httpClient,
 });
 
@@ -42,8 +42,6 @@ exports.getTokenSupply = async (address) => {
             })
     ); // no catch here - allow errors to propogate up.
 }; // getTokenSupply()
-
-exports.getTokenSupply('tethertether').then(console.log); //.then(console.log);
 
 /*------------------------------- this works to fetch an accounts balance -----------------------------------*/
 

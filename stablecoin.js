@@ -6,6 +6,8 @@ const tron = require('./api/tron');
 const bnb = require('./api/bnb');
 const slp = require('./api/bch');
 const algo = require('./api/algo');
+const eos = require('./api/eos');
+const liquid = require('./api/liquid');
 
 class Stablecoin {
     /*---------------------------------------------------------
@@ -23,6 +25,7 @@ class Stablecoin {
         this.cmc = {};
         this.msri = {};
         this.scw = {};
+        this.main = {};
     } // constructor()
 
     /*---------------------------------------------------------
@@ -36,10 +39,9 @@ class Stablecoin {
         this.cmc.volume_s = util.toDollarString(this.cmc.volume);
         this.msri.mcap_s = util.toDollarString(this.msri.mcap);
         this.msri.volume_s = util.toDollarString(this.msri.volume);
-        if (this.main) {
-            this.main.mcap_s = util.toDollarString(this.main.mcap);
-            this.main.volume_s = util.toDollarString(this.main.volume);
-        }
+        this.scw.mcap_s = util.toDollarString(this.scw.mcap);
+        this.main.mcap_s = util.toDollarString(this.main.mcap);
+        this.main.volume_s = util.toDollarString(this.main.volume);
     } // updateStrings()
 
     /*---------------------------------------------------------
@@ -61,7 +63,8 @@ class Stablecoin {
             this.main.mcap = this.msri.mcap;
         } else if (this.scw.total_supply) {
             this.main.total_supply = this.scw.total_supply;
-            if (this.cmc.mcap) this.main.mcap = this.cmc.mcap;
+            if (this.scw.mcap) this.main.mcap = this.scw.mcap;
+            else if (this.cmc.mcap) this.main.mcap = this.cmc.mcap;
             else if (this.msri.mcap) this.main.mcap = this.msri.mcap;
         }
 
@@ -85,8 +88,10 @@ class Stablecoin {
     ------------------------------------------------*/
     async updateDerivedMetrics() {
         this.setMainDataSrc();
+        await this.updatePlatformsSupply();
+        this.setMainDataSrc();
         this.updateStrings();
-        return this.updatePlatformsSupply();
+        return;
     }
 
     /*---------------------------------------------------------
@@ -98,30 +103,31 @@ class Stablecoin {
     ------------------------------------------------*/
     async updatePlatformsSupply() {
         if (!this.platforms) {
-            console.log('no platforms for', this.name);
+            console.warn('No platforms for', this.name);
             return;
         }
         let PLATFORM_API = {};
         PLATFORM_API['Ethereum'] = eth;
-        PLATFORM_API['Bitcoin'] = omni;
+        PLATFORM_API['Bitcoin (Omni)'] = omni;
         PLATFORM_API['Tron'] = tron;
         PLATFORM_API['BNB Chain'] = bnb;
-        PLATFORM_API['Bitcoin Cash (SLP)'] = slp;
-        PLATFORM_API['EOS'] = null;
+        PLATFORM_API['Bitcoin Cash'] = slp;
+        PLATFORM_API['EOS'] = eos;
         PLATFORM_API['Algorand'] = algo;
+        PLATFORM_API['Bitcoin (Liquid)'] = liquid;
 
         await Promise.all(
             this.platforms.map(async (platform) => {
                 try {
                     if (!PLATFORM_API[platform.name]) {
-                        throw `No API available for platform ${platform.name}`;
+                        console.warn(`No API available for platform ${platform.name}`);
                     } else if (!PLATFORM_API[platform.name].getTokenSupply) {
-                        throw `API for platform ${platform.name} does not support function 'getTokenSupply()'`;
+                        console.warn(`API for platform ${platform.name} does not support function 'getTokenSupply()'`);
                     } else {
                         platform.supply = await PLATFORM_API[platform.name].getTokenSupply(platform.contract_address);
                     }
                 } catch (e) {
-                    console.log(`Error getting ${this.name} platform supply: \n\t${e}`);
+                    console.error(`Could not get ${this.name} platform supply: \n\t${e}`);
                     if (this.platforms.length == 1) {
                         this.platforms[0].supply = this.cmc.total_supply
                             ? this.cmc.total_supply
@@ -139,6 +145,8 @@ class Stablecoin {
         this.platforms.forEach((p) => {
             if (p && p.supply) this.scw.total_supply += p.supply;
         });
+
+        this.scw.mcap = this.main.price * this.scw.total_supply;
     } // updatePlatformsSupply()
 }
 
