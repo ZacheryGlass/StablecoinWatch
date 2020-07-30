@@ -17,7 +17,7 @@ const token = {
 };
 
 /*---------------------------------------------------------
-    MODULE VARIABLES
+    MODULE-SCOPED VARIABLES
 ---------------------------------------------------------*/
 const algodclient = new algosdk.Algod(token, mainnet_url, port);
 

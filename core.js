@@ -7,13 +7,21 @@ const util = require('./util');
 const cmc = require('./api/cmc');
 
 /*---------------------------------------------------------
-    MODULE VARIABLES
+    MODULE-SCOPED VARIABLES
 ---------------------------------------------------------*/
 let data = {};
 data.stablecoins = [];
 data.totalMCap = 0;
 data.totalVolume = 0;
 data.platform_data = [];
+
+const CONSOLE_CLR = {
+    reset: '\x1b[0m',
+    green: '\x1b[32m',
+    yellow: '\x1b[33m',
+    red: '\x1b[31m',
+    cyan: '\x1b[36m',
+};
 
 /*---------------------------------------------------------
     FUNCTIONS
@@ -23,24 +31,32 @@ data.platform_data = [];
 Function: console.warn
 Description: Print warnings to the console
 ---------------------------------------------------------*/
-console.warn = function (s) {
-    console.log('WARNING:', s);
+console.warn = function (msg) {
+    if (global.SHOW_WARNINGS) console.log(`${CONSOLE_CLR.yellow}WARNING: ${CONSOLE_CLR.reset} ${msg}`);
 };
 
 /*---------------------------------------------------------
 Function: console.info
 Description: Print info to the console
 ---------------------------------------------------------*/
-console.info = function (s) {
-    console.log('INFO:', s);
+console.info = function (msg) {
+    console.log(`${CONSOLE_CLR.green}INFO:    ${CONSOLE_CLR.reset} ${msg}`);
 };
 
 /*---------------------------------------------------------
 Function: console.error
 Description: Print errors to the console
 ---------------------------------------------------------*/
-console.error = function (s) {
-    console.log('ERROR:', s);
+console.error = function (msg) {
+    console.log(`${CONSOLE_CLR.red}ERROR:    ${msg} ${CONSOLE_CLR.reset}`);
+};
+
+/*---------------------------------------------------------
+Function: console.error
+Description: Print errors to the console
+---------------------------------------------------------*/
+console.debug = function (msg) {
+    if (global.DEBUG) console.log(`${CONSOLE_CLR.cyan}DEBUG:   ${CONSOLE_CLR.reset} ${msg}`);
 };
 
 /*---------------------------------------------------------
@@ -117,7 +133,7 @@ async function fetchStablecoins() {
             return ret_list;
         })
         .catch((e) => {
-            console.log(e);
+            console.error(e);
         });
 } // fetchStablecoins()
 
@@ -231,12 +247,15 @@ Function: updateData
 Description:
 ---------------------------------------------------------*/
 async function updateData() {
-    // these functions must be called in this order
-    let new_stablecoin_data = await fetchStablecoins();
-    updateStablecoinData(new_stablecoin_data);
-    updateMetrics();
-    updatePlatformData();
-    console.info('Data Updated.');
+    try {
+        let new_stablecoin_data = await fetchStablecoins();
+        updateStablecoinData(new_stablecoin_data);
+        updateMetrics();
+        updatePlatformData();
+        console.info('Data Updated.');
+    } catch (e) {
+        console.error(` ***CRITICAL*** Could not update data: ${e}`);
+    }
 } // updateData()
 
 /*---------------------------------------------------------

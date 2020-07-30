@@ -52,7 +52,7 @@ const DEBUG_COIN_LIST = [
 // const DEBUG_COIN_LIST = ['XAUT'];
 
 /*---------------------------------------------------------
-    MODULE VARIABLES
+    MODULE-SCOPED VARIABLES
 ---------------------------------------------------------*/
 let glb_cmc_tickers = [];
 
@@ -90,7 +90,7 @@ Description:
         Stablecoins.
 ---------------------------------------------------------*/
 async function buildCMCStablecoinList() {
-    if (DEBUGING) {
+    if (global.DEBUG) {
         glb_cmc_tickers = DEBUG_COIN_LIST;
         return;
     }

@@ -13,7 +13,11 @@ exports.getTokenSupply = async (address) => {
     let resp;
 
     // get available tables for this contract
-    resp = await client.stateAbi(address);
+    try {
+        resp = await client.stateAbi(address).catch(console.debug);
+    } catch (e) {
+        console.debug('EOS fail here', e);
+    }
     const tables = resp.abi.tables;
 
     // check if stat tables exists - this is usually the table that contains the supply for token contracts

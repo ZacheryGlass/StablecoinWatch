@@ -69,10 +69,10 @@ class Stablecoin {
         }
 
         // set Price
-        this.main.price = this.cmc.price ? this.cmc.price : this.msri.price;
+        this.main.price = Number(this.cmc.price ? this.cmc.price : this.msri.price ? this.msri.price : this.scw.price);
 
         // set Price
-        this.main.volume = this.cmc.volume ? this.cmc.volume : this.msri.volume;
+        this.main.volume = Number(this.cmc.volume ? this.cmc.volume : this.msri.volume);
     } // setMainDataSrc()
 
     /*---------------------------------------------------------
@@ -85,7 +85,7 @@ class Stablecoin {
             Many metrics for a Stablecoin are step from
             API return values. Derived metrics are
             computed from these base-metrics. 
-    ------------------------------------------------*/
+---------------------------------------------------------*/
     async updateDerivedMetrics() {
         this.setMainDataSrc();
         await this.updatePlatformsSupply();
@@ -102,13 +102,14 @@ class Stablecoin {
             each platform this coin is issued on.
     ------------------------------------------------*/
     async updatePlatformsSupply() {
-        if (!this.platforms) {
+        if (!this.name) return;
+        if (!this.platforms || this.platforms.length == 0) {
             console.warn('No platforms for', this.name);
             return;
         }
         let PLATFORM_API = {};
         PLATFORM_API['Ethereum'] = eth;
-        PLATFORM_API['Bitcoin (Omni)'] = omni;
+        PLATFORM_API['Bitcoin'] = omni;
         PLATFORM_API['Tron'] = tron;
         PLATFORM_API['BNB Chain'] = bnb;
         PLATFORM_API['Bitcoin Cash'] = slp;
@@ -120,20 +121,22 @@ class Stablecoin {
             this.platforms.map(async (platform) => {
                 try {
                     if (!PLATFORM_API[platform.name]) {
-                        console.warn(`No API available for platform ${platform.name}`);
+                        throw `No API available for ${platform.name} platform.`;
                     } else if (!PLATFORM_API[platform.name].getTokenSupply) {
-                        console.warn(`API for platform ${platform.name} does not support function 'getTokenSupply()'`);
+                        throw `API for  ${platform.name} platform does not support function 'getTokenSupply()'.`;
                     } else {
                         platform.supply = await PLATFORM_API[platform.name].getTokenSupply(platform.contract_address);
                     }
                 } catch (e) {
-                    console.error(`Could not get ${this.name} platform supply: \n\t${e}`);
                     if (this.platforms.length == 1) {
-                        this.platforms[0].supply = this.cmc.total_supply
-                            ? this.cmc.total_supply
-                            : this.msri.total_supply;
+                        console.warn(
+                            `Using Total Supply as platform supply for ${this.name} on ${platform.name} due to API error: ${e}`
+                        );
+                        this.platforms[0].supply = this.main.total_supply;
+                    } else {
+                        console.error(`Could not get ${this.name} supply on ${platform.name}: ${e}`);
                     }
-                }
+                } //catch
             })
         ); // await Promise.all
 

@@ -56,7 +56,7 @@ exports.getTokenPlatform = (token) => {
     } else if (token.toUpperCase().startsWith('BEP')) {
         return 'BNB Chain';
     } else if (token.toLowerCase() == 'omni') {
-        return 'Bitcoin (Omni)';
+        return 'Bitcoin';
     } else if (token.toLowerCase() == 'slp') {
         return 'Bitcoin Cash';
     } else if (token.toLowerCase() == 'native') {

@@ -204,7 +204,11 @@
 
                             <!-- price -->
                             <% if (coin.main.price) { %>
-                                <li>$<%= coin.main.price %></li>
+                                <% if (coin.main.price < 10) { %>
+                                    <li>$<%= coin.main.price.toFixed(3) %></li>
+                                <% } else { %>
+                                    <li>$<%= coin.main.price.toFixed(2) %></li>
+                                <% } %>        
                             <% } else { %>
                                 <li>No data</li>
                             <% } %>
@@ -256,7 +260,15 @@
                                                         <% if (platform.supply && coin.main.total_supply) { %>
                                                             <% let pct =  Math.min(100, ((platform.supply / coin.scw.total_supply) * 100))%>
                                                             <% sum += pct; %>
-                                                            <%=pct.toFixed() %>%
+                                                            <% if (pct < 0.005) { %>
+                                                                <%=pct.toFixed(3) %>%
+                                                            <% } else if (pct < 0.05){ %>
+                                                                <%=pct.toFixed(2) %>%
+                                                            <% } else if (pct < 0.5){ %>
+                                                                <%=pct.toFixed(1) %>%
+                                                            <% } else { %>
+                                                                <%=pct.toFixed(0) %>%
+                                                            <% } %>
                                                         <% } else { %>
                                                             ?%
                                                         <% } %>

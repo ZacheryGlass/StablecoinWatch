@@ -1,27 +1,37 @@
+/*---------------------------------------------------------
+    GLOBALS SETTINGS
+---------------------------------------------------------*/
+global.DEBUG = true;
+global.SHOW_WARNINGS = true;
 global.fetch = require('node-fetch');
 global.WebSocket = require('ws');
 global.EXCLUDE_COINS = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC', '1GOLD'];
 
+/*---------------------------------------------------------
+    IMPORTS
+---------------------------------------------------------*/
 const express = require('express');
 const cron = require('node-cron');
 const util = require('./util');
 const { data, updateData } = require('./core');
 
 /*---------------------------------------------------------
-    CONSTANTS
+    COSNTANTS
 ---------------------------------------------------------*/
 const MINS_BETWEEN_UPDATE = 15;
 
 /*---------------------------------------------------------
     APP SETUP
 ---------------------------------------------------------*/
-// set up express app.
 const app = express();
 
 app.set('view engine', 'ejs');
 app.use(express.static(__dirname + '/res/styles'));
 app.use(express.static(__dirname + '/res/img'));
 
+/*---------------------------------------------------------
+    SCHEDULED TASKS
+---------------------------------------------------------*/
 updateData();
 cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, updateData);
 
@@ -78,4 +88,4 @@ app.use(express.json());
 // process is a global variable.
 // Use the eviroment variable if it's set, otherwise use port 3000.
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Listening on port ${port}`));
+app.listen(port, () => console.info(`Listening on port ${port}`));
