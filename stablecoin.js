@@ -85,7 +85,7 @@ class Stablecoin {
             Many metrics for a Stablecoin are step from
             API return values. Derived metrics are
             computed from these base-metrics. 
----------------------------------------------------------*/
+    ---------------------------------------------------------*/
     async updateDerivedMetrics() {
         this.setMainDataSrc();
         await this.updatePlatformsSupply();

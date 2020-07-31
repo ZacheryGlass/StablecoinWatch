@@ -1,23 +1,26 @@
 const keys = require('../keys');
 const { createDfuseClient, createHttpClient } = require('@dfuse/client');
 
-const httpClient = createHttpClient('', 'https://mainnet.eos.dfuse.io/');
+const httpClient = createHttpClient('https://auth.dfuse.io', 'https://mainnet.eos.dfuse.io');
 
 const client = createDfuseClient({
     apiKey: keys.dfuse,
-    network: 'https://mainnet.eos.dfuse.io/',
+    network: 'mainnet.eos.dfuse.io',
     httpClient: httpClient,
 });
 
+/*---------------------------------------------------------
+Function:
+        eos.getTokenSupply
+Description:
+        Get the total supply of the token at the provided
+        address.
+---------------------------------------------------------*/
 exports.getTokenSupply = async (address) => {
     let resp;
 
     // get available tables for this contract
-    try {
-        resp = await client.stateAbi(address).catch(console.debug);
-    } catch (e) {
-        console.debug('EOS fail here', e);
-    }
+    resp = await client.stateAbi(address).catch(console.debug);
     const tables = resp.abi.tables;
 
     // check if stat tables exists - this is usually the table that contains the supply for token contracts

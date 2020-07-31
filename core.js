@@ -15,7 +15,7 @@ data.totalMCap = 0;
 data.totalVolume = 0;
 data.platform_data = [];
 
-const CONSOLE_CLR = {
+const CLR = {
     reset: '\x1b[0m',
     green: '\x1b[32m',
     yellow: '\x1b[33m',
@@ -32,7 +32,7 @@ Function: console.warn
 Description: Print warnings to the console
 ---------------------------------------------------------*/
 console.warn = function (msg) {
-    if (global.SHOW_WARNINGS) console.log(`${CONSOLE_CLR.yellow}WARNING: ${CONSOLE_CLR.reset} ${msg}`);
+    if (global.SHOW_WARNINGS) console.log(`${CLR.yellow}WARNING: ${CLR.reset} ${msg}`);
 };
 
 /*---------------------------------------------------------
@@ -40,7 +40,7 @@ Function: console.info
 Description: Print info to the console
 ---------------------------------------------------------*/
 console.info = function (msg) {
-    console.log(`${CONSOLE_CLR.green}INFO:    ${CONSOLE_CLR.reset} ${msg}`);
+    console.log(`${CLR.green}INFO:    ${CLR.reset} ${msg}`);
 };
 
 /*---------------------------------------------------------
@@ -48,7 +48,7 @@ Function: console.error
 Description: Print errors to the console
 ---------------------------------------------------------*/
 console.error = function (msg) {
-    console.log(`${CONSOLE_CLR.red}ERROR:    ${msg} ${CONSOLE_CLR.reset}`);
+    console.log(`${CLR.red}ERROR:    ${msg} ${CLR.reset}`);
 };
 
 /*---------------------------------------------------------
@@ -56,7 +56,7 @@ Function: console.error
 Description: Print errors to the console
 ---------------------------------------------------------*/
 console.debug = function (msg) {
-    if (global.DEBUG) console.log(`${CONSOLE_CLR.cyan}DEBUG:   ${CONSOLE_CLR.reset} ${msg}`);
+    if (global.DEBUG) console.log(`${CLR.cyan}DEBUG:   ${CLR.reset} ${msg}`);
 };
 
 /*---------------------------------------------------------
