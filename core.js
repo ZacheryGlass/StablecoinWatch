@@ -205,6 +205,7 @@ async function updatePlatformData() {
                 data.platform_data.push({
                     name: pltfm.name,
                     total_mcap: mcap_on_pltfm,
+                    uri: pltfm.name.replace(' ', '_'),
                 });
             } // end if-else
         }); // end for each platform
