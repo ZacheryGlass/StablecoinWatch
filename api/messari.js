@@ -24,7 +24,7 @@ exports.getAllMessariStablecoins = async () => {
     allCoins = response.data.data;
 
     allCoins.forEach((coin) => {
-        if (coin.profile.sector == 'Stablecoins') {
+        if (coin.profile.sector == 'Stablecoins' && !global.EXCLUDE_COINS.includes(coin.symbol)) {
             // format platforms
             let platforms = [];
 
@@ -36,7 +36,7 @@ exports.getAllMessariStablecoins = async () => {
                     platforms.push(new Platform(platform_name));
                 });
             } catch {
-                console.log(`Error getting platforms for Messari coin: ${coin.name}`);
+                console.error(`Fail to get platforms for Messari coin: ${coin.name}`);
             }
 
             let scoin = new Stablecoin();

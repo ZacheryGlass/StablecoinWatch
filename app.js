@@ -1,11 +1,15 @@
 /*---------------------------------------------------------
+    GLOBALS SETTINGS
+---------------------------------------------------------*/
+global.DEBUG = true;
+global.SHOW_WARNINGS = true;
+global.EXCLUDE_COINS = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC', '1GOLD'];
+
+/*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const https = require('https');
 const express = require('express');
 const cron = require('node-cron');
-const messari = require('./api/messari');
-const scw = require('./api/scw');
 const util = require('./util');
 const { data, updateData } = require('./core');
 
@@ -70,5 +74,4 @@ app.use(express.json());
 // process is a global variable.
 // Use the eviroment variable if it's set, otherwise use port 3000.
 const port = process.env.PORT || 3000;
-
-app.listen(port, () => console.log(`Listening on port ${port}`));
+app.listen(port, () => console.info(`Listening on port ${port}`));

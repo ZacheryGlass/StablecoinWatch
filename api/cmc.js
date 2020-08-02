@@ -14,7 +14,6 @@ const MINS_BETWEEN_UPDATE = 60 * 8; /* 8 hours */
 const DEBUGING = true;
 // CMC API will list some coins as Stablecoins that are
 // not actually stablecoins. Manually exclude these mistakes.
-const EXCLUDE_COINS = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC'];
 const ADDITIONAL_COINS = ['DAI', 'AMPL', 'SUSD'];
 const DEBUG_COIN_LIST = [
     'USDT',
@@ -73,7 +72,7 @@ Description:
         reponse to see if an error code was set.
 ---------------------------------------------------------*/
 function cmcCheckError(status) {
-    console.log(`${status.timestamp}: Used ${status.credit_count} CMC Credits`);
+    console.info(`${status.timestamp}: Used ${status.credit_count} CMC Credits`);
 
     if (status.error_code) {
         let code = status.error_code;
@@ -90,7 +89,7 @@ Description:
         Stablecoins.
 ---------------------------------------------------------*/
 async function buildCMCStablecoinList() {
-    if (DEBUGING) {
+    if (global.DEBUG) {
         glb_cmc_tickers = DEBUG_COIN_LIST;
         return;
     }
@@ -100,16 +99,19 @@ async function buildCMCStablecoinList() {
     return cmc_api
         .getTickers({ limit: 3000 })
         .then((resp) => {
-            console.log('Built CMC Coin List');
+            console.info('Built CMC Coin List');
             cmcCheckError(resp.status);
             resp.data.forEach((coin) => {
-                if (coin.tags.includes('stablecoin-asset-backed') || coin.tags.includes('stablecoin')) {
-                    if (!EXCLUDE_COINS.includes(coin.symbol)) glb_cmc_tickers.push(coin.symbol);
+                if (
+                    (coin.tags.includes('stablecoin-asset-backed') || coin.tags.includes('stablecoin')) &&
+                    !global.EXCLUDE_COINS.includes(coin.symbol)
+                ) {
+                    glb_cmc_tickers.push(coin.symbol);
                 }
             });
         })
         .catch((err) => {
-            console.log('ERROR: ', err);
+            console.error(err);
         });
 } // buildCMCStablecoinList()
 

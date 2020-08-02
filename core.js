@@ -15,9 +15,49 @@ data.totalMCap = 0;
 data.totalVolume = 0;
 data.platform_data = [];
 
+const CLR = {
+    reset: '\x1b[0m',
+    green: '\x1b[32m',
+    yellow: '\x1b[33m',
+    red: '\x1b[31m',
+    cyan: '\x1b[36m',
+};
+
 /*---------------------------------------------------------
     FUNCTIONS
 ---------------------------------------------------------*/
+
+/*---------------------------------------------------------
+Function: console.warn
+Description: Print warnings to the console
+---------------------------------------------------------*/
+console.warn = function (msg) {
+    if (global.SHOW_WARNINGS) console.log(`${CLR.yellow}WARNING: ${CLR.reset} ${msg}`);
+};
+
+/*---------------------------------------------------------
+Function: console.info
+Description: Print info to the console
+---------------------------------------------------------*/
+console.info = function (msg) {
+    console.log(`${CLR.green}INFO:    ${CLR.reset} ${msg}`);
+};
+
+/*---------------------------------------------------------
+Function: console.error
+Description: Print errors to the console
+---------------------------------------------------------*/
+console.error = function (msg) {
+    console.log(`${CLR.red}ERROR:    ${msg} ${CLR.reset}`);
+};
+
+/*---------------------------------------------------------
+Function: console.error
+Description: Print errors to the console
+---------------------------------------------------------*/
+console.debug = function (msg) {
+    if (global.DEBUG) console.log(`${CLR.cyan}DEBUG:   ${CLR.reset} ${msg}`);
+};
 
 /*---------------------------------------------------------
 Function:
@@ -97,7 +137,7 @@ async function fetchStablecoins() {
             return ret_list;
         })
         .catch((e) => {
-            console.log(e);
+            console.error(e);
         });
 } // fetchStablecoins()
 
@@ -211,15 +251,19 @@ Description:
         TODO
 ---------------------------------------------------------*/
 async function updateData() {
-    let new_stablecoin_data = await fetchStablecoins();
-    updateStablecoinData(new_stablecoin_data);
-    updateMetrics();
-    updatePlatformData();
-    console.log('Data Updated.');
+    try {
+        let new_stablecoin_data = await fetchStablecoins();
+        updateStablecoinData(new_stablecoin_data);
+        updateMetrics();
+        updatePlatformData();
+        console.info('Data Updated.');
+    } catch (e) {
+        console.error(` ***CRITICAL*** Could not update data: ${e}`);
+    }
 } // updateData()
 
 /*---------------------------------------------------------
     EXPORTS
 ---------------------------------------------------------*/
-module.exports.updateData = updateData;
-module.exports.data = data;
+exports.updateData = updateData;
+exports.data = data;

@@ -70,7 +70,7 @@ class Stablecoin {
 
     /*---------------------------------------------------------
     Function:
-            updateDerivedMetrics
+            updateMetrics
     Description:
             Update metric that require computation
             on prior set metrics
@@ -93,8 +93,9 @@ class Stablecoin {
             each platform this coin is issued on.
     ------------------------------------------------*/
     async updatePlatformsSupply() {
-        if (!this.platforms) {
-            console.log('no platforms for', this.name);
+        if (!this.name) return;
+        if (!this.platforms || this.platforms.length == 0) {
+            console.warn('No platforms for', this.name);
             return;
         }
         let PLATFORM_API = {};
@@ -110,20 +111,24 @@ class Stablecoin {
             this.platforms.map(async (platform) => {
                 try {
                     if (!PLATFORM_API[platform.name]) {
-                        throw `No API available for platform ${platform.name}`;
+                        throw `No API available for ${platform.name} platform.`;
                     } else if (!PLATFORM_API[platform.name].getTokenSupply) {
-                        throw `API for platform ${platform.name} does not support function 'getTokenSupply()'`;
+                        throw `API for ${platform.name} platform does not support function 'getTokenSupply()'.`;
                     } else {
                         platform.supply = await PLATFORM_API[platform.name].getTokenSupply(platform.contract_address);
                     }
                 } catch (e) {
-                    console.log(`Error getting ${this.name} platform supply: \n\t${e}`);
                     if (this.platforms.length == 1) {
+                        console.warn(
+                            `Using Total Supply as platform supply for ${this.name} on ${platform.name} due to API error: ${e}`
+                        );
                         this.platforms[0].supply = this.cmc.total_supply
                             ? this.cmc.total_supply
                             : this.msri.total_supply;
+                    } else {
+                        console.error(`Could not get ${this.name} supply on ${platform.name}: ${e}`);
                     }
-                }
+                } //catch
             })
         ); // await Promise.all
 
