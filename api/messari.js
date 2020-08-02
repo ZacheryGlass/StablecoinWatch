@@ -36,7 +36,7 @@ exports.getAllMessariStablecoins = async () => {
                     platforms.push(new Platform(platform_name));
                 });
             } catch {
-                console.error(`Fail to get platforms for Messari coin: ${coin.name}`);
+                console.warn(`Fail to get platforms for Messari coin: ${coin.name}`);
             }
 
             let scoin = new Stablecoin();
@@ -44,8 +44,12 @@ exports.getAllMessariStablecoins = async () => {
             scoin.symbol = coin.symbol;
             scoin.platforms = platforms;
             scoin.msri.desc = coin.profile.overview;
+            scoin.msri.price = coin.metrics.market_data.price_usd
+                ? coin.metrics.market_data.price_usd.toFixed(3)
+                : null;
             scoin.msri.mcap = coin.metrics.marketcap.current_marketcap_usd;
-            scoin.msri.volume = coin.metrics.market_data.volume_last_24_hours;
+            scoin.msri.volume = coin.metrics.market_data.real_volume_last_24_hours;
+            scoin.cmc.circulating_supply = coin.metrics.supply.circulating;
             ret_list.push(scoin);
         } // if is stablecoin
     }); // for each

@@ -149,7 +149,7 @@
 
                                 <!-- name -->
                                 <li class="name">
-                                	<strong><a href="#"><%= coin.name %></a></strong>
+                                	<strong><a href="/coins/<%= coin.uri %>"><%= coin.name %></a></strong>
                                 </li>
 
                                 <!-- symbol -->
@@ -224,10 +224,8 @@
                                                             <% } %>
                                                         </div>
                                                     <% } else if (i == 2) { %>
-                                                        <!-- <a href=""> -->
                                                             <div class="a">Other:</div>
-                                                            <div class="b"><%= (100-sum).toFixed()%>%</div>
-                                                        <!-- </a> -->
+                                                            <div class="b"><a href="/coins/<%= coin.uri %>"><%= (100-sum).toFixed()%>%</a></div>
                                                     <% } %>
                                                 </li>
                                             <% }); %>

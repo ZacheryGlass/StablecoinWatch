@@ -5,6 +5,7 @@ const Stablecoin = require('../stablecoin');
 const Platform = require('../platform');
 const cron = require('node-cron');
 const keys = require('../keys');
+const util = require('../util');
 
 /*---------------------------------------------------------
     MODULE-SCOPED VARIABLES
@@ -20,6 +21,7 @@ const MINS_BETWEEN_UPDATE = 60; /* 1 hour */
 /*---------------------------------------------------------
     SCHEDULED TASKS
 ---------------------------------------------------------*/
+getCurrencyRates();
 cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, getCurrencyRates);
 
 /*---------------------------------------------------------
@@ -161,7 +163,7 @@ exports.getSCWStablecoins = async () => {
     coin = new Stablecoin();
     coin.symbol = 'BITCNY';
     coin.scw.peg = '1 CNY';
-    coin.scw.price = currency_prices_in_usd.CNY;
+    coin.scw.price = currency_prices_in_usd.CNY.toFixed(3);
     sc.push(coin);
 
     /*-----------------------------------------------
@@ -254,10 +256,13 @@ exports.getSCWStablecoins = async () => {
     coin.name = 'Tether EUR';
     coin.symbol = 'EURT';
     coin.scw.peg = '1 EUR';
-    coin.scw.price = currency_prices_in_usd.EUR;
+    coin.scw.price =currency_prices_in_usd.EUR.toFixed(3);
     coin.platforms.push(new Platform('Ethereum', '0xabdf147870235fcfc34153828c769a70b3fae01f'));
     coin.platforms.push(new Platform('Bitcoin', 41));
-    coin.scw.desc = 'https://wallet.tether.to/transparency';
+    coin.scw.desc = 'Tether is fiat-collateralized stablecoin that offers individuals the \
+advantages of transacting with blockchain-based assets while mitigating price risk. \
+Tether is primarily issued on the Ethereum and Bitcoin blockchains and corresponds on \
+a 1:1 basis with Euros sitting in bank accounts.';
     coin.img_url = '/tether.png';
     sc.push(coin);
 
@@ -281,13 +286,13 @@ exports.getSCWStablecoins = async () => {
     coin.symbol = 'XAUT';
     coin.scw.peg = '1oz Gold';
     coin.platforms.push(new Platform('Ethereum', '0x4922a015c4407F87432B179bb209e125432E4a2A'));
-    coin.scw.desc =
-        'Tether Gold (XAUT) is a cryptocurrency with a value meant to mirror the value of \
+    coin.scw.desc = util.urlify(
+'Tether Gold (XAUT) is a cryptocurrency with a value meant to mirror the value of \
 the Gold. According to their site, Tether converts  cash into digital currency, to \
 anchor or “tether” the value of the coin to the price of assets or national \
 currencies like the US dollar, the Euro, and the Yen. Tether Gold (XAUT) is \
 issued on the Ethereum blockchain. For details on the issuance please refer to: \
-https://wallet.tether.to/transparency';
+https://wallet.tether.to/transparency');
     coin.img_url = '/tether-gold-logo.svg';
     sc.push(coin);
 
@@ -298,6 +303,7 @@ https://wallet.tether.to/transparency';
     coin.name = 'HonestCoin';
     coin.symbol = 'USDH';
     coin.scw.peg = '1 USD';
+    coin.scw.price = 1;
     coin.scw.desc =
         'HonestCoin (USDH) describes themsleves as a fully regulated, 1 to 1 U.S. Dollar-backed \
 stablecoin that can be bought, sold, invested in or spent as freely as you wish.';
