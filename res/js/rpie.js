@@ -1,5 +1,4 @@
-console.log('ZACHERY');
-
+// minified
 function generatePieGraph(t, e) {
     !(function () {
         var t =
@@ -166,4 +165,3 @@ function generatePieGraph(t, e) {
         }
     })();
 }
-console.log('ZACHERY');

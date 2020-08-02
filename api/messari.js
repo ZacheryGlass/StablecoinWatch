@@ -39,8 +39,6 @@ exports.getAllMessariStablecoins = async () => {
                 console.warn(`Fail to get platforms for Messari coin: ${coin.name}`);
             }
 
-            // if(coin.symbol == 'PAX') console.log(coin.profile.overview);
-
             let scoin = new Stablecoin();
             scoin.name = coin.name;
             scoin.symbol = coin.symbol;
@@ -51,7 +49,6 @@ exports.getAllMessariStablecoins = async () => {
                 : null;
             scoin.msri.mcap = coin.metrics.marketcap.current_marketcap_usd;
             scoin.msri.volume = coin.metrics.market_data.real_volume_last_24_hours;
-            // scoin.cmc.total_supply = coin.metrics.supply.circulating;
             scoin.cmc.circulating_supply = coin.metrics.supply.circulating;
             ret_list.push(scoin);
         } // if is stablecoin
