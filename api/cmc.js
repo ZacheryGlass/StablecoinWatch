@@ -45,7 +45,6 @@ const DEBUG_COIN_LIST = [
     'ITL',
     'BITGOLD',
     'XEUR',
-    '1GOLD',
     'CNHT',
     'XAUT',
 ];

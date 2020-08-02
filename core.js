@@ -129,11 +129,7 @@ async function fetchStablecoins() {
             let ret_list = combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list);
 
             // update the platform-specific supply for each coin
-            await Promise.all(
-                ret_list.map(async (coin) => {
-                    await coin.updateMetrics();
-                })
-            );
+            await Promise.all(ret_list.map(async (coin) => coin.updateDerivedMetrics()));
             return ret_list;
         })
         .catch((e) => {
@@ -169,7 +165,7 @@ function updateStablecoinData(new_stablecoin_data) {
 
     // sort global stablecoins list
     data.stablecoins = data.stablecoins.sort(function (a, b) {
-        return b.cmc.mcap - a.cmc.mcap;
+        return b.main.mcap - a.main.mcap;
     });
 } // updateStablecoinData()
 
@@ -186,12 +182,15 @@ async function updatePlatformData() {
 
     data.stablecoins.forEach((scoin) => {
         if (!scoin.platforms) return;
+        if (!scoin.main.total_supply) return;
         if (!scoin.main) scoin.setMainDataSrc();
 
         // loop through each platform of the current scoin
         scoin.platforms.forEach((pltfm) => {
             // calculate the market cap of this coin on this platform only.
-            let mcap_on_pltfm = (pltfm.supply / scoin.main.total_supply) * scoin.main.mcap;
+            let mcap_on_pltfm = (pltfm.supply / scoin.scw.total_supply) * scoin.main.mcap;
+            // let mcap_on_pltfm = pltfm.supply * scoin.main.price;
+
             if (!mcap_on_pltfm) return;
             sum += mcap_on_pltfm;
 
@@ -211,10 +210,11 @@ async function updatePlatformData() {
         }); // end for each platform
     }); // end for each scoin
 
-    data.platform_data.push({
-        name: 'Other / Unknown',
-        total_mcap: data.totalMCap - sum,
-    });
+    if (data.totalMCap - sum > 1000000)
+        data.platform_data.push({
+            name: 'Other / Unknown',
+            total_mcap: data.totalMCap - sum,
+        });
 
     // sort global platform list
     data.platform_data = data.platform_data.sort(function (a, b) {
@@ -239,9 +239,12 @@ function updateMetrics() {
 
     data.stablecoins.forEach(async (scoin) => {
         // update global total data
-        if (scoin.cmc.mcap) data.totalMCap += scoin.cmc.mcap;
-        if (scoin.cmc.volume) data.totalVolume += scoin.cmc.volume;
+        if (scoin.main.mcap) data.totalMCap += scoin.main.mcap;
+        if (scoin.main.volume) data.totalVolume += scoin.main.volume;
     });
+
+    data.totalMCap_s = util.toDollarString(data.totalMCap);
+    data.totalVolume_s = util.toDollarString(data.totalVolume);
 } // updateMetrics()
 
 /*---------------------------------------------------------

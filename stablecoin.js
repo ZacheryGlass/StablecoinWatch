@@ -15,11 +15,16 @@ class Stablecoin {
             Creates a blank Stablecoin object.
     ------------------------------------------------*/
     constructor() {
+        /* basic properties */
+        this.name = null;
+        this.symbol = null;
+        this.platforms = [];
+        /* coin metrics per-data source */
         this.cmc = {};
         this.msri = {};
         this.scw = {};
-        this.platforms = [];
-    } // constructor
+        this.main = {};
+    } // constructor()
 
     /*---------------------------------------------------------
     Function:
@@ -32,10 +37,9 @@ class Stablecoin {
         this.cmc.volume_s = util.toDollarString(this.cmc.volume);
         this.msri.mcap_s = util.toDollarString(this.msri.mcap);
         this.msri.volume_s = util.toDollarString(this.msri.volume);
-        if (this.main) {
-            this.main.mcap_s = util.toDollarString(this.main.mcap);
-            this.main.volume_s = util.toDollarString(this.main.volume);
-        }
+        this.scw.mcap_s = util.toDollarString(this.scw.mcap);
+        this.main.mcap_s = util.toDollarString(this.main.mcap);
+        this.main.volume_s = util.toDollarString(this.main.volume);
     } // updateStrings()
 
     /*---------------------------------------------------------
@@ -57,20 +61,21 @@ class Stablecoin {
             this.main.mcap = this.msri.mcap;
         } else if (this.scw.total_supply) {
             this.main.total_supply = this.scw.total_supply;
-            if (this.cmc.mcap) this.main.mcap = this.cmc.mcap;
+            if (this.scw.mcap) this.main.mcap = this.scw.mcap;
+            else if (this.cmc.mcap) this.main.mcap = this.cmc.mcap;
             else if (this.msri.mcap) this.main.mcap = this.msri.mcap;
         }
 
         // set Price
-        this.main.price = this.cmc.price ? this.cmc.price : this.msri.price;
+        this.main.price = Number(this.cmc.price ? this.cmc.price : this.msri.price ? this.msri.price : this.scw.price);
 
         // set Price
-        this.main.volume = this.cmc.volume ? this.cmc.volume : this.msri.volume;
+        this.main.volume = Number(this.cmc.volume ? this.cmc.volume : this.msri.volume);
     } // setMainDataSrc()
 
     /*---------------------------------------------------------
     Function:
-            updateMetrics
+            updateDerivedMetrics
     Description:
             Update metric that require computation
             on prior set metrics
@@ -78,11 +83,13 @@ class Stablecoin {
             Many metrics for a Stablecoin are step from
             API return values. Derived metrics are
             computed from these base-metrics. 
-    ------------------------------------------------*/
-    async updateMetrics() {
+    ---------------------------------------------------------*/
+    async updateDerivedMetrics() {
+        this.setMainDataSrc();
+        await this.updatePlatformsSupply();
         this.setMainDataSrc();
         this.updateStrings();
-        return this.updatePlatformsSupply();
+        return;
     }
 
     /*---------------------------------------------------------
@@ -103,7 +110,7 @@ class Stablecoin {
         PLATFORM_API['Bitcoin'] = omni;
         PLATFORM_API['Tron'] = tron;
         PLATFORM_API['BNB Chain'] = bnb;
-        PLATFORM_API['Bitcoin Cash (SLP)'] = slp;
+        PLATFORM_API['Bitcoin Cash'] = slp;
         PLATFORM_API['EOS'] = null;
         PLATFORM_API['Algorand'] = algo;
 
@@ -122,9 +129,7 @@ class Stablecoin {
                         console.warn(
                             `Using Total Supply as platform supply for ${this.name} on ${platform.name} due to API error: ${e}`
                         );
-                        this.platforms[0].supply = this.cmc.total_supply
-                            ? this.cmc.total_supply
-                            : this.msri.total_supply;
+                        this.platforms[0].supply = this.main.total_supply;
                     } else {
                         console.error(`Could not get ${this.name} supply on ${platform.name}: ${e}`);
                     }
@@ -140,6 +145,8 @@ class Stablecoin {
         this.platforms.forEach((p) => {
             if (p && p.supply) this.scw.total_supply += p.supply;
         });
+
+        this.scw.mcap = this.main.price * this.scw.total_supply;
     } // updatePlatformsSupply()
 }
 

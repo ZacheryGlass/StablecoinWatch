@@ -63,6 +63,8 @@ exports.getTokenPlatform = (token) => {
         return 'BNB Chain';
     } else if (token.toLowerCase() == 'omni') {
         return 'Bitcoin';
+    } else if (token.toLowerCase() == 'slp') {
+        return 'Bitcoin Cash';
     } else if (token.toLowerCase() == 'native') {
         return 'Native';
     } else {
