@@ -1,7 +1,20 @@
+/*---------------------------------------------------------
+Function:
+	sleep
+Description:
+	pause execution for a specified amount of time
+---------------------------------------------------------*/
 exports.sleep = (ms) => {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }; // sleep()
 
+/*---------------------------------------------------------
+Function:
+	toDollarString
+Description:
+	return a USD currency formated string from a
+	number input
+---------------------------------------------------------*/
 exports.toDollarString = (v) => {
     if (!v) return v;
 
@@ -22,11 +35,23 @@ exports.toDollarString = (v) => {
     }
 }; // toDollarString()
 
+/*---------------------------------------------------------
+Function:
+	stripHTML
+Description:
+	Remove HTML from a string of text
+---------------------------------------------------------*/
 exports.stripHTML = (str) => {
     if (typeof str !== 'string') return str;
     return str.replace(/<[^>]*>?/gm, '');
 }; // stripHTML()
 
+/*---------------------------------------------------------
+Function:
+	getTokenPlatform
+Description:
+	Return the platform from the token type as input
+---------------------------------------------------------*/
 exports.getTokenPlatform = (token) => {
     if (typeof token !== 'string') return 'Unknown';
 

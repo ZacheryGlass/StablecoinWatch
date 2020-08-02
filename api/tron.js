@@ -1,14 +1,22 @@
+/*---------------------------------------------------------
+    IMPORTS
+---------------------------------------------------------*/
 const TronGrid = require('trongrid');
 const TronWeb = require('tronweb');
 
+/*---------------------------------------------------------
+    CONSTANTS
+---------------------------------------------------------*/
 const tronWeb = new TronWeb({
     fullHost: 'https://api.trongrid.io',
 });
 
 const tronGrid = new TronGrid(tronWeb);
-
 // tronGrid.setExperimental('experimental key');
 
+/*---------------------------------------------------------
+    FUNCTIONS
+---------------------------------------------------------*/
 exports.getAccount = async (address) => {
     const options = {
         showAssets: true,

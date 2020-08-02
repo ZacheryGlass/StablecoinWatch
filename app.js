@@ -1,3 +1,6 @@
+/*---------------------------------------------------------
+    IMPORTS
+---------------------------------------------------------*/
 const https = require('https');
 const express = require('express');
 const cron = require('node-cron');
@@ -6,21 +9,29 @@ const scw = require('./api/scw');
 const util = require('./util');
 const { data, updateData } = require('./core');
 
-// CONSTANTS
+/*---------------------------------------------------------
+    CONSTANTS
+---------------------------------------------------------*/
 const MINS_BETWEEN_UPDATE = 15;
 
+/*---------------------------------------------------------
+    APP SETUP
+---------------------------------------------------------*/
 const app = express();
 
 app.set('view engine', 'ejs');
 app.use(express.static(__dirname + '/res/styles'));
 app.use(express.static(__dirname + '/res/img'));
 
+/*---------------------------------------------------------
+    SCHEDULED TASKS
+---------------------------------------------------------*/
 updateData();
 cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, updateData);
 
-/*-----------------------------------------------
-                    Routes
------------------------------------------------*/
+/*---------------------------------------------------------
+    ROUTES
+---------------------------------------------------------*/
 app.get('/', async (req, res) => {
     let eth_data = data.platform_data.find((chain) => chain.name === 'Ethereum');
     res.render('home', {

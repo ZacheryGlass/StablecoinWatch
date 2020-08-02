@@ -1,6 +1,20 @@
+/*---------------------------------------------------------
+    IMPORTS
+---------------------------------------------------------*/
 const fetch = require('node-fetch');
 const util = require('../util');
 
+/*---------------------------------------------------------
+    FUNCTIONS
+---------------------------------------------------------*/
+
+/*---------------------------------------------------------
+Function:
+        omni.getTokenSupply
+Description:
+        Fetches the Omni exporer to get the total supply
+        for coin specified by 'token_id'
+---------------------------------------------------------*/
 exports.getTokenSupply = async (token_id) => {
     const omni_api_url = `https://api.omniexplorer.info/v1/property/${token_id}`;
     const response = await fetch(omni_api_url);

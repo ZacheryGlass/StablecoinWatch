@@ -1,9 +1,22 @@
+/*---------------------------------------------------------
+    IMPORTS
+---------------------------------------------------------*/
 const Messari = require('messari-api');
 const MessariClient = new Messari();
 const util = require('../util');
 const Stablecoin = require('../stablecoin');
 const Platform = require('../platform');
 
+/*---------------------------------------------------------
+    FUNCTIONS
+---------------------------------------------------------*/
+
+/*---------------------------------------------------------
+Function:
+	getAllMessariStablecoins
+Description:
+	Fetch all stablecoins from Messari API
+---------------------------------------------------------*/
 exports.getAllMessariStablecoins = async () => {
     let ret_list = [];
 

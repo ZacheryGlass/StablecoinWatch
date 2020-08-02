@@ -1,19 +1,31 @@
+/*---------------------------------------------------------
+    IMPORTS
+---------------------------------------------------------*/
 const messari = require('./api/messari');
 const scw = require('./api/scw');
 const util = require('./util');
 const cmc = require('./api/cmc');
 
-// GLOBAL VARS
+/*---------------------------------------------------------
+    MODULE-SCOPED VARIABLES
+---------------------------------------------------------*/
 let data = {};
 data.stablecoins = [];
 data.totalMCap = 0;
 data.totalVolume = 0;
 data.platform_data = [];
 
-/*----------------------------------------------
-Function:       combineCoins
-Description: 
-------------------------------------------------*/
+/*---------------------------------------------------------
+    FUNCTIONS
+---------------------------------------------------------*/
+
+/*---------------------------------------------------------
+Function:
+        combineCoins
+Description:
+        Combine the data from mutlipe sources into a
+        a single Stablecoin object.
+---------------------------------------------------------*/
 function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
     // loop through each CMC coin
     cmc_coins_list.forEach((cmc_coin) => {
@@ -53,10 +65,14 @@ function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
     return cmc_coins_list;
 } // end coinbinedCoins()
 
-/*----------------------------------------------
-Function:       fetchStablecoins
-Description: 
-------------------------------------------------*/
+/*---------------------------------------------------------
+Function:
+        fetchStablecoins
+Description:
+        Pull Stablecoin data from various supported APIs.
+        This function will build and return a list of
+        Stablecoin objects.
+---------------------------------------------------------*/
 async function fetchStablecoins() {
     // pull new stablecoins data
     let fetching_msri = messari.getAllMessariStablecoins();
@@ -85,10 +101,12 @@ async function fetchStablecoins() {
         });
 } // fetchStablecoins()
 
-/*----------------------------------------------
-Function:       updateStablecoinData
-Description: 
-------------------------------------------------*/
+/*---------------------------------------------------------
+Function:
+        updateStablecoinData
+Description:
+        TODO
+---------------------------------------------------------*/
 function updateStablecoinData(new_stablecoin_data) {
     new_stablecoin_data.forEach((scoin_temp) => {
         let scoin_temp_found = false;
@@ -115,10 +133,12 @@ function updateStablecoinData(new_stablecoin_data) {
     });
 } // updateStablecoinData()
 
-/*----------------------------------------------
-Function:       updatePlatformData
-Description: 
-------------------------------------------------*/
+/*---------------------------------------------------------
+Function:
+        updatePlatformData
+Description:
+        TODO
+---------------------------------------------------------*/
 async function updatePlatformData() {
     data.platform_data = [];
 
@@ -167,10 +187,12 @@ async function updatePlatformData() {
     });
 } // updatePlatformData()
 
-/*----------------------------------------------
-Function:       updateMetrics
-Description: 
-------------------------------------------------*/
+/*---------------------------------------------------------
+Function:
+        updateMetrics
+Description:
+        TODO
+---------------------------------------------------------*/
 function updateMetrics() {
     data.totalMCap = 0;
     data.totalVolume = 0;
@@ -182,10 +204,12 @@ function updateMetrics() {
     });
 } // updateMetrics()
 
-/*----------------------------------------------
-Function:       updateData
-Description: 
-------------------------------------------------*/
+/*---------------------------------------------------------
+Function:
+        updateData
+Description:
+        TODO
+---------------------------------------------------------*/
 async function updateData() {
     let new_stablecoin_data = await fetchStablecoins();
     updateStablecoinData(new_stablecoin_data);
@@ -194,5 +218,8 @@ async function updateData() {
     console.log('Data Updated.');
 } // updateData()
 
+/*---------------------------------------------------------
+    EXPORTS
+---------------------------------------------------------*/
 module.exports.updateData = updateData;
 module.exports.data = data;

@@ -8,8 +8,11 @@ const slp = require('./api/bch');
 const algo = require('./api/algo');
 
 class Stablecoin {
-    /*----------------------------------------------
-    Function:       constructor
+    /*---------------------------------------------------------
+    Function:
+            constructor
+    Description:
+            Creates a blank Stablecoin object.
     ------------------------------------------------*/
     constructor() {
         this.cmc = {};
@@ -18,9 +21,11 @@ class Stablecoin {
         this.platforms = [];
     } // constructor
 
-    /*----------------------------------------------
-    Function:       updateStrings
-    Description: 
+    /*---------------------------------------------------------
+    Function:
+            updateStrings
+    Description:
+            Build dollar formated string for coin metrics
     ------------------------------------------------*/
     async updateStrings() {
         this.cmc.mcap_s = util.toDollarString(this.cmc.mcap);
@@ -33,9 +38,12 @@ class Stablecoin {
         }
     } // updateStrings()
 
-    /*----------------------------------------------
-    Function:       setMainDataSrc
-    Description: 
+    /*---------------------------------------------------------
+    Function:
+            setMainDataSrc
+    Description:
+            Set the values to be used as the main
+            source of data for each metric
     ------------------------------------------------*/
     setMainDataSrc() {
         this.main = {};
@@ -60,9 +68,16 @@ class Stablecoin {
         this.main.volume = this.cmc.volume ? this.cmc.volume : this.msri.volume;
     } // setMainDataSrc()
 
-    /*----------------------------------------------
-    Function:       updateMetrics
-    Description: 
+    /*---------------------------------------------------------
+    Function:
+            updateDerivedMetrics
+    Description:
+            Update metric that require computation
+            on prior set metrics
+    Note:
+            Many metrics for a Stablecoin are step from
+            API return values. Derived metrics are
+            computed from these base-metrics. 
     ------------------------------------------------*/
     async updateMetrics() {
         this.setMainDataSrc();
@@ -70,9 +85,12 @@ class Stablecoin {
         return this.updatePlatformsSupply();
     }
 
-    /*----------------------------------------------
-    Function:       updatePlatformsSupply
-    Description: 
+    /*---------------------------------------------------------
+    Function:
+            updatePlatformsSupply
+    Description:
+            Update the total-supply on this coin for
+            each platform this coin is issued on.
     ------------------------------------------------*/
     async updatePlatformsSupply() {
         if (!this.platforms) {
