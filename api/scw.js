@@ -237,7 +237,7 @@ exports.getSCWStablecoins = async () => {
     coin = new Stablecoin();
     coin.symbol = 'USDT';
     coin.scw.peg = '1 USD';
-    coin.platforms.push(new Platform('Tron', '41fde74827168724bdafdaf8896dc90afc0fa6641d'));
+    coin.platforms.push(new Platform('Tron', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'));
     coin.platforms.push(new Platform('Bitcoin', 31));
     coin.platforms.push(new Platform('Bitcoin (Liquid)'));
     coin.platforms.push(new Platform('EOS', 'tethertether'));
