@@ -3,6 +3,8 @@
 ---------------------------------------------------------*/
 global.DEBUG = true;
 global.SHOW_WARNINGS = true;
+global.fetch = require('node-fetch');
+global.WebSocket = require('ws');
 global.EXCLUDE_COINS = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC', '1GOLD'];
 
 /*---------------------------------------------------------

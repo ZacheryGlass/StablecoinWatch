@@ -6,6 +6,8 @@ const tron = require('./api/tron');
 const bnb = require('./api/bnb');
 const slp = require('./api/bch');
 const algo = require('./api/algo');
+const eos = require('./api/eos');
+const liquid = require('./api/liquid');
 
 class Stablecoin {
     /*---------------------------------------------------------
@@ -111,8 +113,9 @@ class Stablecoin {
         PLATFORM_API['Tron'] = tron;
         PLATFORM_API['BNB Chain'] = bnb;
         PLATFORM_API['Bitcoin Cash'] = slp;
-        PLATFORM_API['EOS'] = null;
+        PLATFORM_API['EOS'] = eos;
         PLATFORM_API['Algorand'] = algo;
+        PLATFORM_API['Bitcoin (Liquid)'] = liquid;
 
         await Promise.all(
             this.platforms.map(async (platform) => {
