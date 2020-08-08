@@ -205,9 +205,8 @@ async function updatePlatformData() {
                 data.platform_data.push({
                     name: pltfm.name,
                     total_mcap: mcap_on_pltfm,
-                    uri: encodeURIComponent(pltfm.name),
+                    uri: pltfm.name.replace(' ', '_'),
                 });
-                console.debug(encodeURIComponent(pltfm.name));
             } // end if-else
         }); // end for each platform
     }); // end for each scoin

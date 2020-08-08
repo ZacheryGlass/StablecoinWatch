@@ -35,7 +35,7 @@ class Stablecoin {
             Build dollar formated string for coin metrics
     ------------------------------------------------*/
     async updateStrings() {
-        this.uri = encodeURIComponent(this.symbol);
+        this.uri = this.symbol;
         this.cmc.mcap_s = util.toDollarString(this.cmc.mcap);
         this.cmc.volume_s = util.toDollarString(this.cmc.volume);
         this.msri.mcap_s = util.toDollarString(this.msri.mcap);
