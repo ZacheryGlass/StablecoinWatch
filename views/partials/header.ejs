@@ -9,17 +9,18 @@
 
     header img {
         max-height: 90px;
+        max-width: 75%;
         border-radius: 10px;
         margin: 0;
         padding: 0;
     }
 
-    h1,
-    h1 a {
+    h1, h1 a {
         text-align: center;
         margin: 0;
         padding: 0;
     }
+
     /****************************************
                     buttons
     *****************************************/
@@ -58,11 +59,12 @@
         padding: 0;
         background: #007ac1;
         text-align: center;
+        width: 100%;
     }
 
-    .gridy {
+    .grid {
         display: grid;
-        grid-template-columns: 1fr 1.5fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr;
         grid-template-areas:
             'a b c'
             'd b f';
@@ -74,31 +76,36 @@
         padding: 0.25rem 0;
     }
 
-    .gridy > * {
+    .grid > * {
         margin-left: 5px;
         margin-right: 5px;
     }
-    .gridy .a {
-        grid-area: a;
-        text-align: left;
-    }
-    .gridy .b {
-        grid-area: b;
-    }
-    .gridy .c {
-        grid-area: c;
-        text-align: right;
+
+    .grid .a { grid-area: a; }
+    .grid .b { grid-area: b; }
+    .grid .c { grid-area: c; }
+    .grid .d { grid-area: d; }
+    .grid .f { grid-area: f; }
+
+    .left_grid  { text-align: left;  }
+    .right_grid { text-align: right; }
+
+    /****************************************
+                Mobile Support
+    *****************************************/
+    @media only screen and (max-width: 767px) {
+        .grid       { grid-template-columns:
+                      1fr 300px 1fr;        }
+        .left_grid  { text-align: center;   }
+        .right_grid { text-align: center;   }
+        .bar        { font-size: 12px;      }
     }
 
-    .gridy .d {
-        grid-area: d;
-        text-align: left;
+    @media only screen and (max-width: 620px) {
+        .grid       { grid-template-columns:
+                      1fr 1fr 1fr;          }
     }
 
-    .gridy .f {
-        grid-area: f;
-        text-align: right;
-    }
 </style>
 <header>
     <h1>
@@ -106,8 +113,8 @@
     </h1>
 </header>
 <div class="bar">
-    <div class="gridy">
-        <section class="a">
+    <div class="grid">
+        <section class="a left_grid">
             Total Market Cap:&nbsp;<%=data.totalMCap_s%>
         </section>
         <section class="b">
@@ -121,13 +128,13 @@
             <a href="/platforms" class="btn btn-white">Chains</a>
             <% } %>
         </section>
-        <section class="c">
+        <section class="c right_grid">
             Total $ on ETH: <%=totalETHMCap_s%>
         </section>
-        <section class="d">
+        <section class="d left_grid">
             Total 24h Volume: <%=data.totalVolume_s%>
         </section>
-        <section class="f">
+        <section class="f right_grid">
             Total % on ETH: <%= ((totalETHMCap/data.totalMCap)*100).toFixed(1)%>%
         </section>
     </div>

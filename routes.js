@@ -43,7 +43,6 @@ router.get('/platforms', async (req, res) => {
     Coins
 -----------------------------------------------*/
 router.get('/coins/:symbol', async (req, res) => {
-    console.debug(req.params.symbol);
     const symbol = req.params.symbol;
     const sc = data.stablecoins.find((c) => c.symbol == symbol);
     if (sc) res.send(sc);
@@ -54,7 +53,6 @@ router.get('/coins/:symbol', async (req, res) => {
     Platforms
 -----------------------------------------------*/
 router.get('/platforms/:name', async (req, res) => {
-    console.debug(req.params.name);
     const name = req.params.name.replace('_', ' ');
     const platform = data.platform_data.find((p) => p.name.toLowerCase() == name.toLowerCase());
     if (platform) res.send(platform);
