@@ -205,7 +205,7 @@ async function updatePlatformData() {
                 data.platform_data.push({
                     name: pltfm.name,
                     total_mcap: mcap_on_pltfm,
-                    uri: encodeURIComponent(encodeURIComponent(pltfm.name)),
+                    uri: encodeURIComponent(pltfm.name),
                 });
                 console.debug(encodeURIComponent(pltfm.name));
             } // end if-else
