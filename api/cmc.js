@@ -4,7 +4,7 @@ const cmc_api = new CoinMarketCap(keys.cmc);
 const Stablecoin = require('../stablecoin');
 const Platform = require('../platform');
 const { cmc } = require('../keys');
-const { sleep, toDollarString } = require('../util');
+const { sleep, toDollarString, stripHTML } = require('../util');
 const cron = require('node-cron');
 
 /*---------------------------------------------------------
@@ -167,7 +167,7 @@ exports.getCMCStablecoins = async (ticker_list) => {
                           ),
                       ]
                     : [new Platform(md.name)];
-                scoin.cmc.desc = md.description;
+                scoin.cmc.desc = stripHTML(md.description);
                 scoin.cmc.mcap = q.quote ? q.quote.USD.market_cap : null;
                 scoin.cmc.mcap_s = toDollarString(scoin.cmc.mcap);
                 scoin.cmc.volume = q.quote ? q.quote.USD.volume_24h : null;

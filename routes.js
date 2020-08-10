@@ -45,9 +45,15 @@ router.get('/platforms', async (req, res) => {
 router.get('/coins/:symbol', async (req, res) => {
     console.debug(req.params.symbol);
     const symbol = req.params.symbol;
-    const sc = data.stablecoins.find((c) => c.symbol == symbol);
-    if (sc) res.send(sc);
-    else res.send('error');
+    const coin = data.stablecoins.find((p) => p.symbol.toLowerCase() == symbol.toLowerCase());
+    let eth_data = data.platform_data.find((chain) => chain.name === 'Ethereum');
+    res.render('coins', {
+        data: data,
+        totalETHMCap: eth_data.total_mcap,
+        totalETHMCap_s: eth_data.total_mcap_s,
+        coin: coin,
+        active: '',
+    });
 }); // coins
 
 /*-----------------------------------------------
@@ -57,8 +63,14 @@ router.get('/platforms/:name', async (req, res) => {
     console.debug(req.params.name);
     const name = req.params.name.replace('_', ' ');
     const platform = data.platform_data.find((p) => p.name.toLowerCase() == name.toLowerCase());
-    if (platform) res.send(platform);
-    else res.send('error');
+    let eth_data = data.platform_data.find((chain) => chain.name === 'Ethereum');
+    res.render('platforms', {
+        data: data,
+        totalETHMCap: eth_data.total_mcap,
+        totalETHMCap_s: eth_data.total_mcap_s,
+        platform: platform,
+        active: '',
+    });
 }); // platforms
 
 /*-----------------------------------------------

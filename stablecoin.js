@@ -36,11 +36,20 @@ class Stablecoin {
     ------------------------------------------------*/
     async updateStrings() {
         this.uri = this.symbol;
+
         this.cmc.mcap_s = util.toDollarString(this.cmc.mcap);
+        this.cmc.total_supply_s = util.toDollarString(this.cmc.total_supply);
         this.cmc.volume_s = util.toDollarString(this.cmc.volume);
+        this.cmc.circulating_supply_s = util.toDollarString(this.cmc.circulating_supply);
+
         this.msri.mcap_s = util.toDollarString(this.msri.mcap);
+        this.msri.total_supply_s = util.toDollarString(this.cmc.total_supply);
         this.msri.volume_s = util.toDollarString(this.msri.volume);
+        this.msri.circulating_supply_s = util.toDollarString(this.msri.circulating_supply);
+
         this.scw.mcap_s = util.toDollarString(this.scw.mcap);
+        this.scw.total_supply_s = util.toDollarString(this.cmc.total_supply);
+
         this.main.mcap_s = util.toDollarString(this.main.mcap);
         this.main.volume_s = util.toDollarString(this.main.volume);
     } // updateStrings()
