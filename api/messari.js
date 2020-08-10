@@ -27,11 +27,7 @@ exports.getAllMessariStablecoins = async () => {
         if (coin.profile.sector == 'Stablecoins' && !global.EXCLUDE_COINS.includes(coin.symbol)) {
             // format platforms
             let platforms = [];
-            if (coin.symbol == 'USDT') {
-                console.log(coin.profile.relevant_resources);
-                console.log(coin.profile.organizations);
-                console.log(coin.metrics.market_data_liquidity);
-            }
+
             try {
                 let token_types = coin.profile.token_details.type.split(', ');
                 token_types.forEach((token_type) => {
@@ -48,6 +44,9 @@ exports.getAllMessariStablecoins = async () => {
             scoin.symbol = coin.symbol;
             scoin.platforms = platforms;
             scoin.msri.desc = util.stripHTML(coin.profile.overview);
+            scoin.msri.price = coin.metrics.market_data.price_usd
+                ? coin.metrics.market_data.price_usd.toFixed(3)
+                : null;
             scoin.msri.mcap = coin.metrics.marketcap.current_marketcap_usd;
             scoin.msri.volume = coin.metrics.market_data.real_volume_last_24_hours;
             // scoin.cmc.total_supply = coin.metrics.supply.circulating;

@@ -225,7 +225,7 @@
                                                         </div>
                                                     <% } else if (i == 2) { %>
                                                             <div class="a">Other:</div>
-                                                            <div class="b"><%= (100-sum).toFixed()%>%</div>
+                                                            <div class="b"><a href="/coins/<%= coin.uri %>"><%= (100-sum).toFixed()%>%</a></div>
                                                     <% } %>
                                                 </li>
                                             <% }); %>

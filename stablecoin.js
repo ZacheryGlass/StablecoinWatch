@@ -48,7 +48,7 @@ class Stablecoin {
         this.msri.circulating_supply_s = util.toDollarString(this.msri.circulating_supply);
 
         this.scw.mcap_s = util.toDollarString(this.scw.mcap);
-        this.scw.total_supply_s = util.toDollarString(this.cmc.total_supply);
+        this.scw.total_supply_s = util.toDollarString(this.scw.total_supply);
 
         this.main.mcap_s = util.toDollarString(this.main.mcap);
         this.main.volume_s = util.toDollarString(this.main.volume);
