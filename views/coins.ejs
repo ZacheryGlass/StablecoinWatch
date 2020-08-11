@@ -17,19 +17,20 @@
                 grid-template-areas:
                     'data-hd     data-hd      data-hd      data-hd'
                     'data-tb     data-tb      data-tb      data-tb'
+                    'data-desc   data-desc    data-desc    data-desc'
                     'supply-hd   supply-hd    supply-hd    supply-hd'
                     'supply-tbl  supply-tbl   supply-chrt  supply-chrt';
-                grid-gap: 5px;
+                grid-gap: 25px;
                 /* justify-content: center; */
                 width: 100%;
             }
 
-            .supply-hd    { grid-area: supply-hd;    }
-            /* .data-tb > article      { grid-area: data-main;      } */
-            .supply-tbl   { grid-area: supply-tbl;   }
-            .supply-chrt   { grid-area: supply-chrt;   }
-            .data-hd { grid-area: data-hd; }
-            .data-tb   { grid-area: data-tb;   }
+            .supply-hd      { grid-area: supply-hd;     }
+            .supply-tbl     { grid-area: supply-tbl;    }
+            .supply-chrt    { grid-area: supply-chrt;   }
+            .data-hd        { grid-area: data-hd;       }
+            .data-tb        { grid-area: data-tb;       }
+            .data-desc      { grid-area: data-desc;     }
 
             .supply-tbl   {
                 width: 100%;
@@ -39,6 +40,11 @@
             canvas { 
                 width: 100%;
                 max-width: 300px;
+                margin: auto;
+            }
+            
+            .data-desc > p {
+                width: 80%;
                 margin: auto;
             }
 
@@ -88,8 +94,8 @@
             }
 
             .coin_logo {
-                width: 50px;
-                height: 50px;
+                width: 40px;
+                height: 40px;
             }
 
             table {
@@ -174,14 +180,10 @@
                     <canvas id="supply_chart" width="40" height="40"></canvas>
                 </section>
                 <section class="data-hd">
-                    <!-- <h1>Data Source Comparison</h1> -->
                     <img class="coin_logo" src="<%= coin.img_url %>" alt="" /><h2><%= coin.name %></h2>
                     <h3>(<%= coin.symbol %>)</h3>
                 </section>
-                <!-- <section class="data-main">
-                    <img class="coin_logo" src="<%= coin.img_url %>" alt="" /><h2><%= coin.name %></h2>
-                    <h3>(<%= coin.symbol %>)</h3>
-                </section> -->
+
                 <section class="data-tb">
                     <table>
                         <tr>
@@ -225,12 +227,23 @@
 
                     </table>
                 </section>
+                <section class="data-desc">
+                <h1><%= coin.name %> Description</h1>
+                    <% if( coin.msri.desc) { %>
+                        <p><%= coin.msri.desc %></p>
+                    <% } else if( coin.cmc.desc) { %>
+                        <p><%= coin.cmc.desc%></p>
+                    <% } else if( coin.scw.desc) { %>
+                        <p><%= coin.scw.desc%></p>
+                    <% } else { %>
+                    <p> No description available :(</p>
+                    <% } %>
+                </section>
             </main>
             <!-- Footer -->
             <%- include('partials/footer') %>
             <!-- Footer -->
         </div>
-
     </body>
     <script type="text/javascript">
         let ctx = document.getElementById('supply_chart').getContext('2d');
