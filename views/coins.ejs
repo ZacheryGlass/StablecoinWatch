@@ -12,7 +12,6 @@
                     Main Grid
             *****************************************/
             .grid-wrap {
-                margin-bottom: 40px;
                 display: grid;
                 grid-template-areas:
                     'data-hd     data-hd      data-hd      data-hd'
@@ -21,8 +20,8 @@
                     'supply-hd   supply-hd    supply-hd    supply-hd'
                     'supply-tbl  supply-tbl   supply-chrt  supply-chrt';
                 grid-gap: 25px;
-                /* justify-content: center; */
                 width: 100%;
+                padding-bottom: 80px;
             }
 
             .supply-hd      { grid-area: supply-hd;     }
@@ -43,11 +42,6 @@
                 margin: auto;
             }
             
-            .data-desc > p {
-                width: 80%;
-                margin: auto;
-            }
-
             /****************************************
                     Platform Section
             *****************************************/
@@ -56,7 +50,6 @@
                 display: grid;
                 grid-template-areas:
                     'name amount';
-                /* grid-gap: 1px; */
                 width: 80%;
                 margin: auto;
 
@@ -82,7 +75,6 @@
             *****************************************/
             .data-hd {
                 display: flex;
-                /* width: 70%; */
                 margin: auto;
                 padding: 20px 0;
             }
@@ -110,13 +102,45 @@
             table th {
                 border-bottom: 1px solid black;
                 padding: 10px;
-                background: rgba( 0, 0, 0, 0.5);
                 color: white;
+                background: #003c60;
             }
 
             tr > td:first-of-type {
                 font-weight: bold;
                 text-align: right;
+            }
+            /****************************************
+                    Description
+            *****************************************/
+            .desc-bar {
+                background: rgba( 0, 0, 0, 0.5);
+                height: 40px;
+                background: #003c60;
+            }
+
+            .bar-btn {
+                height: 100%;
+                font-size: 16px;
+                margin: 0;
+                float: left;
+                background: #007ac1;
+                color: white;
+                border: 1px solid #003c60;
+                font-family: Verdana,sans-serif;
+            }
+
+            .bar-btn:hover {
+                background: rgba( 0, 0, 0, 0.5);
+            }
+            
+            .desc-container > p {
+                /* width: 80%; */
+                margin: auto;
+                padding: 3%;
+                border: 1px solid black;
+                border-radius: 5px;
+                animation-duration: 0.2s;
             }
 
             /****************************************
@@ -128,8 +152,8 @@
                 .grid-wrap {
                     grid-template-areas:
                         'data-hd'
-                        /* 'data-main' */
                         'data-tb'
+                        'data-desc'
                         'supply-hd'
                         'supply-tbl'
                         'supply-chrt';
@@ -228,15 +252,39 @@
                     </table>
                 </section>
                 <section class="data-desc">
-                <h1><%= coin.name %> Description</h1>
-                    <% if( coin.msri.desc) { %>
-                        <p><%= coin.msri.desc %></p>
-                    <% } else if( coin.cmc.desc) { %>
-                        <p><%= coin.cmc.desc%></p>
-                    <% } else if( coin.scw.desc) { %>
-                        <p><%= coin.scw.desc%></p>
-                    <% } else { %>
-                    <p> No description available :(</p>
+                    <h1><%= coin.name %> Description</h1>
+                    <div class="desc-bar">
+                        <% if( coin.msri.desc ) { %>
+                            <button id="msri_btn" class="bar-btn" onclick="showDesc('msri')">Messari</button>
+                        <% } %>
+                        <% if( coin.cmc.desc ) { %>
+                            <button id="cmc_btn" class="bar-btn" onclick="showDesc('cmc')">CoinMarketCap</button>
+                        <% } %>
+                        <% if( coin.swc && coin.scw.desc ) { %>
+                            <button id="cmc_btn" class="bar-btn" onclick="showDesc('scw')">Stablecoin Watch</button>
+                        <% } %>
+                    </div>
+
+                    <% let found = false; %>
+
+                    <!-- Messari Description -->
+                    <% if( coin.msri.desc) { %> <div id="msri" class="desc-container">
+                            <p><%- coin.msri.desc %></p>
+                        </div>
+                    <% found = true; } %>
+
+                    <!-- CoinMarketCap Description -->
+                    <% if( coin.cmc.desc) { %>
+                        <div id="cmc" class="desc-container" <% if( found ) { %> style="display:none" <% } %> >
+                            <p><%- coin.cmc.desc %></p>
+                        </div>
+                    <% found = true; } %>
+
+                    <!-- StablecoinWatch Description -->
+                    <% if( coin.swc && coin.swc.desc ) { %>
+                        <div id="scw" class="desc-container" <% if( found ) { %> style="display:none" <% } %> >
+                            <p><%- coin.scw.desc %></p>
+                        </div>
                     <% } %>
                 </section>
             </main>
@@ -289,5 +337,14 @@
             },
             options: {}
         });
+
+        function showDesc(descSource) {
+            let i;
+            let x = document.getElementsByClassName("desc-container");
+            for (i = 0; i < x.length; i++) {
+                x[i].style.display = "none";  
+            }
+            document.getElementById(descSource).style.display = "block";
+        }
     </script>
 </html>

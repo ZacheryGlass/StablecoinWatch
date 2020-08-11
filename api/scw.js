@@ -255,6 +255,10 @@ exports.getSCWStablecoins = async () => {
     coin.symbol = 'EURT';
     coin.scw.peg = '1 EUR';
     coin.scw.price = currency_prices_in_usd.EUR;
+    coin.scw.desc = 'Tether is fiat-collateralized stablecoin that offers individuals the ';
+    // 'advantages of transacting with blockchain-based assets while mitigating price risk. '
+    // 'Tether is primarily issued on the Ethereum and Bitcoin blockchains and corresponds on '
+    // 'a 1:1 basis with Euros sitting in bank accounts.';
     coin.platforms.push(new Platform('Ethereum', '0xabdf147870235fcfc34153828c769a70b3fae01f'));
     coin.platforms.push(new Platform('Bitcoin', 41));
     coin.scw.desc = 'https://wallet.tether.to/transparency';
@@ -298,6 +302,7 @@ https://wallet.tether.to/transparency';
     coin.name = 'HonestCoin';
     coin.symbol = 'USDH';
     coin.scw.peg = '1 USD';
+    coin.scw.price = 1;
     coin.scw.desc =
         'HonestCoin (USDH) describes themsleves as a fully regulated, 1 to 1 U.S. Dollar-backed \
 stablecoin that can be bought, sold, invested in or spent as freely as you wish.';

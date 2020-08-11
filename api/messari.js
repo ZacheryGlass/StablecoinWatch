@@ -39,11 +39,13 @@ exports.getAllMessariStablecoins = async () => {
                 console.warn(`Fail to get platforms for Messari coin: ${coin.name}`);
             }
 
+            // if(coin.symbol == 'PAX') console.log(coin.profile.overview);
+
             let scoin = new Stablecoin();
             scoin.name = coin.name;
             scoin.symbol = coin.symbol;
             scoin.platforms = platforms;
-            scoin.msri.desc = util.stripHTML(coin.profile.overview);
+            scoin.msri.desc = coin.profile.overview;
             scoin.msri.price = coin.metrics.market_data.price_usd
                 ? coin.metrics.market_data.price_usd.toFixed(3)
                 : null;
