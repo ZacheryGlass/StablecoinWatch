@@ -28,35 +28,55 @@ const CLR = {
 ---------------------------------------------------------*/
 
 /*---------------------------------------------------------
+Function: 
+        print_custom
+Description:
+        Print a message to the console in a specified
+        color with a specified prefix.
+---------------------------------------------------------*/
+const print_custom = function (clr, prefix, msgs) {
+    if (global.DEBUG) process.stdout.write(clr);
+
+    process.stdout.write(prefix);
+    for (let i = 0; i < msgs.length; i++) {
+        process.stdout.write(' ');
+        process.stdout.write(msgs[i]);
+    }
+    process.stdout.write('\n');
+
+    if (global.DEBUG) process.stdout.write(CLR.reset);
+};
+
+/*---------------------------------------------------------
 Function: console.warn
 Description: Print warnings to the console
 ---------------------------------------------------------*/
-console.warn = function (msg) {
-    if (global.SHOW_WARNINGS) console.log(`${CLR.yellow}WARNING: ${CLR.reset} ${msg}`);
+console.warn = function () {
+    print_custom(CLR.yellow, 'WARNING', arguments);
 };
 
 /*---------------------------------------------------------
 Function: console.info
 Description: Print info to the console
 ---------------------------------------------------------*/
-console.info = function (msg) {
-    console.log(`${CLR.green}INFO:    ${CLR.reset} ${msg}`);
+console.info = function () {
+    print_custom(CLR.green, 'INFO', arguments);
 };
 
 /*---------------------------------------------------------
 Function: console.error
 Description: Print errors to the console
 ---------------------------------------------------------*/
-console.error = function (msg) {
-    console.log(`${CLR.red}ERROR:    ${msg} ${CLR.reset}`);
+console.error = function () {
+    print_custom(CLR.red, 'ERROR', arguments);
 };
 
 /*---------------------------------------------------------
 Function: console.error
 Description: Print errors to the console
 ---------------------------------------------------------*/
-console.debug = function (msg) {
-    if (global.DEBUG) console.log(`${CLR.cyan}DEBUG:   ${CLR.reset} ${msg}`);
+console.debug = function () {
+    print_custom(CLR.cyan, 'DEBUG', arguments);
 };
 
 /*---------------------------------------------------------
