@@ -136,16 +136,20 @@
                     </main>
 
                     <!-- for each coin -->
-                    <% data.stablecoins.forEach((coin, i) => {  %>
+                    <% let i = 0; %>
+                    <% data.stablecoins.forEach((coin) => {  %>
+
                         <!-- if no data, skip this coin -->
                         <% if (!coin.name || !coin.symbol) return; %>
+                        <% i++; %>
+
                         <!-- Row X -->
                         <article class="row expand type<%=i%4+1%>">
 
                             <ul class="coinstats">
 
                                 <!-- rank -->
-                                <li class="coinrank"><%= (i+1) %></li>
+                                <li class="coinrank"><%= i %></li>
 
                                 <!-- name -->
                                 <li class="name">
@@ -200,9 +204,9 @@
                                 <% if (coin.platforms.length > 1) { %>
                                     <li class="platform">
                                         <ul class="supply_list">
-                                            <% let sum = 0; coin.platforms.forEach((platform, i) => { %>
+                                            <% let sum = 0; coin.platforms.forEach((platform, j) => { %>
                                                 <li class="p_grid">
-                                                    <% if (i < 2) { %>
+                                                    <% if (j < 2) { %>
                                                         <div class="a">
                                                             <%= platform.name %>: 
                                                         </div>
@@ -223,7 +227,7 @@
                                                                 ?%
                                                             <% } %>
                                                         </div>
-                                                    <% } else if (i == 2) { %>
+                                                    <% } else if (j == 2) { %>
                                                             <div class="a">Other:</div>
                                                             <div class="b"><a href="/coins/<%= coin.uri %>"><%= (100-sum).toFixed()%>%</a></div>
                                                     <% } %>

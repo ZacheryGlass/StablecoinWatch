@@ -77,6 +77,8 @@ class Stablecoin {
             else if (this.cmc.mcap) this.main.mcap = this.cmc.mcap;
             else if (this.msri.mcap) this.main.mcap = this.msri.mcap;
         }
+        this.main.total_supply = Number(this.main.total_supply);
+        this.main.mcap = Number(this.main.mcap);
 
         // set Price
         this.main.price = Number(this.cmc.price ? this.cmc.price : this.msri.price ? this.msri.price : this.scw.price);

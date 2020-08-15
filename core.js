@@ -37,7 +37,7 @@ Description:
 const print_custom = function (clr, prefix, msgs) {
     if (global.DEBUG) process.stdout.write(clr);
 
-    process.stdout.write(prefix);
+    process.stdout.write(prefix + ':');
     for (let i = 0; i < msgs.length; i++) {
         process.stdout.write(' ');
         process.stdout.write(msgs[i]);

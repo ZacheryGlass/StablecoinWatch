@@ -53,11 +53,13 @@ async function getCurrencyRates() {
 
     const eur_price_in_usd = eur_rates.USD;
     currency_prices_in_usd['EUR'] = eur_price_in_usd;
+
     // convert to USD price
     Object.keys(eur_rates).forEach((currency) => {
         const x_price_in_eur = 1 / eur_rates[currency];
         currency_prices_in_usd[currency] = x_price_in_eur * eur_price_in_usd;
     });
+
     currency_rates_set = true;
     return currency_prices_in_usd;
 } // getCurrencyRates
@@ -66,146 +68,23 @@ async function getCurrencyRates() {
 Function:
         scw.getSCWStablecoins
 Description:
-        TODO
+        Get coins tracked by StablecoinWatch.
+Note:
+        Many stablecoins are not tracked by other APIs such
+        as CoinMarketCap, or are missing data so they are
+        manually tracked here
 ---------------------------------------------------------*/
 exports.getSCWStablecoins = async () => {
+    let coin;
+
     if (!currency_rates_set) await getCurrencyRates();
-
-    /*-----------------------------------------------
-    USDC
-    -----------------------------------------------*/
-    let coin = new Stablecoin();
-    coin.symbol = 'USDC';
-    coin.scw.peg = '1 USD';
-    sc.push(coin);
-
-    /*-----------------------------------------------
-    IDRT
-    -----------------------------------------------*/
-    coin = new Stablecoin();
-    coin.symbol = 'IDRT ;';
-    coin.scw.peg = '1 Rupiah';
-    sc.push(coin);
-
-    /*-----------------------------------------------
-    PAX
-    -----------------------------------------------*/
-    coin = new Stablecoin();
-    coin.symbol = 'PAX';
-    coin.scw.peg = '1 USD';
-    sc.push(coin);
-
-    /*-----------------------------------------------
-    HUSD
-    -----------------------------------------------*/
-    coin = new Stablecoin();
-    coin.symbol = 'HUSD';
-    coin.scw.peg = '1 USD';
-    sc.push(coin);
-
-    /*-----------------------------------------------
-    EURS
-    -----------------------------------------------*/
-    coin = new Stablecoin();
-    coin.symbol = 'EURS';
-    coin.scw.peg = '1 EUR';
-    sc.push(coin);
-
-    /*-----------------------------------------------
-    USDK
-    -----------------------------------------------*/
-    coin = new Stablecoin();
-    coin.symbol = 'USDK';
-    coin.scw.peg = '1 USD';
-    sc.push(coin);
-
-    /*-----------------------------------------------
-    GUSD
-    -----------------------------------------------*/
-    coin = new Stablecoin();
-    coin.symbol = 'GUSD';
-    coin.scw.peg = '1 USD';
-    sc.push(coin);
-
-    /*-----------------------------------------------
-    Digix Gold token
-    -----------------------------------------------*/
-    coin = new Stablecoin();
-    coin.symbol = 'DGX';
-    coin.scw.peg = '1g Gold';
-    sc.push(coin);
-
-    /*-----------------------------------------------
-    SBD
-    -----------------------------------------------*/
-    coin = new Stablecoin();
-    coin.symbol = 'SBD';
-    coin.scw.peg = '1 USD';
-    sc.push(coin);
-
-    /*-----------------------------------------------
-    USDQ
-    -----------------------------------------------*/
-    coin = new Stablecoin();
-    coin.symbol = 'USDQ';
-    coin.scw.peg = '1 USD';
-    sc.push(coin);
-
-    /*-----------------------------------------------
-    XCHF
-    -----------------------------------------------*/
-    coin = new Stablecoin();
-    coin.symbol = 'XCHF';
-    coin.scw.peg = '1 CHF';
-    sc.push(coin);
 
     /*-----------------------------------------------
     BITCNY
     -----------------------------------------------*/
     coin = new Stablecoin();
     coin.symbol = 'BITCNY';
-    coin.scw.peg = '1 CNY';
-    coin.scw.price = currency_prices_in_usd.CNY.toFixed(3);
-    sc.push(coin);
-
-    /*-----------------------------------------------
-    XAUR
-    -----------------------------------------------*/
-    coin = new Stablecoin();
-    coin.symbol = 'XAUR';
-    coin.scw.peg = '.001g Gold';
-    sc.push(coin);
-
-    /*-----------------------------------------------
-    EOSDT
-    -----------------------------------------------*/
-    coin = new Stablecoin();
-    coin.symbol = 'EOSDT';
-    coin.scw.peg = '1 USD';
-    sc.push(coin);
-
-    /*-----------------------------------------------
-    CONST
-    -----------------------------------------------*/
-    coin = new Stablecoin();
-    coin.symbol = 'CONST';
-    coin.scw.peg = '1 USD';
-    sc.push(coin);
-
-    /*-----------------------------------------------
-    BITUSD
-    -----------------------------------------------*/
-    coin = new Stablecoin();
-    coin.symbol = 'BITUSD';
-    coin.scw.peg = '1 USD';
-    sc.push(coin);
-
-    /*-----------------------------------------------
-    XPD
-    -----------------------------------------------*/
-    coin = new Stablecoin();
-    coin.symbol = 'XPD';
-    coin.scw.peg = '1 USD';
+    coin.scw.price = Number(currency_prices_in_usd.CNY.toFixed(3));
     sc.push(coin);
 
     /*-----------------------------------------------
@@ -213,16 +92,14 @@ exports.getSCWStablecoins = async () => {
     -----------------------------------------------*/
     coin = new Stablecoin();
     coin.symbol = 'USDS';
-    coin.scw.peg = '1 USD';
     coin.platforms.push(new Platform('Ethereum', '0xa4bdb11dc0a2bec88d24a3aa1e6bb17201112ebe'));
     sc.push(coin);
 
     /*-----------------------------------------------
-    TrueUSD
+    True USD
     -----------------------------------------------*/
     coin = new Stablecoin();
     coin.symbol = 'TUSD';
-    coin.scw.peg = '1 USD';
     coin.platforms.push(new Platform('Ethereum', '0x0000000000085d4780B73119b644AE5ecd22b376'));
     sc.push(coin);
 
@@ -231,16 +108,14 @@ exports.getSCWStablecoins = async () => {
     -----------------------------------------------*/
     coin = new Stablecoin();
     coin.symbol = 'BUSD';
-    coin.scw.peg = '1 USD';
     coin.platforms.push(new Platform('Ethereum', '0x4fabb145d64652a948d72533023f6e7a623c7c53'));
     sc.push(coin);
 
     /*-----------------------------------------------
-    Tether
+    Tether USD
     -----------------------------------------------*/
     coin = new Stablecoin();
     coin.symbol = 'USDT';
-    coin.scw.peg = '1 USD';
     coin.platforms.push(new Platform('Tron', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'));
     coin.platforms.push(new Platform('Bitcoin', 31));
     coin.platforms.push(new Platform('Bitcoin (Liquid)'));
@@ -257,15 +132,13 @@ exports.getSCWStablecoins = async () => {
     coin = new Stablecoin();
     coin.name = 'Tether EUR';
     coin.symbol = 'EURT';
-    coin.scw.peg = '1 EUR';
-    coin.scw.price = currency_prices_in_usd.EUR.toFixed(3);
+    coin.scw.price = Number(currency_prices_in_usd.EUR.toFixed(3));
     coin.platforms.push(new Platform('Ethereum', '0xabdf147870235fcfc34153828c769a70b3fae01f'));
     coin.platforms.push(new Platform('Bitcoin', 41));
-    coin.scw.desc =
-        'Tether is fiat-collateralized stablecoin that offers individuals the \
-advantages of transacting with blockchain-based assets while mitigating price risk. \
-Tether is primarily issued on the Ethereum and Bitcoin blockchains and corresponds on \
-a 1:1 basis with Euros sitting in bank accounts.';
+    coin.scw.desc = `Tether is fiat-collateralized stablecoin that offers individuals the
+                    advantages of transacting with blockchain-based assets while mitigating price risk.
+                    Tether is primarily issued on the Ethereum and Bitcoin blockchains and corresponds on
+                    a 1:1 basis with Euros sitting in bank accounts.`;
     coin.img_url = '/tether.png';
     sc.push(coin);
 
@@ -275,7 +148,6 @@ a 1:1 basis with Euros sitting in bank accounts.';
     coin = new Stablecoin();
     coin.name = 'Tether CNH';
     coin.symbol = 'CNHT';
-    coin.scw.peg = '1 CNH';
     coin.platforms.push(new Platform('Ethereum', '0x6e109e9dd7fa1a58bc3eff667e8e41fc3cc07aef'));
     coin.scw.desc = 'https://wallet.tether.to/transparency';
     coin.img_url = '/tether.png';
@@ -287,15 +159,14 @@ a 1:1 basis with Euros sitting in bank accounts.';
     coin = new Stablecoin();
     coin.name = 'Token Gold';
     coin.symbol = 'XAUT';
-    coin.scw.peg = '1oz Gold';
     coin.platforms.push(new Platform('Ethereum', '0x4922a015c4407F87432B179bb209e125432E4a2A'));
     coin.scw.desc = util.urlify(
-        'Tether Gold (XAUT) is a cryptocurrency with a value meant to mirror the value of \
-the Gold. According to their site, Tether converts  cash into digital currency, to \
-anchor or “tether” the value of the coin to the price of assets or national \
-currencies like the US dollar, the Euro, and the Yen. Tether Gold (XAUT) is \
-issued on the Ethereum blockchain. For details on the issuance please refer to: \
-https://wallet.tether.to/transparency'
+        `Tether Gold (XAUT) is a cryptocurrency with a value meant to mirror the value of
+            the Gold. According to their site, Tether converts  cash into digital currency, to
+            anchor or “tether” the value of the coin to the price of assets or national
+            currencies like the US dollar, the Euro, and the Yen. Tether Gold (XAUT) is
+            issued on the Ethereum blockchain. For details on the issuance please refer to:
+            https://wallet.tether.to/transparency`
     );
     coin.img_url = '/tether-gold-logo.svg';
     sc.push(coin);
@@ -306,15 +177,23 @@ https://wallet.tether.to/transparency'
     coin = new Stablecoin();
     coin.name = 'HonestCoin';
     coin.symbol = 'USDH';
-    coin.scw.peg = '1 USD';
     coin.scw.price = 1;
-    coin.scw.desc =
-        'HonestCoin (USDH) describes themsleves as a fully regulated, 1 to 1 U.S. Dollar-backed \
-stablecoin that can be bought, sold, invested in or spent as freely as you wish.';
+    coin.scw.desc = `HonestCoin (USDH) describes themsleves as a fully regulated, 1 to 1 U.S. Dollar-backed
+        stablecoin that can be bought, sold, invested in or spent as freely as you wish.`;
     coin.platforms.push(
         new Platform('Bitcoin Cash', 'c4b0d62156b3fa5c8f3436079b5394f7edc1bef5dc1cd2f9d0c4d46f82cca479')
     );
     sc.push(coin);
+
+    /*-----------------------------------------------
+    Serum
+    -----------------------------------------------*/
+    coin = new Stablecoin();
+    coin.symbol = 'SRM';
+    coin.name = 'SerumUSD';
+    coin.scw.desc =
+        'SerumUSD is Serum’s SPL and ERC20 USD stablecoin. A decentralized stable coin with no single point of failure.';
+    coin.platforms.push(new Platform('Ethereum', '0x476c5e26a75bd202a9683ffd34359c0cc15be0ff'));
 
     return sc;
 }; // getSCWStablecoins()

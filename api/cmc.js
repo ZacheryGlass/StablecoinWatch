@@ -4,50 +4,13 @@ const cmc_api = new CoinMarketCap(keys.cmc);
 const Stablecoin = require('../stablecoin');
 const Platform = require('../platform');
 const { cmc } = require('../keys');
-const { urlify, sleep, toDollarString, stripHTML } = require('../util');
+const { urlify, toDollarString } = require('../util');
 const cron = require('node-cron');
 
 /*---------------------------------------------------------
     CONSTANTS
 ---------------------------------------------------------*/
-const MINS_BETWEEN_UPDATE = 60 * 8; /* 8 hours */
-const DEBUGING = true;
-// CMC API will list some coins as Stablecoins that are
-// not actually stablecoins. Manually exclude these mistakes.
-const ADDITIONAL_COINS = ['DAI', 'AMPL', 'SUSD'];
-const DEBUG_COIN_LIST = [
-    'USDT',
-    'USDC',
-    'AMPL',
-    'DAI',
-    'PAX',
-    'TUSD',
-    'BUSD',
-    'HUSD',
-    'EURS',
-    'USDK',
-    'SUSD',
-    'GUSD',
-    'DGX',
-    'SBD',
-    'USDQ',
-    'XCHF',
-    'BITCNY',
-    'XAUR',
-    'IDRT',
-    'EOSDT',
-    'CONST',
-    'BITUSD',
-    'XPD',
-    'USDS',
-    'HGT',
-    'BITEUR',
-    'ITL',
-    'BITGOLD',
-    'XEUR',
-    'CNHT',
-    'XAUT',
-];
+const MINS_BETWEEN_UPDATE = 60 * 12; /* 12 hours */
 
 /*---------------------------------------------------------
     MODULE-SCOPED VARIABLES
@@ -85,15 +48,14 @@ Function:
         buildCMCStablecoinList
 Description:
         This pulls the CoinMarketCap API to build a list of
-        Stablecoins.
+        Stablecoins, as defined by CMC.
 ---------------------------------------------------------*/
 async function buildCMCStablecoinList() {
-    if (global.DEBUG) {
-        glb_cmc_tickers = DEBUG_COIN_LIST;
-        return;
-    }
+    // CMC doesn't tag all stablecoins correctly so forcefully add to list here
+    // coins that are on CMC but not tagged as stablecoins
+    glb_cmc_tickers = ['DAI', 'AMPL', 'SUSD', 'XAUT'];
 
-    glb_cmc_tickers = ADDITIONAL_COINS;
+    if (global.DEBUG) return; // don't waste cmc api credits
 
     return cmc_api
         .getTickers({ limit: 3000 })
@@ -110,7 +72,7 @@ async function buildCMCStablecoinList() {
             });
         })
         .catch((err) => {
-            console.error(err);
+            console.error(`Could not fetch CMC API: ${err}`);
         });
 } // buildCMCStablecoinList()
 
