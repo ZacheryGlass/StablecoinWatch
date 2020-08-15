@@ -76,7 +76,7 @@ Function: console.error
 Description: Print errors to the console
 ---------------------------------------------------------*/
 console.debug = function () {
-    print_custom(CLR.cyan, 'DEBUG', arguments);
+    if (global.DEBUG) print_custom(CLR.cyan, 'DEBUG', arguments);
 };
 
 /*---------------------------------------------------------
