@@ -5,7 +5,7 @@
         <title>Stablecoin Watch</title>
         <link rel="stylesheet" type="text/css" href="/common.css" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <script type="application/javascript" src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+        <script type="application/javascript" src="/chart.min.js"></script>
         <style>
 
             /****************************************
@@ -38,7 +38,7 @@
 
             canvas { 
                 width: 100%;
-                max-width: 300px;
+                max-width: 400px;
                 margin: auto;
             }
             
@@ -52,6 +52,7 @@
                     'name amount';
                 width: 80%;
                 margin: auto;
+                border: 1px solid black;
 
             }
 
@@ -171,6 +172,11 @@
                 table td, table th {
                     padding: 5px 3px;
                     font-size: 13px;
+                }
+                canvas { 
+                    width: 100%;
+                    max-width: 350px;
+                    margin: auto;
                 }
             }
         </style>
@@ -334,7 +340,11 @@
                     borderWidth: 1
                 }]
             },
-            options: {}
+            options: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
         });
 
         function showDesc(descSource) {

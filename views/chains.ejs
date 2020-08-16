@@ -5,6 +5,7 @@
         <title>Stablecoin Watch</title>
         <link rel="stylesheet" type="text/css" href="/common.css" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script type="application/javascript" src="/chart.min.js"></script>
         <style>
             .row ul.chainstats > li {
                 margin: 0;
@@ -27,6 +28,36 @@
                 text-align: center;
             }
 
+            canvas {
+                width: 80%;
+            }
+
+            /* collapsable */
+            .collapsible {
+                display: block;
+                background-color: #777;
+                color: white;
+                font-weight: bold;
+                padding: 15px;
+                width: 200px;
+                margin: auto;
+                margin-top: 5px;
+                border: none;
+                border-radius: 10px;
+                font-size: 15px;
+                }
+
+            .active, .collapsible:hover {
+                background-color: #555;
+            }
+
+            .content {
+                width: 80%;
+                margin: auto;
+                display: none;
+                overflow: hidden;
+            }
+
         </style>
     </head>
     <body>
@@ -38,6 +69,11 @@
 
             <main>
                 <% if( data.platform_data && data.platform_data.length ) { %>
+                <button type="button" class="collapsible">Toggle Chart</button>
+                <div class="content">
+                    <canvas id="chart" width="40" height="40"></canvas>
+                </div>
+
                     <section class="tbl_wrapper">
                         <!-- Row title -->
                         <main class="row title">
@@ -74,4 +110,78 @@
             <!-- Footer -->
         </div>
     </body>
+    <script type="text/javascript">
+        let ctx = document.getElementById('chart').getContext('2d');
+        let chart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: [
+                    <% for (let i = 0; i < data.platform_data.length; i++) { %>
+                        <% if( i < 5 ) { %>
+                            "<%= data.platform_data[i].name %>",
+                        <% } else { break; } %>
+                    <% } %>  
+                    <% if (data.platform_data.length > 5 ) { %>
+                        'Other'
+                    <% } %>
+                ],
+
+                datasets: [{
+                    label: '% on Platforms',
+                    data: [
+                        <% let top_5_total = 0; %>
+                        <% for (let i = 0; i < data.platform_data.length; i++) { %>
+                            <% if( i < 5 ) { %>
+                                <% let pct = Number((( data.platform_data[i].total_mcap / data.totalMCap ) * 100).toFixed(2)) %>
+                                <% top_5_total += pct %>
+                                <%= pct %>,
+                            <% } else { break; } %>
+                        <% } %>
+                        <% if (data.platform_data.length > 5 ) { %>
+                            <%= (100-top_5_total).toFixed(2) %>,
+                        <% } %>
+
+                    ],
+                    
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.5)',
+                        'rgba(54, 162, 235, 0.5)',
+                        'rgba(255, 206, 86, 0.5)',
+                        'rgba(75, 192, 192, 0.5)',
+                        'rgba(153, 102, 255, 0.5)',
+                        'rgba(255, 159, 64, 0.5)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                legend: {
+                    position: 'left'
+                }
+            }
+        });
+    </script>
+    <script>
+        let coll = document.getElementsByClassName("collapsible");
+        
+        for (let i = 0; i < coll.length; i++) {
+            coll[i].addEventListener("click", function() {
+                this.classList.toggle("active");
+                let content = this.nextElementSibling;
+                if (content.style.display === "block") {
+                    content.style.display = "none";
+                } else {
+                    content.style.display = "block";
+                }
+            });
+        }
+        </script>
 </html>

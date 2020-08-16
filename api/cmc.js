@@ -53,7 +53,7 @@ Description:
 async function buildCMCStablecoinList() {
     // CMC doesn't tag all stablecoins correctly so forcefully add to list here
     // coins that are on CMC but not tagged as stablecoins
-    glb_cmc_tickers = ['DAI', 'AMPL', 'SUSD', 'XAUT'];
+    glb_cmc_tickers = ['DAI', 'AMPL', 'SUSD', 'XAUT', 'USDT'];
 
     if (global.DEBUG) return; // don't waste cmc api credits
 
