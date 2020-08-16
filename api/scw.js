@@ -148,6 +148,7 @@ exports.getSCWStablecoins = async () => {
     coin = new Stablecoin();
     coin.name = 'Tether CNH';
     coin.symbol = 'CNHT';
+    coin.scw.price = Number(currency_prices_in_usd.CNY.toFixed(3));
     coin.platforms.push(new Platform('Ethereum', '0x6e109e9dd7fa1a58bc3eff667e8e41fc3cc07aef'));
     coin.scw.desc = 'https://wallet.tether.to/transparency';
     coin.img_url = '/tether.png';
@@ -189,11 +190,24 @@ exports.getSCWStablecoins = async () => {
     Serum
     -----------------------------------------------*/
     coin = new Stablecoin();
-    coin.symbol = 'SRM';
     coin.name = 'SerumUSD';
+    coin.symbol = 'SRM';
     coin.scw.desc =
         'SerumUSD is Serum’s SPL and ERC20 USD stablecoin. A decentralized stable coin with no single point of failure.';
     coin.platforms.push(new Platform('Ethereum', '0x476c5e26a75bd202a9683ffd34359c0cc15be0ff'));
+    sc.push(coin);
+
+    /*-----------------------------------------------
+    Reserve
+    -----------------------------------------------*/
+    coin = new Stablecoin();
+    coin.name = 'Reserve';
+    coin.symbol = 'RSV';
+    coin.scw.price = 1;
+    coin.scw.desc = `Reserve is a stable cryptocurrency that is economically and legally robust at any scale. Decentralized,
+        100% asset-backed, and funded by top Silicon Valley investors.`;
+    coin.platforms.push(new Platform('Ethereum', '0x1c5857e110cd8411054660f60b5de6a6958cfae2'));
+    sc.push(coin);
 
     return sc;
 }; // getSCWStablecoins()
