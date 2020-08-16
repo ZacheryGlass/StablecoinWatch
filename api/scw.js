@@ -178,6 +178,7 @@ exports.getSCWStablecoins = async () => {
     coin = new Stablecoin();
     coin.name = 'HonestCoin';
     coin.symbol = 'USDH';
+    coin.img_url = '/default-logo.png';
     coin.scw.price = 1;
     coin.scw.desc = `HonestCoin (USDH) describes themsleves as a fully regulated, 1 to 1 U.S. Dollar-backed
         stablecoin that can be bought, sold, invested in or spent as freely as you wish.`;
@@ -203,6 +204,7 @@ exports.getSCWStablecoins = async () => {
     coin = new Stablecoin();
     coin.name = 'Reserve';
     coin.symbol = 'RSV';
+    coin.img_url = '/default-logo.png';
     coin.scw.price = 1;
     coin.scw.desc = `Reserve is a stable cryptocurrency that is economically and legally robust at any scale. Decentralized,
         100% asset-backed, and funded by top Silicon Valley investors.`;
