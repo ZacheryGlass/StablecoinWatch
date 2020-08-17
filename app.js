@@ -35,6 +35,7 @@ app.set('view engine', 'ejs');
 app.use(express.static(__dirname + '/res/styles'));
 app.use(express.static(__dirname + '/res/img'));
 app.use(express.static(__dirname + '/res/js'));
+app.use(express.static(__dirname + '/res'));
 app.use('/', routes);
 app.use(express.json());
 app.listen(PORT, () => console.info(`Listening on port ${PORT}`));
