@@ -19,6 +19,7 @@ Description:
 ---------------------------------------------------------*/
 exports.getAllMessariStablecoins = async () => {
     let ret_list = [];
+    return ret_list;
 
     let response = await MessariClient.assets.all({ limit: 500 });
     allCoins = response.data.data;

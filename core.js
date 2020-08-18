@@ -135,26 +135,31 @@ Description:
 ---------------------------------------------------------*/
 async function fetchStablecoins() {
     // pull new stablecoins data
-    let fetching_msri = messari.getAllMessariStablecoins();
-    let fetching_cmc = cmc.getAllCMCStablecoins();
-    let fetching_scw = scw.getSCWStablecoins();
+    console.log('fetching msri')
+    let fetching_msri = await messari.getAllMessariStablecoins();
+    console.log('fetching cmc')
+    let fetching_cmc = await cmc.getAllCMCStablecoins();
+    // console.log('fetching scw')
+    // let fetching_scw = await scw.getSCWStablecoins();
+    console.log('fetching_cmc.length', fetching_cmc.length)
+
 
     // combined data from multiple APIs
-    return Promise.all([fetching_msri, fetching_cmc, fetching_scw])
-        .then(async (scoins_arr) => {
-            let msri_coins_list = scoins_arr[0];
-            let cmc_coins_list = scoins_arr[1];
-            let scw_coins_list = scoins_arr[2];
+    // return Promise.all([fetching_msri, fetching_cmc, fetching_scw])
+    //     .then(async (scoins_arr) => {
+    //         let msri_coins_list = scoins_arr[0];
+    //         let cmc_coins_list = scoins_arr[1];
+    //         let scw_coins_list = scoins_arr[2];
 
-            let ret_list = combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list);
+    //         let ret_list = combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list);
 
-            // update the platform-specific supply for each coin
-            await Promise.all(ret_list.map(async (coin) => coin.updateDerivedMetrics()));
-            return ret_list;
-        })
-        .catch((e) => {
-            console.error(e);
-        });
+    //         // update the platform-specific supply for each coin
+    //         await Promise.all(ret_list.map(async (coin) => coin.updateDerivedMetrics()));
+    //         return ret_list;
+    //     })
+    //     .catch((e) => {
+    //         console.error(e);
+    //     });
 } // fetchStablecoins()
 
 /*---------------------------------------------------------
@@ -277,9 +282,9 @@ Description:
 async function updateData() {
     try {
         let new_stablecoin_data = await fetchStablecoins();
-        updateStablecoinData(new_stablecoin_data);
-        updateMetrics();
-        updatePlatformData();
+        // updateStablecoinData(new_stablecoin_data);
+        // updateMetrics();
+        // updatePlatformData();
         console.info('Data Updated.');
     } catch (e) {
         console.error(` ***CRITICAL*** Could not update data: ${e}`);
