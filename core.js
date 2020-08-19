@@ -135,31 +135,32 @@ Description:
 ---------------------------------------------------------*/
 async function fetchStablecoins() {
     // pull new stablecoins data
-    console.log('fetching msri')
-    let fetching_msri = await messari.getAllMessariStablecoins();
-    console.log('fetching cmc')
-    let fetching_cmc = await cmc.getAllCMCStablecoins();
-    // console.log('fetching scw')
-    // let fetching_scw = await scw.getSCWStablecoins();
-    console.log('fetching_cmc.length', fetching_cmc.length)
-
+    let fetching_msri = messari.getAllMessariStablecoins();
+    console.log('fetching_msri type:', typeof fetching_msri);
+    let fetching_cmc = cmc.getAllCMCStablecoins();
+    console.log('fetching_cmc type:', typeof fetching_cmc);
+    let fetching_scw = scw.getSCWStablecoins();
+    console.log('fetching_scw type:', typeof fetching_scw);
 
     // combined data from multiple APIs
-    // return Promise.all([fetching_msri, fetching_cmc, fetching_scw])
-    //     .then(async (scoins_arr) => {
-    //         let msri_coins_list = scoins_arr[0];
-    //         let cmc_coins_list = scoins_arr[1];
-    //         let scw_coins_list = scoins_arr[2];
+    return Promise.all([fetching_msri, fetching_cmc, fetching_scw])
+        .then(async (scoins_arr) => {
+            let msri_coins_list = scoins_arr[0];
+            let cmc_coins_list = scoins_arr[1];
+            let scw_coins_list = scoins_arr[2];
 
-    //         let ret_list = combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list);
+            console.info(cmc_coins_list);
 
-    //         // update the platform-specific supply for each coin
-    //         await Promise.all(ret_list.map(async (coin) => coin.updateDerivedMetrics()));
-    //         return ret_list;
-    //     })
-    //     .catch((e) => {
-    //         console.error(e);
-    //     });
+            // // let ret_list = combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list);
+
+            // // update the platform-specific supply for each coin
+            // // await Promise.all(ret_list.map(async (coin) => coin.updateDerivedMetrics()));
+            // return ret_list;
+            return 0;
+        })
+        .catch((e) => {
+            console.error(e);
+        });
 } // fetchStablecoins()
 
 /*---------------------------------------------------------

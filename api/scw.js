@@ -75,7 +75,6 @@ Note:
         manually tracked here
 ---------------------------------------------------------*/
 exports.getSCWStablecoins = async () => {
-    // return [];
     let coin;
 
     if (!currency_rates_set) await getCurrencyRates();
