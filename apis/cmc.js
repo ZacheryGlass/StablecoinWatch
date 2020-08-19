@@ -1,8 +1,8 @@
 const keys = require('../keys');
 const CoinMarketCap = require('coinmarketcap-api');
 const cmc_api = new CoinMarketCap(keys.cmc);
-const Stablecoin = require('../stablecoin');
-const Platform = require('../platform');
+const Stablecoin = require('../classes/stablecoin');
+const Platform = require('../classes/platform');
 const { cmc } = require('../keys');
 const { urlify, toDollarString } = require('../util');
 const cron = require('node-cron');
