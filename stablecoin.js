@@ -129,28 +129,28 @@ class Stablecoin {
         PLATFORM_API['Algorand'] = algo;
         PLATFORM_API['Bitcoin (Liquid)'] = liquid;
 
-        await Promise.all(
-            this.platforms.map(async (platform) => {
-                try {
-                    if (!PLATFORM_API[platform.name]) {
-                        throw `No API available for ${platform.name} platform.`;
-                    } else if (!PLATFORM_API[platform.name].getTokenSupply) {
-                        throw `API for ${platform.name} platform does not support function 'getTokenSupply()'.`;
-                    } else {
-                        platform.supply = await PLATFORM_API[platform.name].getTokenSupply(platform.contract_address);
-                    }
-                } catch (e) {
-                    if (this.platforms.length == 1) {
-                        console.warn(
-                            `Using Total Supply as platform supply for ${this.name} on ${platform.name} due to API error: ${e}`
-                        );
-                        this.platforms[0].supply = this.main.total_supply;
-                    } else {
-                        console.error(`Could not get ${this.name} supply on ${platform.name}: ${e}`);
-                    }
-                } //catch
-            })
-        ); // await Promise.all
+        if (this.platforms.length == 1) {
+            this.platforms[0].supply = this.main.total_supply;
+        } else {
+            await Promise.all(
+                this.platforms.map(async (platform) => {
+                    try {
+                        if (!PLATFORM_API[platform.name]) {
+                            throw `No API available for ${platform.name} platform.`;
+                        } else if (!PLATFORM_API[platform.name].getTokenSupply) {
+                            throw `API for ${platform.name} platform does not support function 'getTokenSupply()'.`;
+                        } else {
+                            platform.supply = await PLATFORM_API[platform.name].getTokenSupply(
+                                platform.contract_address
+                            );
+                        }
+                    } catch (e) {
+                        console.error(`Could not get ${this.name} supply on ${platform.name}. Assuming zero: ${e}`);
+                        platform.supply = 0;
+                    } //catch
+                })
+            ); // await Promise.all
+        } // if-else
 
         // sort platforms
         this.platforms = this.platforms.sort((a, b) => b.supply - a.supply);

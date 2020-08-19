@@ -59,8 +59,7 @@ async function buildCMCStablecoinList() {
     // coins that are on CMC but not tagged as stablecoins
     // glb_cmc_tickers = ['DAI', 'AMPL', 'SUSD', 'XAUT', 'USDT'];
     let limit = 2000;
-    // if (global.DEBUG)
-    limit = 200; // don't waste cmc api credits
+    if (global.DEBUG) limit = 200; // don't waste cmc api credits
 
     gbl_all_cmc_data = await cmc_api
         .getTickers({ limit: limit })
@@ -71,7 +70,7 @@ async function buildCMCStablecoinList() {
         .catch((err) => {
             console.error(`Could not fetch CMC API: ${err}`);
         });
-    console.log('gbl_all_cmc_data.length', gbl_all_cmc_data.length);
+    console.debug('gbl_all_cmc_data.length', gbl_all_cmc_data.length);
     glb_cmc_initialized = true;
     return;
 } // buildCMCStablecoinList()
@@ -145,7 +144,7 @@ exports.getCMCStablecoins = async () => {
 
         coin_list_ret.push(scoin);
     });
-    // console.log(coin_list_ret.length);
+    // console.debug(coin_list_ret.length);
     return coin_list_ret;
     //     } // then
     // );
