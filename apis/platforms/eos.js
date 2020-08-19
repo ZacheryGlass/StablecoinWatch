@@ -1,4 +1,4 @@
-const keys = require('../keys');
+const keys = require('../../keys');
 const { createDfuseClient, createHttpClient } = require('@dfuse/client');
 
 const httpClient = createHttpClient('https://auth.dfuse.io', 'https://mainnet.eos.dfuse.io');

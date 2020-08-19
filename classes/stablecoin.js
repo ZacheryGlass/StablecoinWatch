@@ -1,15 +1,15 @@
-const util = require('./util');
+const util = require('../util');
 const Platform = require('./platform');
 
 const PLATFORM_API = {
-    Ethereum: require('./api/eth'),
-    Bitcoin: require('./api/omni'),
-    Tron: require('./api/tron'),
-    'BNB Chain': require('./api/bnb'),
-    'Bitcoin Cash': require('./api/bch'),
-    EOS: require('./api/eos'),
-    Algorand: require('./api/algo'),
-    'Bitcoin (Liquid)': require('./api/liquid'),
+    Ethereum: require('../apis/platforms/eth'),
+    Bitcoin: require('../apis/platforms/omni'),
+    Tron: require('../apis/platforms/tron'),
+    'BNB Chain': require('../apis/platforms/bnb'),
+    'Bitcoin Cash': require('../apis/platforms/bch'),
+    EOS: require('../apis/platforms/eos'),
+    Algorand: require('../apis/platforms/algo'),
+    'Bitcoin (Liquid)': require('../apis/platforms/liquid'),
 };
 
 class Stablecoin {

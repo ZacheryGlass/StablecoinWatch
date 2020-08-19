@@ -1,10 +1,10 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const messari = require('./api/messari');
-const scw = require('./api/scw');
+const messari = require('./apis/messari');
+const scw = require('./apis/scw');
 const util = require('./util');
-const cmc = require('./api/cmc');
+const cmc = require('./apis/cmc');
 
 /*---------------------------------------------------------
     MODULE-SCOPED VARIABLES

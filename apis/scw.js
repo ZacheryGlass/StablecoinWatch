@@ -1,8 +1,8 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const Stablecoin = require('../stablecoin');
-const Platform = require('../platform');
+const Stablecoin = require('../classes/stablecoin');
+const Platform = require('../classes/platform');
 const cron = require('node-cron');
 const keys = require('../keys');
 const util = require('../util');
