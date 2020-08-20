@@ -1,7 +1,7 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const Stablecoin = require('../classes/stablecoin');
+const Coin = require('../classes/coin');
 const Platform = require('../classes/platform');
 const cron = require('node-cron');
 const keys = require('../keys');
@@ -68,9 +68,9 @@ async function getCurrencyRates() {
 Function:
         local.getLocalCoins
 Description:
-        Get coins tracked by StablecoinWatch.
+        Get coins tracked locally / manually.
 Note:
-        Many stablecoins are not tracked by other APIs such
+        Many coins are not tracked by other APIs such
         as CoinMarketCap, or are missing data so they are
         manually tracked here
 ---------------------------------------------------------*/
@@ -82,7 +82,7 @@ exports.getLocalCoins = async () => {
     /*-----------------------------------------------
     BITCNY
     -----------------------------------------------*/
-    coin = new Stablecoin();
+    coin = new Coin();
     coin.symbol = 'BITCNY';
     coin.lcl.price = Number(currency_prices_in_usd.CNY.toFixed(3));
     sc.push(coin);
@@ -90,7 +90,7 @@ exports.getLocalCoins = async () => {
     /*-----------------------------------------------
     StableUSD / Stably
     -----------------------------------------------*/
-    coin = new Stablecoin();
+    coin = new Coin();
     coin.symbol = 'USDS';
     coin.platforms.push(new Platform('Ethereum', '0xa4bdb11dc0a2bec88d24a3aa1e6bb17201112ebe'));
     sc.push(coin);
@@ -98,7 +98,7 @@ exports.getLocalCoins = async () => {
     /*-----------------------------------------------
     True USD
     -----------------------------------------------*/
-    coin = new Stablecoin();
+    coin = new Coin();
     coin.symbol = 'TUSD';
     coin.platforms.push(new Platform('Ethereum', '0x0000000000085d4780B73119b644AE5ecd22b376'));
     sc.push(coin);
@@ -106,7 +106,7 @@ exports.getLocalCoins = async () => {
     /*-----------------------------------------------
     Binance USD
     -----------------------------------------------*/
-    coin = new Stablecoin();
+    coin = new Coin();
     coin.symbol = 'BUSD';
     coin.platforms.push(new Platform('Ethereum', '0x4fabb145d64652a948d72533023f6e7a623c7c53'));
     sc.push(coin);
@@ -114,7 +114,7 @@ exports.getLocalCoins = async () => {
     /*-----------------------------------------------
     Tether USD
     -----------------------------------------------*/
-    coin = new Stablecoin();
+    coin = new Coin();
     coin.symbol = 'USDT';
     coin.platforms.push(new Platform('Tron', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'));
     coin.platforms.push(new Platform('Bitcoin', 31));
@@ -129,7 +129,7 @@ exports.getLocalCoins = async () => {
     /*-----------------------------------------------
     Tether EUR
     -----------------------------------------------*/
-    coin = new Stablecoin();
+    coin = new Coin();
     coin.name = 'Tether EUR';
     coin.symbol = 'EURT';
     coin.lcl.price = Number(currency_prices_in_usd.EUR.toFixed(3));
@@ -145,7 +145,7 @@ exports.getLocalCoins = async () => {
     /*-----------------------------------------------
     Tether CNH
     -----------------------------------------------*/
-    coin = new Stablecoin();
+    coin = new Coin();
     coin.name = 'Tether CNH';
     coin.symbol = 'CNHT';
     coin.lcl.price = Number(currency_prices_in_usd.CNY.toFixed(3));
@@ -157,7 +157,7 @@ exports.getLocalCoins = async () => {
     /*-----------------------------------------------
     Token Gold
     -----------------------------------------------*/
-    coin = new Stablecoin();
+    coin = new Coin();
     coin.name = 'Token Gold';
     coin.symbol = 'XAUT';
     coin.platforms.push(new Platform('Ethereum', '0x4922a015c4407F87432B179bb209e125432E4a2A'));
@@ -175,7 +175,7 @@ exports.getLocalCoins = async () => {
     /*-----------------------------------------------
     HonestCoin
     -----------------------------------------------*/
-    coin = new Stablecoin();
+    coin = new Coin();
     coin.name = 'HonestCoin';
     coin.symbol = 'USDH';
     coin.img_url = '/default-logo.png';
@@ -190,7 +190,7 @@ exports.getLocalCoins = async () => {
     /*-----------------------------------------------
     Serum
     -----------------------------------------------*/
-    coin = new Stablecoin();
+    coin = new Coin();
     coin.name = 'SerumUSD';
     coin.symbol = 'SRM';
     coin.lcl.desc =
@@ -201,7 +201,7 @@ exports.getLocalCoins = async () => {
     /*-----------------------------------------------
     Reserve
     -----------------------------------------------*/
-    coin = new Stablecoin();
+    coin = new Coin();
     coin.name = 'Reserve';
     coin.symbol = 'RSV';
     coin.img_url = '/default-logo.png';

@@ -45,7 +45,7 @@ router.get('/platforms', async (req, res) => {
 router.get('/coins/:symbol', async (req, res) => {
     console.debug(req.params.symbol);
     const symbol = req.params.symbol;
-    const coin = data.stablecoins.find((p) => p.symbol.toLowerCase() == symbol.toLowerCase());
+    const coin = data.coins.find((p) => p.symbol.toLowerCase() == symbol.toLowerCase());
     let eth_data = data.platform_data.find((chain) => chain.name === 'Ethereum');
     res.render('coins', {
         data: data,

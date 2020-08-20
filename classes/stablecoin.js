@@ -9,12 +9,12 @@ const algo = require('../apis/platforms/algo');
 const eos = require('../apis/platforms/eos');
 const liquid = require('../apis/platforms/liquid');
 
-class Stablecoin {
+class Coin {
     /*---------------------------------------------------------
     Function:
             constructor
     Description:
-            Creates a blank Stablecoin object.
+            Creates a blank Coin object.
     ------------------------------------------------*/
     constructor() {
         /* basic properties */
@@ -94,7 +94,7 @@ class Stablecoin {
             Update metric that require computation
             on prior set metrics
     Note:
-            Many metrics for a Stablecoin are step from
+            Some metrics for a Coin are calculated from
             API return values. Derived metrics are
             computed from these base-metrics. 
     ---------------------------------------------------------*/
@@ -165,4 +165,4 @@ class Stablecoin {
     } // updatePlatformsSupply()
 }
 
-module.exports = Stablecoin;
+module.exports = Coin;

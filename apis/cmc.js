@@ -1,7 +1,7 @@
 const keys = require('../keys');
 const CoinMarketCap = require('coinmarketcap-api');
 const cmc_api = new CoinMarketCap(keys.cmc);
-const Stablecoin = require('../classes/stablecoin');
+const Coin = require('../classes/coin');
 const Platform = require('../classes/platform');
 const { cmc } = require('../keys');
 const { urlify, toDollarString } = require('../util');
@@ -16,13 +16,14 @@ const MINS_BETWEEN_UPDATE = 60 * 12; /* 12 hours */
     MODULE-SCOPED VARIABLES
 ---------------------------------------------------------*/
 let glb_cmc_tickers = [];
-let gbl_all_cmc_data;
-let glb_cmc_initialized = false;
+let gbl_all_cmc_coin_data;
+let gbl_all_cmc_metadata;
+let glb_cmc_coins_initialized = false;
 
 /*---------------------------------------------------------
     SCHEDULED TASKS
 ---------------------------------------------------------*/
-cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, buildCMCStablecoinList);
+cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, buildCmcCoinList);
 
 /*---------------------------------------------------------
     FUNCTIONS
@@ -49,19 +50,17 @@ function cmcCheckError(status) {
 
 /*---------------------------------------------------------
 Function:
-        buildCMCStablecoinList
+        buildCmcCoinList
 Description:
-        This pulls the CoinMarketCap API to build a list of
-        Stablecoins, as defined by CMC.
+        This function fetches all coins from the CoinMarketCap
+        API and saves to 'gbl_all_cmc_coin_data'
 ---------------------------------------------------------*/
-async function buildCMCStablecoinList() {
-    // CMC doesn't tag all stablecoins correctly so forcefully add to list here
-    // coins that are on CMC but not tagged as stablecoins
-    // glb_cmc_tickers = ['DAI', 'AMPL', 'SUSD', 'XAUT', 'USDT'];
+async function buildCmcCoinList() {
     let limit = 2000;
+
     if (global.DEBUG) limit = 200; // don't waste cmc api credits
 
-    gbl_all_cmc_data = await cmc_api
+    gbl_all_cmc_coin_data = await cmc_api
         .getTickers({ limit: limit })
         .then((resp) => {
             if (!cmcCheckError(resp.status)) return;
@@ -70,57 +69,26 @@ async function buildCMCStablecoinList() {
         .catch((err) => {
             console.error(`Could not fetch CMC API: ${err}`);
         });
-    console.debug('gbl_all_cmc_data.length', gbl_all_cmc_data.length);
-    glb_cmc_initialized = true;
+
+    glb_cmc_coins_initialized = true;
     return;
-} // buildCMCStablecoinList()
+} // buildCmcCoinList()
 
 /*---------------------------------------------------------
 Function:
-        cmc.getAllCMCStablecoins()
+        cmc.getAllCmcCoins()
 Description:
-        This function returns all coins listed as stablecoins
-        on CoinMarketCap API.
-Note:   This includes coins pegged to assets other than the
-        US Dollar, but oddly does not some coins such as DAI
+        This function returns all coins from CoinMarketCap API.
 ---------------------------------------------------------*/
-exports.getAllCMCStablecoins = async () => {
-    await buildCMCStablecoinList();
-    return exports.getCMCStablecoins();
-}; // end getAllCMCStablecoins()
+exports.getAllCmcCoins = async () => {
+    if (!glb_cmc_coins_initialized) await buildCmcCoinList();
 
-/*---------------------------------------------------------
-Function:
-        cmc.getCMCStablecoins()
-Description:
-        Get a list of Stablecoin Objects from a list of tickers
----------------------------------------------------------*/
-exports.getCMCStablecoins = async () => {
-    // build ticker list from CMC data
-    // gbl_all_cmc_data.forEach(function (coin) {
-    //     if(coin.symbol) glb_cmc_tickers.push(coin.symbol);
-    // });
-
-    // let fetching_metadata = cmc_api.getMetadata({ symbol: glb_cmc_tickers });
-    // let fetching_quote = cmc_api.getQuotes({ symbol: glb_cmc_tickers });
-
-    // return Promise.all([fetching_metadata, fetching_quote]).then(
-    // async (scoins_arr) => {
-    // let metadata_resp = scoins_arr[0];
-    // let quote_resp = scoins_arr[1];
-    // cmcCheckError(metadata_resp.status);
-    // cmcCheckError(quote_resp.status);
-
-    // build return list
     let coin_list_ret = [];
-    Object.keys(gbl_all_cmc_data).forEach(function (key, i) {
-        let q = {};
 
-        let md = gbl_all_cmc_data[key];
+    Object.keys(gbl_all_cmc_coin_data).forEach(function (key, i) {
+        let md = gbl_all_cmc_coin_data[key];
 
-        // if (gbl_all_cmc_data.hasOwnProperty(key)) q = quote_resp.data[key];
-
-        let scoin = new Stablecoin();
+        let scoin = new Coin();
         scoin.name = md.name;
         scoin.symbol = md.symbol;
         scoin.platforms = md.platform
@@ -144,8 +112,5 @@ exports.getCMCStablecoins = async () => {
 
         coin_list_ret.push(scoin);
     });
-    // console.debug(coin_list_ret.length);
     return coin_list_ret;
-    //     } // then
-    // );
-}; // end getCMCStablecoins()
+}; // end getCmcCoins()

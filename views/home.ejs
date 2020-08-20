@@ -118,7 +118,7 @@
         <%- include('partials/header') %>
         <!-- Header -->
         <main>
-            <% if (data.stablecoins) { %>
+            <% if (data.coins) { %>
                 <section class="tbl_wrapper">
                     <!-- Row title -->
                     <main class="row title">
@@ -137,7 +137,7 @@
 
                     <!-- for each coin -->
                     <% let i = 0; %>
-                    <% data.stablecoins.forEach((coin) => {  %>
+                    <% data.coins.forEach((coin) => {  %>
 
                         <!-- if no data, skip this coin -->
                         <% if (!coin.name || !coin.symbol) return; %>

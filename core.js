@@ -10,7 +10,7 @@ const cmc = require('./apis/cmc');
     MODULE-SCOPED VARIABLES
 ---------------------------------------------------------*/
 let data = {};
-data.stablecoins = [];
+data.coins = [];
 data.totalMCap = 0;
 data.totalVolume = 0;
 data.platform_data = [];
@@ -82,7 +82,7 @@ Function:
         combineCoins
 Description:
         Combine the data from mutlipe sources into a
-        a single Stablecoin object.
+        a single Coin object.
 ---------------------------------------------------------*/
 function combineCoins(msri_coins_list, cmc_coins_list, lcl_coins_list) {
     // loop through each CMC coin
@@ -125,15 +125,15 @@ function combineCoins(msri_coins_list, cmc_coins_list, lcl_coins_list) {
 
 /*---------------------------------------------------------
 Function:
-        fetchStablecoins
+        fetchCoins
 Description:
-        Pull Stablecoin data from various supported APIs.
+        Pull Coin data from various supported APIs.
         This function will build and return a list of
-        Stablecoin objects.
+        Coin objects.
 ---------------------------------------------------------*/
-async function fetchStablecoins() {
-    // pull new stablecoins data
-    let fetching_msri = messari.getAllMessariStablecoins();
+async function fetchCoins() {
+    // pull new coins data
+    let fetching_msri = messari.getAllMessariCoins();
     let fetching_cmc = cmc.getAllCmcCoins();
     let fetching_lcl = lcl.getLocalCoins();
 
@@ -153,39 +153,39 @@ async function fetchStablecoins() {
         .catch((e) => {
             console.error(e);
         });
-} // fetchStablecoins()
+} // fetchCoins()
 
 /*---------------------------------------------------------
 Function:
-        updateStablecoinData
+        updateCoinData
 Description:
         TODO
 ---------------------------------------------------------*/
-function updateStablecoinData(new_stablecoin_data) {
-    new_stablecoin_data.forEach((scoin_temp) => {
+function updateCoinData(new_coin_data) {
+    new_coin_data.forEach((scoin_temp) => {
         let scoin_temp_found = false;
 
-        data.stablecoins.forEach((scoin) => {
+        data.coins.forEach((scoin) => {
             if (scoin.symbol == scoin_temp.symbol) {
                 scoin_temp_found = true;
-                // new data found, replace scoin with scoin_temp in data.stablecoins list
-                var index = data.stablecoins.indexOf(scoin);
-                if (index !== -1) data.stablecoins[index] = scoin_temp;
+                // new data found, replace scoin with scoin_temp in data.coins list
+                var index = data.coins.indexOf(scoin);
+                if (index !== -1) data.coins[index] = scoin_temp;
             }
         });
 
-        // new coin found in data that wasn't already in global stablecoins list.
-        // Add new coin to global stablecoins list
+        // new coin found in data that wasn't already in global coins list.
+        // Add new coin to global coins list
         if (!scoin_temp_found) {
-            data.stablecoins.push(scoin_temp);
+            data.coins.push(scoin_temp);
         }
-    }); // end loop through new_stablecoin_data
+    }); // end loop through new_coin_data
 
-    // sort global stablecoins list
-    data.stablecoins = data.stablecoins.sort(function (a, b) {
+    // sort global coins list
+    data.coins = data.coins.sort(function (a, b) {
         return b.main.mcap - a.main.mcap;
     });
-} // updateStablecoinData()
+} // updateCoinData()
 
 /*---------------------------------------------------------
 Function:
@@ -198,7 +198,7 @@ async function updatePlatformData() {
 
     let sum = 0;
 
-    data.stablecoins.forEach((scoin) => {
+    data.coins.forEach((scoin) => {
         if (!scoin.platforms) return;
         if (!scoin.main.total_supply) return;
         if (!scoin.main) scoin.setMainDataSrc();
@@ -256,7 +256,7 @@ function updateMetrics() {
     data.totalMCap = 0;
     data.totalVolume = 0;
 
-    data.stablecoins.forEach(async (scoin) => {
+    data.coins.forEach(async (scoin) => {
         // update global total data
         if (scoin.main.mcap) data.totalMCap += scoin.main.mcap;
         if (scoin.main.volume) data.totalVolume += scoin.main.volume;
@@ -274,8 +274,8 @@ Description:
 ---------------------------------------------------------*/
 async function updateData() {
     try {
-        let new_stablecoin_data = await fetchStablecoins();
-        updateStablecoinData(new_stablecoin_data);
+        let new_coin_data = await fetchCoins();
+        updateCoinData(new_coin_data);
         updateMetrics();
         updatePlatformData();
         console.info('Data Updated.');
