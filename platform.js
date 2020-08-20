@@ -1,5 +1,5 @@
 class Platform {
-    constructor(name = null, contract_address = null, supply = null) {
+    constructor(name = '', contract_address = '', supply = 0) {
         this.name = name;
         this.contract_address = contract_address;
         this.supply = supply;

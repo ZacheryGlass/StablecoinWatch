@@ -18,8 +18,8 @@ class Stablecoin {
     ---------------------------------------------------------*/
     constructor() {
         /* basic properties */
-        this.name = null;
-        this.symbol = null;
+        this.name = '';
+        this.symbol = '';
         this.platforms = [];
         /* coin metrics per-data source */
         this.cmc = {};
@@ -80,7 +80,7 @@ class Stablecoin {
 
         // cmc has DAI mcap high than what's seen on chain
         // temp fix till I find out why that is
-        this.main.mcap = Math.max(this.main.mcap, this.cmc.mcap);
+        // this.main.mcap = Math.max(this.main.mcap, this.cmc.mcap);
 
         this.main.total_supply = Number(this.main.total_supply);
         this.main.mcap = Number(this.main.mcap);
