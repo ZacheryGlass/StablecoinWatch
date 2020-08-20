@@ -209,7 +209,7 @@ async function updatePlatformData() {
         scoin.platforms.forEach((pltfm) => {
             // calculate the market cap of this coin on this platform only.
             let mcap_on_pltfm = (pltfm.supply / scoin.scw.total_supply) * scoin.main.mcap;
-            // let mcap_on_pltfm = pltfm.supply * scoin.main.price;
+            // let mcap_on_pltfm = (pltfm.supply / scoin.scw.total_supply) * scoin.scw.mcap;    // reevaluate
 
             if (!mcap_on_pltfm) return;
             sum += mcap_on_pltfm;

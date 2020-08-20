@@ -56,12 +56,12 @@ class Stablecoin {
 
     /*---------------------------------------------------------
     Function:
-            setMainDataSrc
+            setMainMCapSupply
     Description:
-            Set the values to be used as the main
-            source of data for each metric
+            Set the values to be used as the main source of
+            market cap and supply data
     ---------------------------------------------------------*/
-    setMainDataSrc() {
+    setMainMCapSupply() {
         this.main = {};
 
         // set Market Cap and Total Supply
@@ -78,19 +78,27 @@ class Stablecoin {
             this.main.mcap = this.msri.mcap;
         }
 
-        // cmc has DAI mcap high than what's seen on chain
-        // temp fix till I find out why that is
-        // this.main.mcap = Math.max(this.main.mcap, this.cmc.mcap);
+        if (this.cmc.mcap > this.main.mcap) {
+            console.warn('CMC Market Cap is larger than main');
+            this.main.mcap = this.cmc.mcap;
+        }
 
         this.main.total_supply = Number(this.main.total_supply);
         this.main.mcap = Number(this.main.mcap);
+    } // setMainMCapSupply()
 
+    /*---------------------------------------------------------
+    Function:
+            setMainPriceVol
+    Description:
+            Set the values to be used as the main source
+            of price and volume data
+    ---------------------------------------------------------*/
+    setMainPriceVol() {
         // set Price
         this.main.price = Number(this.cmc.price ? this.cmc.price : this.msri.price ? this.msri.price : this.scw.price);
-
-        // set Price
         this.main.volume = Number(this.cmc.volume ? this.cmc.volume : this.msri.volume);
-    } // setMainDataSrc()
+    } // setMainPriceVol()
 
     /*---------------------------------------------------------
     Function:
@@ -104,9 +112,9 @@ class Stablecoin {
             computed from these base-metrics. 
     ---------------------------------------------------------*/
     async updateDerivedMetrics() {
-        this.setMainDataSrc();
+        this.setMainPriceVol();
         await this.updatePlatformsSupply();
-        this.setMainDataSrc();
+        this.setMainMCapSupply();
         this.updateStrings();
         return;
     }
