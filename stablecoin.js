@@ -15,7 +15,7 @@ class Stablecoin {
             constructor
     Description:
             Creates a blank Stablecoin object.
-    ------------------------------------------------*/
+    ---------------------------------------------------------*/
     constructor() {
         /* basic properties */
         this.name = null;
@@ -33,7 +33,7 @@ class Stablecoin {
             updateStrings
     Description:
             Build dollar formated string for coin metrics
-    ------------------------------------------------*/
+    ---------------------------------------------------------*/
     async updateStrings() {
         this.uri = this.symbol;
 
@@ -60,23 +60,28 @@ class Stablecoin {
     Description:
             Set the values to be used as the main
             source of data for each metric
-    ------------------------------------------------*/
+    ---------------------------------------------------------*/
     setMainDataSrc() {
         this.main = {};
 
         // set Market Cap and Total Supply
-        if (this.cmc.total_supply && this.cmc.mcap) {
+        if (this.scw.total_supply) {
+            this.main.total_supply = this.scw.total_supply;
+            if (this.scw.mcap) this.main.mcap = this.scw.mcap;
+            else if (this.cmc.mcap) this.main.mcap = this.cmc.mcap;
+            else if (this.msri.mcap) this.main.mcap = this.msri.mcap;
+        } else if (this.cmc.total_supply && this.cmc.mcap) {
             this.main.total_supply = this.cmc.total_supply;
             this.main.mcap = this.cmc.mcap;
         } else if (this.msri.total_supply && this.msri.mcap) {
             this.main.total_supply = this.msri.total_supply;
             this.main.mcap = this.msri.mcap;
-        } else if (this.scw.total_supply) {
-            this.main.total_supply = this.scw.total_supply;
-            if (this.scw.mcap) this.main.mcap = this.scw.mcap;
-            else if (this.cmc.mcap) this.main.mcap = this.cmc.mcap;
-            else if (this.msri.mcap) this.main.mcap = this.msri.mcap;
         }
+
+        // cmc has DAI mcap high than what's seen on chain
+        // temp fix till I find out why that is
+        this.main.mcap = Math.max(this.main.mcap, this.cmc.mcap);
+
         this.main.total_supply = Number(this.main.total_supply);
         this.main.mcap = Number(this.main.mcap);
 
@@ -112,7 +117,7 @@ class Stablecoin {
     Description:
             Update the total-supply on this coin for
             each platform this coin is issued on.
-    ------------------------------------------------*/
+    ---------------------------------------------------------*/
     async updatePlatformsSupply() {
         if (!this.name) return;
         if (!this.platforms || this.platforms.length == 0) {
