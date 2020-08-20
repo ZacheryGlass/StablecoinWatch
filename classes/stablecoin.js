@@ -24,7 +24,7 @@ class Stablecoin {
         /* coin metrics per-data source */
         this.cmc = {};
         this.msri = {};
-        this.scw = {};
+        this.lcl = {};
         this.main = {};
     } // constructor()
 
@@ -47,8 +47,8 @@ class Stablecoin {
         this.msri.volume_s = util.toDollarString(this.msri.volume);
         this.msri.circulating_supply_s = util.toDollarString(this.msri.circulating_supply);
 
-        this.scw.mcap_s = util.toDollarString(this.scw.mcap);
-        this.scw.total_supply_s = util.toDollarString(this.scw.total_supply);
+        this.lcl.mcap_s = util.toDollarString(this.lcl.mcap);
+        this.lcl.total_supply_s = util.toDollarString(this.lcl.total_supply);
 
         this.main.mcap_s = util.toDollarString(this.main.mcap);
         this.main.volume_s = util.toDollarString(this.main.volume);
@@ -71,9 +71,9 @@ class Stablecoin {
         } else if (this.msri.total_supply && this.msri.mcap) {
             this.main.total_supply = this.msri.total_supply;
             this.main.mcap = this.msri.mcap;
-        } else if (this.scw.total_supply) {
-            this.main.total_supply = this.scw.total_supply;
-            if (this.scw.mcap) this.main.mcap = this.scw.mcap;
+        } else if (this.lcl.total_supply) {
+            this.main.total_supply = this.lcl.total_supply;
+            if (this.lcl.mcap) this.main.mcap = this.lcl.mcap;
             else if (this.cmc.mcap) this.main.mcap = this.cmc.mcap;
             else if (this.msri.mcap) this.main.mcap = this.msri.mcap;
         }
@@ -81,7 +81,7 @@ class Stablecoin {
         this.main.mcap = Number(this.main.mcap);
 
         // set Price
-        this.main.price = Number(this.cmc.price ? this.cmc.price : this.msri.price ? this.msri.price : this.scw.price);
+        this.main.price = Number(this.cmc.price ? this.cmc.price : this.msri.price ? this.msri.price : this.lcl.price);
 
         // set Price
         this.main.volume = Number(this.cmc.volume ? this.cmc.volume : this.msri.volume);
@@ -155,13 +155,13 @@ class Stablecoin {
         // sort platforms
         this.platforms = this.platforms.sort((a, b) => b.supply - a.supply);
 
-        // update scw.total_supply
-        this.scw.total_supply = 0;
+        // update lcl.total_supply
+        this.lcl.total_supply = 0;
         this.platforms.forEach((p) => {
-            if (p && p.supply) this.scw.total_supply += p.supply;
+            if (p && p.supply) this.lcl.total_supply += p.supply;
         });
 
-        this.scw.mcap = this.main.price * this.scw.total_supply;
+        this.lcl.mcap = this.main.price * this.lcl.total_supply;
     } // updatePlatformsSupply()
 }
 

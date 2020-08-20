@@ -245,13 +245,13 @@
                         </tr>
                         <tr>
                             <td>Stablecoin Watch</td>
-                            <td><%= coin.scw.price %></td>
-                            <td><%= coin.scw.mcap_s %></td>
+                            <td><%= coin.lcl.price %></td>
+                            <td><%= coin.lcl.mcap_s %></td>
                             <% try { %>
-                            <td><%= coin.scw.total_supply_s.replace('$', '') %></td>
+                            <td><%= coin.lcl.total_supply_s.replace('$', '') %></td>
                             <% } catch {} %>
-                            <td><%= coin.scw.circulating_supply_s %></td>
-                            <td><%= coin.scw.volume_s %></td>
+                            <td><%= coin.lcl.circulating_supply_s %></td>
+                            <td><%= coin.lcl.volume_s %></td>
                         </tr>
 
                     </table>
@@ -265,8 +265,8 @@
                         <% if( coin.cmc.desc ) { %>
                             <button id="cmc_btn" class="bar-btn" onclick="showDesc('cmc')">CoinMarketCap</button>
                         <% } %>
-                        <% if( coin.scw && coin.scw.desc ) { %>
-                            <button id="cmc_btn" class="bar-btn" onclick="showDesc('scw')">Stablecoin Watch</button>
+                        <% if( coin.lcl && coin.lcl.desc ) { %>
+                            <button id="cmc_btn" class="bar-btn" onclick="showDesc('lcl')">Stablecoin Watch</button>
                         <% } %>
                     </div>
 
@@ -286,9 +286,9 @@
                     <% found = true; } %>
 
                     <!-- StablecoinWatch Description -->
-                    <% if( coin.scw && coin.scw.desc ) { %>
-                        <div id="scw" class="desc-container" <% if( found ) { %> style="display:none" <% } %> >
-                            <p><%- coin.scw.desc %></p>
+                    <% if( coin.lcl && coin.lcl.desc ) { %>
+                        <div id="lcl" class="desc-container" <% if( found ) { %> style="display:none" <% } %> >
+                            <p><%- coin.lcl.desc %></p>
                         </div>
                     <% } %>
                 </section>
@@ -314,7 +314,7 @@
                     data: [
                         <% for (let i = 0; i < coin.platforms.length; i++) { %>
                             <% if( typeof(coin.platforms[i].supply) == 'number') { %>
-                                <%= ((coin.platforms[i].supply/coin.scw.total_supply)*100).toFixed(2) %>,
+                                <%= ((coin.platforms[i].supply/coin.lcl.total_supply)*100).toFixed(2) %>,
                             <% } else { %>
                                 undefined,
                             <% } %>

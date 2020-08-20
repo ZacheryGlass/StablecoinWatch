@@ -2,7 +2,7 @@
     IMPORTS
 ---------------------------------------------------------*/
 const messari = require('./apis/messari');
-const scw = require('./apis/scw');
+const lcl = require('./apis/local');
 const util = require('./util');
 const cmc = require('./apis/cmc');
 
@@ -84,7 +84,7 @@ Description:
         Combine the data from mutlipe sources into a
         a single Stablecoin object.
 ---------------------------------------------------------*/
-function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
+function combineCoins(msri_coins_list, cmc_coins_list, lcl_coins_list) {
     // loop through each CMC coin
     cmc_coins_list.forEach((cmc_coin) => {
         // for the current cmc coin, check if the same coin exists in the cmc coin list
@@ -99,25 +99,25 @@ function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
             });
         } // if (msri_coin)
 
-        let scw_coin = scw_coins_list.find((c) => c.symbol === cmc_coin.symbol);
-        if (scw_coin) {
-            cmc_coin.scw = scw_coin.scw;
-            if (scw_coin.platforms)
-                scw_coin.platforms.forEach((scw_pltfm) => {
-                    let cmc_pltfm = cmc_coin.platforms.find((p) => p.name === scw_pltfm.name);
+        let lcl_coin = lcl_coins_list.find((c) => c.symbol === cmc_coin.symbol);
+        if (lcl_coin) {
+            cmc_coin.lcl = lcl_coin.lcl;
+            if (lcl_coin.platforms)
+                lcl_coin.platforms.forEach((lcl_pltfm) => {
+                    let cmc_pltfm = cmc_coin.platforms.find((p) => p.name === lcl_pltfm.name);
                     if (cmc_pltfm) {
-                        if (scw_pltfm.contract_address) cmc_pltfm.contract_address = scw_pltfm.contract_address;
+                        if (lcl_pltfm.contract_address) cmc_pltfm.contract_address = lcl_pltfm.contract_address;
                     } else {
-                        cmc_coin.platforms.push(scw_pltfm);
+                        cmc_coin.platforms.push(lcl_pltfm);
                     }
                 });
-        } // if (scw_coin)
+        } // if (lcl_coin)
     });
 
-    // here, check for coins that exist in SCW data but not CMC, if found - push to cmc_coins_list
-    scw_coins_list.forEach((scwcoin) => {
-        let cmc_coin = cmc_coins_list.find((c) => c.symbol === scwcoin.symbol);
-        if (!cmc_coin) cmc_coins_list.push(scwcoin);
+    // here, check for coins that exist in lcl data but not CMC, if found - push to cmc_coins_list
+    lcl_coins_list.forEach((lclcoin) => {
+        let cmc_coin = cmc_coins_list.find((c) => c.symbol === lclcoin.symbol);
+        if (!cmc_coin) cmc_coins_list.push(lclcoin);
     });
 
     return cmc_coins_list;
@@ -134,16 +134,16 @@ Description:
 async function fetchStablecoins() {
     // pull new stablecoins data
     let fetching_msri = messari.getAllMessariStablecoins();
-    let fetching_cmc = cmc.getAllCMCStablecoins();
-    let fetching_scw = scw.getSCWStablecoins();
+    let fetching_cmc = cmc.getAllCmcCoins();
+    let fetching_lcl = lcl.getLocalCoins();
 
-    return Promise.all([fetching_msri, fetching_cmc, fetching_scw])
+    return Promise.all([fetching_msri, fetching_cmc, fetching_lcl])
         .then(async (scoins_arr) => {
             let msri_coins_list = scoins_arr[0];
             let cmc_coins_list = scoins_arr[1];
-            let scw_coins_list = scoins_arr[2];
+            let lcl_coins_list = scoins_arr[2];
 
-            let ret_list = combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list);
+            let ret_list = combineCoins(msri_coins_list, cmc_coins_list, lcl_coins_list);
 
             // update the platform-specific supply for each coin
             await Promise.all(ret_list.map(async (coin) => coin.updateDerivedMetrics()));
@@ -206,7 +206,7 @@ async function updatePlatformData() {
         // loop through each platform of the current scoin
         scoin.platforms.forEach((pltfm) => {
             // calculate the market cap of this coin on this platform only.
-            let mcap_on_pltfm = (pltfm.supply / scoin.scw.total_supply) * scoin.main.mcap;
+            let mcap_on_pltfm = (pltfm.supply / scoin.lcl.total_supply) * scoin.main.mcap;
             // let mcap_on_pltfm = pltfm.supply * scoin.main.price;
 
             if (!mcap_on_pltfm) return;

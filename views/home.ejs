@@ -176,8 +176,8 @@
                                 <!-- market cap -->
                                 <% if (coin.main.mcap_s) { %>
                                     <li><%= coin.main.mcap_s %></li>
-                                <% } else if (coin.scw.mcap_s) { %>
-                                    <li><%= coin.scw.mcap_s %></li>
+                                <% } else if (coin.lcl.mcap_s) { %>
+                                    <li><%= coin.lcl.mcap_s %></li>
                                 <% } else { %>
                                         <li>No data</li>
                                 <% } %>
@@ -212,7 +212,7 @@
                                                         </div>
                                                         <div class="b">
                                                             <% if (platform.supply && coin.main.total_supply) { %>
-                                                                <% let pct =  Math.min(100, ((platform.supply / coin.scw.total_supply) * 100))%>
+                                                                <% let pct =  Math.min(100, ((platform.supply / coin.lcl.total_supply) * 100))%>
                                                                 <% sum += pct; %>
                                                                 <% if (pct < 0.005) { %>
                                                                     <%=pct.toFixed(3) %>%

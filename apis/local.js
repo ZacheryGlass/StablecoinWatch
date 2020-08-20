@@ -66,7 +66,7 @@ async function getCurrencyRates() {
 
 /*---------------------------------------------------------
 Function:
-        scw.getSCWStablecoins
+        local.getLocalCoins
 Description:
         Get coins tracked by StablecoinWatch.
 Note:
@@ -74,7 +74,7 @@ Note:
         as CoinMarketCap, or are missing data so they are
         manually tracked here
 ---------------------------------------------------------*/
-exports.getSCWStablecoins = async () => {
+exports.getLocalCoins = async () => {
     let coin;
 
     if (!currency_rates_set) await getCurrencyRates();
@@ -84,7 +84,7 @@ exports.getSCWStablecoins = async () => {
     -----------------------------------------------*/
     coin = new Stablecoin();
     coin.symbol = 'BITCNY';
-    coin.scw.price = Number(currency_prices_in_usd.CNY.toFixed(3));
+    coin.lcl.price = Number(currency_prices_in_usd.CNY.toFixed(3));
     sc.push(coin);
 
     /*-----------------------------------------------
@@ -132,10 +132,10 @@ exports.getSCWStablecoins = async () => {
     coin = new Stablecoin();
     coin.name = 'Tether EUR';
     coin.symbol = 'EURT';
-    coin.scw.price = Number(currency_prices_in_usd.EUR.toFixed(3));
+    coin.lcl.price = Number(currency_prices_in_usd.EUR.toFixed(3));
     coin.platforms.push(new Platform('Ethereum', '0xabdf147870235fcfc34153828c769a70b3fae01f'));
     coin.platforms.push(new Platform('Bitcoin', 41));
-    coin.scw.desc = `Tether is fiat-collateralized stablecoin that offers individuals the
+    coin.lcl.desc = `Tether is fiat-collateralized stablecoin that offers individuals the
                     advantages of transacting with blockchain-based assets while mitigating price risk.
                     Tether is primarily issued on the Ethereum and Bitcoin blockchains and corresponds on
                     a 1:1 basis with Euros sitting in bank accounts.`;
@@ -148,9 +148,9 @@ exports.getSCWStablecoins = async () => {
     coin = new Stablecoin();
     coin.name = 'Tether CNH';
     coin.symbol = 'CNHT';
-    coin.scw.price = Number(currency_prices_in_usd.CNY.toFixed(3));
+    coin.lcl.price = Number(currency_prices_in_usd.CNY.toFixed(3));
     coin.platforms.push(new Platform('Ethereum', '0x6e109e9dd7fa1a58bc3eff667e8e41fc3cc07aef'));
-    coin.scw.desc = 'https://wallet.tether.to/transparency';
+    coin.lcl.desc = 'https://wallet.tether.to/transparency';
     coin.img_url = '/tether.png';
     sc.push(coin);
 
@@ -161,7 +161,7 @@ exports.getSCWStablecoins = async () => {
     coin.name = 'Token Gold';
     coin.symbol = 'XAUT';
     coin.platforms.push(new Platform('Ethereum', '0x4922a015c4407F87432B179bb209e125432E4a2A'));
-    coin.scw.desc = util.urlify(
+    coin.lcl.desc = util.urlify(
         `Tether Gold (XAUT) is a cryptocurrency with a value meant to mirror the value of
             the Gold. According to their site, Tether converts  cash into digital currency, to
             anchor or “tether” the value of the coin to the price of assets or national
@@ -179,8 +179,8 @@ exports.getSCWStablecoins = async () => {
     coin.name = 'HonestCoin';
     coin.symbol = 'USDH';
     coin.img_url = '/default-logo.png';
-    coin.scw.price = 1;
-    coin.scw.desc = `HonestCoin (USDH) describes themsleves as a fully regulated, 1 to 1 U.S. Dollar-backed
+    coin.lcl.price = 1;
+    coin.lcl.desc = `HonestCoin (USDH) describes themsleves as a fully regulated, 1 to 1 U.S. Dollar-backed
         stablecoin that can be bought, sold, invested in or spent as freely as you wish.`;
     coin.platforms.push(
         new Platform('Bitcoin Cash', 'c4b0d62156b3fa5c8f3436079b5394f7edc1bef5dc1cd2f9d0c4d46f82cca479')
@@ -193,7 +193,7 @@ exports.getSCWStablecoins = async () => {
     coin = new Stablecoin();
     coin.name = 'SerumUSD';
     coin.symbol = 'SRM';
-    coin.scw.desc =
+    coin.lcl.desc =
         'SerumUSD is Serum’s SPL and ERC20 USD stablecoin. A decentralized stable coin with no single point of failure.';
     coin.platforms.push(new Platform('Ethereum', '0x476c5e26a75bd202a9683ffd34359c0cc15be0ff'));
     sc.push(coin);
@@ -205,11 +205,11 @@ exports.getSCWStablecoins = async () => {
     coin.name = 'Reserve';
     coin.symbol = 'RSV';
     coin.img_url = '/default-logo.png';
-    coin.scw.price = 1;
-    coin.scw.desc = `Reserve is a stable cryptocurrency that is economically and legally robust at any scale. Decentralized,
+    coin.lcl.price = 1;
+    coin.lcl.desc = `Reserve is a stable cryptocurrency that is economically and legally robust at any scale. Decentralized,
         100% asset-backed, and funded by top Silicon Valley investors.`;
     coin.platforms.push(new Platform('Ethereum', '0x1c5857e110cd8411054660f60b5de6a6958cfae2'));
     sc.push(coin);
 
     return sc;
-}; // getSCWStablecoins()
+}; // getLocalCoins()
