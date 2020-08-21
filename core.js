@@ -40,7 +40,7 @@ const print_custom = function (clr, prefix, msgs) {
     process.stdout.write(prefix + ':');
     for (let i = 0; i < msgs.length; i++) {
         process.stdout.write(' ');
-        process.stdout.write(msgs[i]);
+        process.stdout.write(''+msgs[i]);
     }
     process.stdout.write('\n');
 

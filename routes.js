@@ -63,6 +63,7 @@ router.get('/platforms/:name', async (req, res) => {
     console.debug(req.params.name);
     const name = req.params.name.replace('_', ' ');
     const platform = data.platform_data.find((p) => p.name.toLowerCase() == name.toLowerCase());
+    console.debug(platform)
     let eth_data = data.platform_data.find((chain) => chain.name === 'Ethereum');
     res.render('platforms', {
         data: data,
