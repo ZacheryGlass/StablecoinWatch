@@ -11,7 +11,7 @@
             margin: 0;
             font-size: 16px;
             display: inline-block;
-            width: 12%;
+            width: 15%;
             box-sizing: border-box;
             padding: 5px 10px;
             text-align: center;
@@ -19,31 +19,13 @@
         }
 
         .row ul.coinstats > li.coinrank {
-            width: 5%;
+            width: 10%;
             text-align: center;
         }
-        
-        .row ul.coinstats > li.name {
-            width: 17%;
-            justify-content: left;
-            text-align: left;
-            margin: 0;
-            padding: 0;
-        }
 
-        .row ul.coinstats > li.platform {
-            width: 17%;
-            justify-content: left;
-            text-align: left;
-            margin: 0;
-            padding: 0;
-        }
-
+        .row ul.coinstats > li.name,
         .row ul.coinstats > li.symbol {
-            justify-content: left;
             text-align: left;
-            margin: 0;
-            padding: 0;
         }
 
         img.coin_logo {
@@ -52,44 +34,8 @@
             padding-right: 5px;
         }
 
-        .split * {
-            box-sizing: border-box;
-        }
-
-        .split:after {
-            content: '';
-            display: table;
-            clear: both;
-        }
-
-        /****************************************
-                Platform / Supply List
-        *****************************************/
-        .supply_list li {
-            padding: 0;
-            top: 0;
-            font-size: 14px;
-            list-style: none;
-        }
-
-        .p_grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            grid-template-areas:
-                'a b';
-            align-items: center;
-            margin: auto;
-        }
-
-        .p_grid .a {
-            grid-area: a;
-            text-align: left;
-        }
-
-        .p_grid .b {
-            padding-left: 5px;
-            grid-area: b;
-            text-align: right;
+        h1 {
+            text-align: center;
         }
 
         /****************************************
@@ -118,6 +64,7 @@
         <%- include('partials/header') %>
         <!-- Header -->
         <main>
+            <h1>All Stablecoins on <%=platform.name%></h1> 
             <% if (data.stablecoins) { %>
                 <section class="tbl_wrapper">
                     <!-- Row title -->
@@ -128,10 +75,7 @@
                             <li class="symbol">Symbol</li>
                             <li>Price</li>
                             <li>Market Cap</li>
-                            <li class='mcap_dom'>MCap Dominance</li>
-                            <li>Volume (24h)</li>
-                            <!-- <li>Volume Dominance</li> -->
-                            <li class="platform">Platform</li>
+                            <li>% on <%= platform.name %></li>
                         </ul>
                     </main>
 
@@ -139,12 +83,17 @@
                     <% let i = 0; %>
                     <% data.stablecoins.forEach((coin) => {  %>
 
+                        <!-- Consider doing this on back-end            -->
                         <!-- if no data, or not on this platform,       --> 
                         <!-- skip this coin                             -->
                         <% if (!coin.name || !coin.symbol) return;      %>
                         <% let found = false;                           %>
+                        <% let coin_plfm;                               %>
                         <% coin.platforms.forEach( p => {               %>
-                        <%    if( p.name == platform.name) found = true;%>
+                        <%    if( p.name == platform.name) {            %>                           
+                        <%      found = true;                           %>
+                        <%      coin_plfm = p;                          %>
+                        <%      }                                       %>
                         <% });                                          %>
                         <% if ( !found ) return;                        %>
                         <% i++;                                         %>
@@ -180,72 +129,19 @@
                                 <% } %>
 
                                 <!-- market cap -->
-                                <% if (coin.main.mcap_s) { %>
-                                    <li><%= coin.main.mcap_s %></li>
-                                <% } else if (coin.scw.mcap_s) { %>
-                                    <li><%= coin.scw.mcap_s %></li>
+                                <% if (coin_plfm.supply_s) { %>
+                                    <li><%= coin_plfm.supply_s %></li>
                                 <% } else { %>
                                         <li>No data</li>
                                 <% } %>
 
-                                <!-- market cap dominance -->
-                                <% if (coin.main.mcap && data.totalMCap) { %>
-                                    <li class='mcap_dom'>
-                                        <%= ((coin.main.mcap/data.totalMCap)*100).toFixed(2) %>%
-                                    </li>
+                                <!-- % of total coin's market cap on this platform -->
+                                <% if (coin_plfm.supply && coin.scw.total_supply) { %>
+                                    <li><%= ((coin_plfm.supply / coin.scw.total_supply)*100).toFixed(2) %>%</li>
                                 <% } else { %>
-                                    <li class='mcap_dom'>
-                                        No data
-                                    </li>
+                                        <li>No data</li>
                                 <% } %>
 
-                                <!-- volume -->
-                                <% if (coin.main.volume_s) { %>
-                                    <li><%= coin.main.volume_s %></li>
-                                <% } else { %>
-                                    <li>No data</li>
-                                <% } %>
-
-                                <!-- platforms -->
-                                <% if (coin.platforms.length > 1) { %>
-                                    <li class="platform">
-                                        <ul class="supply_list">
-                                            <% let sum = 0; coin.platforms.forEach((platform, j) => { %>
-                                                <li class="p_grid">
-                                                    <% if (j < 2) { %>
-                                                        <div class="a">
-                                                            <%= platform.name %>: 
-                                                        </div>
-                                                        <div class="b">
-                                                            <% if (platform.supply && coin.main.total_supply) { %>
-                                                                <% let pct =  Math.min(100, ((platform.supply / coin.scw.total_supply) * 100))%>
-                                                                <% sum += pct; %>
-                                                                <% if (pct < 0.005) { %>
-                                                                    <%=pct.toFixed(3) %>%
-                                                                <% } else if (pct < 0.05){ %>
-                                                                    <%=pct.toFixed(2) %>%
-                                                                <% } else if (pct < 0.5){ %>
-                                                                    <%=pct.toFixed(1) %>%
-                                                                <% } else { %>
-                                                                    <%=pct.toFixed(0) %>%
-                                                                <% } %>
-                                                            <% } else { %>
-                                                                ?%
-                                                            <% } %>
-                                                        </div>
-                                                    <% } else if (j == 2) { %>
-                                                            <div class="a">Other:</div>
-                                                            <div class="b"><a href="/coins/<%= coin.uri %>"><%= (100-sum).toFixed()%>%</a></div>
-                                                    <% } %>
-                                                </li>
-                                            <% }); %>
-                                        </ul>
-                                    </li>
-                                <% } else { %> <!-- if more than 1 platform -->
-                                    <li class="platform">
-                                        <%= coin.platforms[0].name %>
-                                    </li>
-                                <% } %> 
                             </ul>
                         </article>
                     <% }) %> <!-- forEach coin -->

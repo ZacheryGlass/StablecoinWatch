@@ -158,7 +158,10 @@ class Stablecoin {
         // update scw.total_supply
         this.scw.total_supply = 0;
         this.platforms.forEach((p) => {
-            if (p && p.supply) this.scw.total_supply += p.supply;
+            if (p && p.supply) {
+                this.scw.total_supply += p.supply;
+                p.supply_s = util.toDollarString(p.supply);
+            }
         });
 
         this.scw.mcap = this.main.price * this.scw.total_supply;
