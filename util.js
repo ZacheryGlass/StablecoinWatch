@@ -1,4 +1,19 @@
 /*---------------------------------------------------------
+    MODULE-SCOPED VARIABLES
+---------------------------------------------------------*/
+const CLR = {
+    reset: '\x1b[0m',
+    green: '\x1b[32m',
+    yellow: '\x1b[33m',
+    red: '\x1b[31m',
+    cyan: '\x1b[36m',
+};
+
+/*---------------------------------------------------------
+    FUNCTIONS
+---------------------------------------------------------*/
+
+/*---------------------------------------------------------
 Function:
 	sleep
 Description:
@@ -79,9 +94,61 @@ Description:
 	add <a> html tags around urls in a text block
 ---------------------------------------------------------*/
 exports.urlify = (text) => {
-  var urlRegex = /(https?:\/\/[^\s]+)/g;
-  return text.replace(urlRegex, function(url) {
-    return '<a href="' + url + '">' + url + '</a>';
-  })
-  // return text.replace(urlRegex, '<a href="$1">$1</a>')
-}
+    var urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.replace(urlRegex, function (url) {
+        return '<a href="' + url + '">' + url + '</a>';
+    });
+    // return text.replace(urlRegex, '<a href="$1">$1</a>')
+};
+
+/*---------------------------------------------------------
+Function: 
+        print_custom
+Description:
+        Print a message to the console in a specified
+        color with a specified prefix.
+---------------------------------------------------------*/
+const print_custom = function (clr, prefix, msgs) {
+    if (global.DEBUG) process.stdout.write(clr);
+
+    process.stdout.write(prefix + ':');
+    for (let i = 0; i < msgs.length; i++) {
+        process.stdout.write(' ');
+        process.stdout.write('' + msgs[i]);
+    }
+    process.stdout.write('\n');
+
+    if (global.DEBUG) process.stdout.write(CLR.reset);
+};
+
+/*---------------------------------------------------------
+Function: console.warn
+Description: Print warnings to the console
+---------------------------------------------------------*/
+console.warn = function () {
+    print_custom(CLR.yellow, 'WARNING', arguments);
+};
+
+/*---------------------------------------------------------
+Function: console.info
+Description: Print info to the console
+---------------------------------------------------------*/
+console.info = function () {
+    print_custom(CLR.green, 'INFO', arguments);
+};
+
+/*---------------------------------------------------------
+Function: console.error
+Description: Print errors to the console
+---------------------------------------------------------*/
+console.error = function () {
+    print_custom(CLR.red, 'ERROR', arguments);
+};
+
+/*---------------------------------------------------------
+Function: console.error
+Description: Print errors to the console
+---------------------------------------------------------*/
+console.debug = function () {
+    if (global.DEBUG) print_custom(CLR.cyan, 'DEBUG', arguments);
+};

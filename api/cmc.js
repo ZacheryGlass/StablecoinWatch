@@ -55,7 +55,7 @@ async function buildCMCStablecoinList() {
     // coins that are on CMC but not tagged as stablecoins
     glb_cmc_tickers = ['DAI', 'AMPL', 'SUSD', 'XAUT', 'USDT'];
 
-    if (global.DEBUG) return; // don't waste cmc api credits
+    // if (global.DEBUG) return; // don't waste cmc api credits
 
     return cmc_api
         .getTickers({ limit: 3000 })
@@ -135,7 +135,7 @@ exports.getCMCStablecoins = async (ticker_list) => {
                 scoin.cmc.volume = q.quote ? q.quote.USD.volume_24h : null;
                 scoin.cmc.volume_s = toDollarString(scoin.cmc.volume);
                 scoin.img_url = md.logo;
-                scoin.cmc.price = q.quote ? q.quote.USD.price.toFixed(3) : null;
+                scoin.cmc.price = q.quote ? q.quote.USD.price : null;
                 scoin.cmc.total_supply = q.total_supply;
                 scoin.cmc.circulating_supply = q.circulating_supply;
 

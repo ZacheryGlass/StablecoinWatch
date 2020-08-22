@@ -4,5 +4,5 @@
 // const c = new rpc('http://data-seed-prealpha-1-s1.binance.org/');
 
 exports.getTokenSupply = async (address) => {
-    return null;
+    return 0;
 }; // getTokenSupply

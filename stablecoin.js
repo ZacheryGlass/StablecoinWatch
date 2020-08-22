@@ -56,52 +56,6 @@ class Stablecoin {
 
     /*---------------------------------------------------------
     Function:
-            setMainMCapSupply
-    Description:
-            Set the values to be used as the main source of
-            market cap and supply data
-    ---------------------------------------------------------*/
-    setMainMCapSupply() {
-        this.main = {};
-
-        // set Market Cap and Total Supply
-        if (this.scw.total_supply) {
-            this.main.total_supply = this.scw.total_supply;
-            if (this.scw.mcap) this.main.mcap = this.scw.mcap;
-            else if (this.cmc.mcap) this.main.mcap = this.cmc.mcap;
-            else if (this.msri.mcap) this.main.mcap = this.msri.mcap;
-        } else if (this.cmc.total_supply && this.cmc.mcap) {
-            this.main.total_supply = this.cmc.total_supply;
-            this.main.mcap = this.cmc.mcap;
-        } else if (this.msri.total_supply && this.msri.mcap) {
-            this.main.total_supply = this.msri.total_supply;
-            this.main.mcap = this.msri.mcap;
-        }
-
-        if (this.cmc.mcap > this.main.mcap) {
-            console.warn('CMC Market Cap is larger than main');
-            this.main.mcap = this.cmc.mcap;
-        }
-
-        this.main.total_supply = Number(this.main.total_supply);
-        this.main.mcap = Number(this.main.mcap);
-    } // setMainMCapSupply()
-
-    /*---------------------------------------------------------
-    Function:
-            setMainPriceVol
-    Description:
-            Set the values to be used as the main source
-            of price and volume data
-    ---------------------------------------------------------*/
-    setMainPriceVol() {
-        // set Price
-        this.main.price = Number(this.cmc.price ? this.cmc.price : this.msri.price ? this.msri.price : this.scw.price);
-        this.main.volume = Number(this.cmc.volume ? this.cmc.volume : this.msri.volume);
-    } // setMainPriceVol()
-
-    /*---------------------------------------------------------
-    Function:
             updateDerivedMetrics
     Description:
             Update metric that require computation
@@ -112,11 +66,45 @@ class Stablecoin {
             computed from these base-metrics. 
     ---------------------------------------------------------*/
     async updateDerivedMetrics() {
-        this.setMainPriceVol();
+        this.main = {};
+
+        // set main price source
+        this.main.price = Number(this.cmc.price ? this.cmc.price : this.msri.price ? this.msri.price : this.scw.price);
+
+        // set main volume source
+        this.main.volume = Number(this.cmc.volume ? this.cmc.volume : this.msri.volume);
+
+        // set main Total Supply source, used by updatPlatformsSupply()
+        this.main.total_supply = Number(this.cmc.total_supply ? this.cmc.total_supply : this.msri.total_supply);
+
+        // set supply data
         await this.updatePlatformsSupply();
-        this.setMainMCapSupply();
+
+        // set scw total supply
+        this.scw.total_supply = 0;
+        this.platforms.forEach((p) => {
+            if (p && p.supply) this.scw.total_supply += p.supply;
+        });
+
+        // set scw market cap
+        this.scw.mcap = this.main.price * this.scw.total_supply;
+
+        // always use scw total supply as main
+        this.main.total_supply = this.scw.total_supply;
+
+        // set main Market Cap source
+        if (this.scw.mcap) this.main.mcap = this.scw.mcap;
+        else if (this.cmc.mcap) this.main.mcap = this.cmc.mcap;
+        else if (this.msri.mcap) this.main.mcap = this.msri.mcap;
+        this.main.mcap = Number(this.main.mcap);
+
+        if (this.cmc.mcap > this.main.mcap) {
+            console.warn('CMC Market Cap is larger than main');
+            this.main.mcap = this.cmc.mcap;
+        }
+
+        // set strings
         this.updateStrings();
-        return;
     }
 
     /*---------------------------------------------------------
@@ -125,9 +113,12 @@ class Stablecoin {
     Description:
             Update the total-supply on this coin for
             each platform this coin is issued on.
+    Note:
+            Main price and supply must be set before calling
+            this function.
     ---------------------------------------------------------*/
     async updatePlatformsSupply() {
-        if (!this.name) return;
+        // if (!this.name) return;
         if (!this.platforms || this.platforms.length == 0) {
             console.warn('No platforms for', this.name);
             return;
@@ -142,39 +133,40 @@ class Stablecoin {
         PLATFORM_API['Algorand'] = algo;
         PLATFORM_API['Bitcoin (Liquid)'] = liquid;
 
-        await Promise.all(
-            this.platforms.map(async (platform) => {
-                try {
-                    if (!PLATFORM_API[platform.name]) {
-                        throw `No API available for ${platform.name} platform.`;
-                    } else if (!PLATFORM_API[platform.name].getTokenSupply) {
-                        throw `API for ${platform.name} platform does not support function 'getTokenSupply()'.`;
-                    } else {
-                        platform.supply = await PLATFORM_API[platform.name].getTokenSupply(platform.contract_address);
-                    }
-                } catch (e) {
-                    if (this.platforms.length == 1) {
-                        console.warn(
-                            `Using Total Supply as platform supply for ${this.name} on ${platform.name} due to API error: ${e}`
-                        );
-                        this.platforms[0].supply = this.main.total_supply;
-                    } else {
-                        console.error(`Could not get ${this.name} supply on ${platform.name}: ${e}`);
-                    }
-                } //catch
-            })
-        ); // await Promise.all
+        // if there's only 1 platform and we have the total supply
+        // from another source just use that
+        if (this.platforms.length == 1 && this.main.total_supply) {
+            this.platforms[0].supply = this.main.total_supply;
+            this.scw.total_supply = this.main.total_supply;
+        } else {
+            await Promise.all(
+                this.platforms.map(async (platform) => {
+                    try {
+                        if (!PLATFORM_API[platform.name]) {
+                            throw `No API available for ${platform.name} platform.`;
+                        } else if (!PLATFORM_API[platform.name].getTokenSupply) {
+                            throw `API for ${platform.name} platform does not support function 'getTokenSupply()'.`;
+                        } else {
+                            platform.supply = await PLATFORM_API[platform.name].getTokenSupply(
+                                platform.contract_address
+                            );
+                        }
+                    } catch (e) {
+                        if (this.platforms.length == 1) {
+                            console.warn(
+                                `Using Total Supply as platform supply for ${this.name} on ${platform.name} due to API error: ${e}`
+                            );
+                            this.platforms[0].supply = this.main.total_supply;
+                        } else {
+                            console.error(`Could not get ${this.name} supply on ${platform.name}: ${e}`);
+                        }
+                    } //catch
+                })
+            ); // await Promise.all
 
-        // sort platforms
-        this.platforms = this.platforms.sort((a, b) => b.supply - a.supply);
-
-        // update scw.total_supply
-        this.scw.total_supply = 0;
-        this.platforms.forEach((p) => {
-            if (p && p.supply) this.scw.total_supply += p.supply;
-        });
-
-        this.scw.mcap = this.main.price * this.scw.total_supply;
+            // sort platforms by supply
+            this.platforms.sort((a, b) => b.supply - a.supply);
+        } // if else
     } // updatePlatformsSupply()
 }
 
