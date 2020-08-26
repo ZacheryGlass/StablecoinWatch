@@ -97,7 +97,7 @@
                                         </strong>
                                     </li>
                                     <li><%= p.total_mcap_s %></li>
-                                    <% let pct = ( p.total_mcap / data.totalMCap ) * 100; %>
+                                    <% let pct = ( p.total_mcap / data.metrics.totalMCap ) * 100; %>
                                     <li><%=(pct).toFixed(2)%>%</li>
                                 </ul>
                             </article>
@@ -132,7 +132,7 @@
                         <% let top_5_total = 0; %>
                         <% for (let i = 0; i < data.platform_data.length; i++) { %>
                             <% if( i < 5 ) { %>
-                                <% let pct = Number((( data.platform_data[i].total_mcap / data.totalMCap ) * 100).toFixed(2)) %>
+                                <% let pct = Number((( data.platform_data[i].total_mcap / data.metrics.totalMCap ) * 100).toFixed(2)) %>
                                 <% top_5_total += pct %>
                                 <%= pct %>,
                             <% } else { break; } %>

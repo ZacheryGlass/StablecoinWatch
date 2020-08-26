@@ -9,11 +9,14 @@ const cmc = require('./api/cmc');
 /*---------------------------------------------------------
     MODULE-SCOPED VARIABLES
 ---------------------------------------------------------*/
-let DATA = {};
-DATA.stablecoins = [];
-DATA.totalMCap = 0;
-DATA.totalVolume = 0;
-DATA.platform_data = [];
+let DATA = {
+    stablecoins: [],
+    platform_data: [],
+    metrics: {
+        totalMCap: 0,
+        totalVolume: 0,
+    },
+};
 
 /*---------------------------------------------------------
     FUNCTIONS
@@ -149,7 +152,7 @@ Function:
 Description:
         Calculate the total value on each platform
 ---------------------------------------------------------*/
-async function calcPlatformData(scoin_list) {
+function calcPlatformData(scoin_list) {
     let all_platforms = [];
     let mcap_total = 0;
 
@@ -160,7 +163,7 @@ async function calcPlatformData(scoin_list) {
         /*----------------------------------------------------
         Verify current coin has valid platform(s)
         ----------------------------------------------------*/
-        if (!(typeof scoin.platforms == 'list')) {
+        if (!Array.isArray(scoin.platforms)) {
             console.error(`Problem with platforms of ${scoin.name}`);
             return;
         }
@@ -228,22 +231,26 @@ async function calcPlatformData(scoin_list) {
 
 /*---------------------------------------------------------
 Function:
-        updateMetrics
+        calcMetrics
 Description:
         Update the total volume and total market cap metrics
 ---------------------------------------------------------*/
-function updateMetrics(coin_list) {
-    DATA.totalMCap = 0;
-    DATA.totalVolume = 0;
+function calcMetrics(coin_list) {
+    let new_metrics = {
+        totalMCap: 0,
+        totalVolume: 0,
+    };
 
     coin_list.forEach(async (scoin) => {
-        if (scoin.main.mcap) DATA.totalMCap += scoin.main.mcap;
-        if (scoin.main.volume) DATA.totalVolume += scoin.main.volume;
+        if (scoin.main.mcap) new_metrics.totalMCap += scoin.main.mcap;
+        if (scoin.main.volume) new_metrics.totalVolume += scoin.main.volume;
     });
 
-    DATA.totalMCap_s = util.toDollarString(DATA.totalMCap);
-    DATA.totalVolume_s = util.toDollarString(DATA.totalVolume);
-} // updateMetrics()
+    new_metrics.totalMCap_s = util.toDollarString(new_metrics.totalMCap);
+    new_metrics.totalVolume_s = util.toDollarString(new_metrics.totalVolume);
+
+    return new_metrics;
+} // calcMetrics()
 
 /*---------------------------------------------------------
 Function:
@@ -255,8 +262,8 @@ async function updateData() {
     try {
         let coins = await fetchStablecoins();
         DATA.stablecoins = updateStablecoinData(coins, DATA.stablecoins);
-        DATA.platform_data = calcPlatformData(coins);
-        updateMetrics(coins);
+        DATA.metrics = calcMetrics(DATA.stablecoins);
+        DATA.platform_data = calcPlatformData(DATA.stablecoins);
         console.info('Data Updated.');
     } catch (e) {
         console.error(` ***CRITICAL*** Could not update data: ${e}`);
@@ -267,4 +274,4 @@ async function updateData() {
     EXPORTS
 ---------------------------------------------------------*/
 exports.updateData = updateData;
-exports.data = data;
+exports.data = DATA;

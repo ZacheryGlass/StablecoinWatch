@@ -113,7 +113,7 @@
 <div class="bar">
     <div class="grid">
         <section class="a left_grid">
-            Total Market Cap:&nbsp;<%=data.totalMCap_s%>
+            Total Market Cap:&nbsp;<%=data.metrics.totalMCap_s%>
         </section>
         <section class="b">
             <% if ( active === 'home' ) { %>
@@ -130,10 +130,10 @@
             Total $ on ETH: <%=totalETHMCap_s%>
         </section>
         <section class="d left_grid">
-            Total 24h Volume: <%=data.totalVolume_s%>
+            Total 24h Volume: <%=data.metrics.totalVolume_s%>
         </section>
         <section class="f right_grid">
-            Total % on ETH: <%= ((totalETHMCap/data.totalMCap)*100).toFixed(1)%>%
+            Total % on ETH: <%= ((totalETHMCap/data.metrics.totalMCap)*100).toFixed(1)%>%
         </section>
     </div>
 </div>

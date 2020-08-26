@@ -87,6 +87,7 @@ Note:   This includes coins pegged to assets other than the
 ---------------------------------------------------------*/
 exports.getAllCMCStablecoins = async () => {
     if (!glb_cmc_tickers || glb_cmc_tickers.length == 0) {
+        console.warn('getAllCMCStablecoins: No CMC tickers cached, building new list now.');
         await buildCMCStablecoinList();
     }
     return exports.getCMCStablecoins(glb_cmc_tickers);

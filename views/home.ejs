@@ -183,9 +183,9 @@
                                 <% } %>
 
                                 <!-- market cap dominance -->
-                                <% if (coin.main.mcap && data.totalMCap) { %>
+                                <% if (coin.main.mcap && data.metrics.totalMCap) { %>
                                     <li class='mcap_dom'>
-                                        <%= ((coin.main.mcap/data.totalMCap)*100).toFixed(2) %>%
+                                        <%= ((coin.main.mcap/data.metrics.totalMCap)*100).toFixed(2) %>%
                                     </li>
                                 <% } else { %>
                                     <li class='mcap_dom'>
