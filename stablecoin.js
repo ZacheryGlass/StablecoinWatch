@@ -105,7 +105,9 @@ class Stablecoin {
 
         // set strings
         this.updateStrings();
-    }
+
+        return this;
+    } // updateDerivedMetrics
 
     /*---------------------------------------------------------
     Function:
@@ -118,7 +120,6 @@ class Stablecoin {
             this function.
     ---------------------------------------------------------*/
     async updatePlatformsSupply() {
-        // if (!this.name) return;
         if (!this.platforms || this.platforms.length == 0) {
             console.warn('No platforms for', this.name);
             return;
@@ -133,40 +134,31 @@ class Stablecoin {
         PLATFORM_API['Algorand'] = algo;
         PLATFORM_API['Bitcoin (Liquid)'] = liquid;
 
-        // if there's only 1 platform and we have the total supply
-        // from another source just use that
-        if (this.platforms.length == 1 && this.main.total_supply) {
-            this.platforms[0].supply = this.main.total_supply;
-            this.scw.total_supply = this.main.total_supply;
-        } else {
-            await Promise.all(
-                this.platforms.map(async (platform) => {
-                    try {
-                        if (!PLATFORM_API[platform.name]) {
-                            throw `No API available for ${platform.name} platform.`;
-                        } else if (!PLATFORM_API[platform.name].getTokenSupply) {
-                            throw `API for ${platform.name} platform does not support function 'getTokenSupply()'.`;
-                        } else {
-                            platform.supply = await PLATFORM_API[platform.name].getTokenSupply(
-                                platform.contract_address
-                            );
-                        }
-                    } catch (e) {
-                        if (this.platforms.length == 1) {
-                            console.warn(
-                                `Using Total Supply as platform supply for ${this.name} on ${platform.name} due to API error: ${e}`
-                            );
-                            this.platforms[0].supply = this.main.total_supply;
-                        } else {
-                            console.error(`Could not get ${this.name} supply on ${platform.name}: ${e}`);
-                        }
-                    } //catch
-                })
-            ); // await Promise.all
+        await Promise.all(
+            this.platforms.map(async (platform) => {
+                try {
+                    if (!PLATFORM_API[platform.name]) {
+                        throw `No API available for ${platform.name} platform.`;
+                    } else if (!PLATFORM_API[platform.name].getTokenSupply) {
+                        throw `API for ${platform.name} platform does not support function 'getTokenSupply()'.`;
+                    } else {
+                        platform.supply = await PLATFORM_API[platform.name].getTokenSupply(platform.contract_address);
+                    }
+                } catch (e) {
+                    if (this.platforms.length == 1) {
+                        console.warn(
+                            `Using Total Supply as platform supply for ${this.name} on ${platform.name} due to API error: ${e}`
+                        );
+                        this.platforms[0].supply = this.main.total_supply;
+                    } else {
+                        console.error(`Could not get ${this.name} supply on ${platform.name}: ${e}`);
+                    }
+                } //catch
+            })
+        ); // await Promise.all
 
-            // sort platforms by supply
-            this.platforms.sort((a, b) => b.supply - a.supply);
-        } // if else
+        // sort platforms by supply
+        this.platforms.sort((a, b) => b.supply - a.supply);
     } // updatePlatformsSupply()
 }
 

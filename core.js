@@ -29,7 +29,7 @@ Description:
         Combine the data from mutlipe sources into a
         a single Stablecoin object.
 ---------------------------------------------------------*/
-function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
+async function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
     /*----------------------------------------------------
     Loop through each CMC coin
     ----------------------------------------------------*/
@@ -73,8 +73,13 @@ function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
         if (!cmc_coin) cmc_coins_list.push(scwcoin);
     });
 
-    return cmc_coins_list;
-} // end coinbinedCoins()
+    /*----------------------------------------------------
+    Update the platform-specific supply data for each coin
+    and return the coin list
+    ----------------------------------------------------*/
+    return Promise.all(cmc_coins_list.map(async (coin) => coin.updateDerivedMetrics()));
+
+} // end combineCoins()
 
 /*---------------------------------------------------------
 Function:
@@ -97,17 +102,7 @@ async function fetchStablecoins() {
     ----------------------------------------------------*/
     return Promise.all([fetching_msri, fetching_cmc, fetching_scw])
         .then(async (scoins_arr) => {
-            let msri_coins_list = scoins_arr[0];
-            let cmc_coins_list = scoins_arr[1];
-            let scw_coins_list = scoins_arr[2];
-
-            let ret_list = combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list);
-
-            /*----------------------------------------------------
-            Update the platform-specific supply for each coin
-            ----------------------------------------------------*/
-            await Promise.all(ret_list.map(async (coin) => coin.updateDerivedMetrics()));
-            return ret_list;
+            return combineCoins(scoins_arr[0], scoins_arr[1], scoins_arr[2]);
         })
         .catch((e) => {
             console.error(e);
@@ -203,11 +198,13 @@ function calcPlatformData(scoin_list) {
         }); // for each platform
     }); // for each scoin
 
-    if (DATA.totalMCap - mcap_total > 1000000)
+    if (DATA.totalMCap - mcap_total > 1000000) {
+        console.warn('Total market cap on all platforms != total market cap on all coins');
         all_platforms.push({
             name: 'Other / Unknown',
             total_mcap: DATA.totalMCap - mcap_total,
         });
+    }
 
     /*----------------------------------------------------
     Sort platform list
