@@ -1,13 +1,16 @@
 const util = require('./util');
 const Platform = require('./platform');
-const eth = require('./api/eth');
-const omni = require('./api/omni');
-const tron = require('./api/tron');
-const bnb = require('./api/bnb');
-const slp = require('./api/bch');
-const algo = require('./api/algo');
-const eos = require('./api/eos');
-const liquid = require('./api/liquid');
+
+const PLATFORM_API = {
+    Ethereum: require('./api/eth'),
+    Bitcoin: require('./api/omni'),
+    Tron: require('./api/tron'),
+    'BNB Chain': require('./api/bnb'),
+    'Bitcoin Cash': require('./api/bch'),
+    EOS: require('./api/eos'),
+    Algorand: require('./api/algo'),
+    'Bitcoin (Liquid)': require('./api/liquid'),
+};
 
 class Stablecoin {
     /*---------------------------------------------------------
@@ -124,15 +127,6 @@ class Stablecoin {
             console.warn('No platforms for', this.name);
             return;
         }
-        let PLATFORM_API = {};
-        PLATFORM_API['Ethereum'] = eth;
-        PLATFORM_API['Bitcoin'] = omni;
-        PLATFORM_API['Tron'] = tron;
-        PLATFORM_API['BNB Chain'] = bnb;
-        PLATFORM_API['Bitcoin Cash'] = slp;
-        PLATFORM_API['EOS'] = eos;
-        PLATFORM_API['Algorand'] = algo;
-        PLATFORM_API['Bitcoin (Liquid)'] = liquid;
 
         await Promise.all(
             this.platforms.map(async (platform) => {
@@ -153,12 +147,12 @@ class Stablecoin {
                     } else {
                         console.error(`Could not get ${this.name} supply on ${platform.name}: ${e}`);
                     }
-                } //catch
+                } //try-catch
             })
         ); // await Promise.all
 
         // sort platforms by supply
-        this.platforms.sort((a, b) => b.supply - a.supply);
+        this.platforms.sort(util.sortObjByNumProperty('supply'));
     } // updatePlatformsSupply()
 }
 

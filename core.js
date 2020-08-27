@@ -78,7 +78,6 @@ async function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
     and return the coin list
     ----------------------------------------------------*/
     return Promise.all(cmc_coins_list.map(async (coin) => coin.updateDerivedMetrics()));
-
 } // end combineCoins()
 
 /*---------------------------------------------------------
@@ -136,7 +135,7 @@ function updateStablecoinData(new_coin_list, old_coin_list) {
     /*----------------------------------------------------
     Sort the stablecoins list
     ----------------------------------------------------*/
-    old_coin_list.sort((a, b) => b.main.mcap - a.main.mcap);
+    old_coin_list.sort(sortObjByNumProperty('main', 'mcap'));
 
     return old_coin_list;
 } // updateStablecoinData()
@@ -209,9 +208,7 @@ function calcPlatformData(scoin_list) {
     /*----------------------------------------------------
     Sort platform list
     ----------------------------------------------------*/
-    all_platforms = all_platforms.sort(function (a, b) {
-        return b.total_mcap - a.total_mcap;
-    });
+    all_platforms.sort(util.sortObjByNumProperty('total_mcap'));
 
     /*----------------------------------------------------
     Add string representatoin of supply on platform

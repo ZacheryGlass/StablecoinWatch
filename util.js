@@ -52,6 +52,82 @@ exports.toDollarString = (v) => {
 
 /*---------------------------------------------------------
 Function:
+    sortObjByNumProperty
+
+Description:
+    Function generator. Returns a function to sort object
+    by the specified object property. Also works for sorting
+    based on nested object properties. The specified property
+    values in the objects are assumed to be numbers and
+    non-numbers be sorted to the end of the list.
+
+Example Usage: 
+    // sort by obj.out.in value
+    myArray.sort( sortObjByNumProperty('out', 'in') )
+    
+            BEFORE               |        AFTER
+_________________________________|________________________
+[                                | [
+    { out: { in: 261195293 } },  |   { out: { in: 261195293 } }, 
+    NaN,                         |   { out: { in: 121905 } },    
+    { out: { in: undefined } },  |   { out: { in: 27123 } },     
+    { out: { in: 'string' } },   |   { out: { in: NaN } },       
+    { out: {} },                 |   { out: { in: undefined } }, 
+    'string',                    |   { out: { in: 'string' } },  
+    { out: { in: null } },       |   { out: {} },                
+    {},                          |   { out: { in: null } },      
+    null,                        |   {},                         
+    undefined,                   |   NaN,                        
+    { out: { in: 121905 } },     |   'string',                   
+    { out: { in: 27123 } },      |   null,                       
+    { out: { in: NaN } },        |   undefined                   
+]                                | ]
+                                 |
+---------------------------------------------------------*/
+
+exports.sortObjByNumProperty = function (/* string: property, ... */) {
+    let properies = Array.prototype.slice.call(arguments);
+
+    let sorter = function (a, b) {
+        /*----------------------------------------------------
+        Get the specified nested object property for which to 
+        sort by
+        ----------------------------------------------------*/
+        for (let i = 0; i < properies.length; i++) {
+            // check for non-objects
+            if (typeof a !== 'object' || a === null) return 1;
+            if (typeof b !== 'object' || b === null) return -1;
+
+            a = a[properies[i]];
+            b = b[properies[i]];
+        }
+
+        /*----------------------------------------------------
+        check for non-numbers properties
+        ----------------------------------------------------*/
+        if (typeof a !== 'number') return 1;
+        if (typeof b !== 'number') return -1;
+
+        /*----------------------------------------------------
+        check for property value NaN
+        ----------------------------------------------------*/
+        if (a !== a) return 1;
+        if (b !== b) return -1;
+
+        /*----------------------------------------------------
+        if all safty checks pass, sort based on number value
+        ----------------------------------------------------*/
+        return b - a;
+    };
+
+    /*----------------------------------------------------
+    return the generated sort function 
+    ----------------------------------------------------*/
+    return sorter;
+};
+
+/*---------------------------------------------------------
+Function:
 	stripHTML
 Description:
 	Remove HTML from a string of text
