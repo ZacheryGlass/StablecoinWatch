@@ -51,11 +51,13 @@ Description:
         Stablecoins, as defined by CMC.
 ---------------------------------------------------------*/
 async function buildCMCStablecoinList() {
-    // CMC doesn't tag all stablecoins correctly so forcefully add to list here
-    // coins that are on CMC but not tagged as stablecoins
+    /*----------------------------------------------------
+    CMC doesn't tag all stablecoins correctly so forcefully
+    add to list here coins that are on CMC but not tagged
+    ----------------------------------------------------*/
     glb_cmc_tickers = ['DAI', 'AMPL', 'SUSD', 'XAUT', 'USDT'];
 
-    // if (global.DEBUG) return; // don't waste cmc api credits
+    if (global.DEBUG) return; // don't waste cmc api credits
 
     return cmc_api
         .getTickers({ limit: 3000 })
@@ -110,7 +112,9 @@ exports.getCMCStablecoins = async (ticker_list) => {
             cmcCheckError(metadata_resp.status);
             cmcCheckError(quote_resp.status);
 
-            // build return list
+            /*----------------------------------------------------
+            build return list
+            ----------------------------------------------------*/
             let coin_list_ret = [];
             Object.keys(metadata_resp.data).forEach(function (key, i) {
                 let md = metadata_resp.data[key];

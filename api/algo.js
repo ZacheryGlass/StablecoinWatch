@@ -25,12 +25,10 @@ const algodclient = new algosdk.Algod(token, mainnet_url, port);
     FUNCTIONS
 ---------------------------------------------------------*/
 async function getAssetInfo(asset_id) {
-    // tether asset id = 312769
     return algodclient.assetInformation(asset_ad);
 }
 
 async function getAccountInfo(address) {
-    // tether account address = XIU7HGGAJ3QOTATPDSIIHPFVKMICXKHMOR2FJKHTVLII4FAOA3CYZQDLG4
     return algodclient.accountInformation(address);
 }
 

@@ -135,7 +135,7 @@ function updateStablecoinData(new_coin_list, old_coin_list) {
     /*----------------------------------------------------
     Sort the stablecoins list
     ----------------------------------------------------*/
-    old_coin_list.sort(sortObjByNumProperty('main', 'mcap'));
+    old_coin_list.sort(util.sortObjByNumProperty('main', 'mcap'));
 
     return old_coin_list;
 } // updateStablecoinData()

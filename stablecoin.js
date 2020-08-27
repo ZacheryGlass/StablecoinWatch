@@ -20,11 +20,15 @@ class Stablecoin {
             Creates a blank Stablecoin object.
     ---------------------------------------------------------*/
     constructor() {
-        /* basic properties */
+        /*----------------------------------------------------
+        basic properties
+        ----------------------------------------------------*/
         this.name = '';
         this.symbol = '';
         this.platforms = [];
-        /* coin metrics per-data source */
+        /*----------------------------------------------------
+        coin metrics per-data source
+        ----------------------------------------------------*/
         this.cmc = {};
         this.msri = {};
         this.scw = {};
@@ -71,31 +75,47 @@ class Stablecoin {
     async updateDerivedMetrics() {
         this.main = {};
 
-        // set main price source
+        /*----------------------------------------------------
+        set main price source
+        ----------------------------------------------------*/
         this.main.price = Number(this.cmc.price ? this.cmc.price : this.msri.price ? this.msri.price : this.scw.price);
 
-        // set main volume source
+        /*----------------------------------------------------
+        set main volume source
+        ----------------------------------------------------*/
         this.main.volume = Number(this.cmc.volume ? this.cmc.volume : this.msri.volume);
 
-        // set main Total Supply source, used by updatPlatformsSupply()
+        /*----------------------------------------------------
+        set main Total Supply source, used by updatPlatformsSupply()
+        ----------------------------------------------------*/
         this.main.total_supply = Number(this.cmc.total_supply ? this.cmc.total_supply : this.msri.total_supply);
 
-        // set supply data
+        /*----------------------------------------------------
+        set supply data
+        ----------------------------------------------------*/
         await this.updatePlatformsSupply();
 
-        // set scw total supply
+        /*----------------------------------------------------
+        set scw total supply
+        ----------------------------------------------------*/
         this.scw.total_supply = 0;
         this.platforms.forEach((p) => {
             if (p && p.supply) this.scw.total_supply += p.supply;
         });
 
-        // set scw market cap
+        /*----------------------------------------------------
+        set scw market cap
+        ----------------------------------------------------*/
         this.scw.mcap = this.main.price * this.scw.total_supply;
 
-        // always use scw total supply as main
+        /*----------------------------------------------------
+        always use scw total supply as main
+        ----------------------------------------------------*/
         this.main.total_supply = this.scw.total_supply;
 
-        // set main Market Cap source
+        /*----------------------------------------------------
+        set main Market Cap source
+        ----------------------------------------------------*/
         if (this.scw.mcap) this.main.mcap = this.scw.mcap;
         else if (this.cmc.mcap) this.main.mcap = this.cmc.mcap;
         else if (this.msri.mcap) this.main.mcap = this.msri.mcap;
@@ -106,7 +126,9 @@ class Stablecoin {
             this.main.mcap = this.cmc.mcap;
         }
 
-        // set strings
+        /*----------------------------------------------------
+        set strings
+        ----------------------------------------------------*/
         this.updateStrings();
 
         return this;
@@ -150,8 +172,9 @@ class Stablecoin {
                 } //try-catch
             })
         ); // await Promise.all
-
-        // sort platforms by supply
+        /*----------------------------------------------------
+        sort platforms by supply
+        ----------------------------------------------------*/
         this.platforms.sort(util.sortObjByNumProperty('supply'));
     } // updatePlatformsSupply()
 }

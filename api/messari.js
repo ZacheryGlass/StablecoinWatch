@@ -25,7 +25,6 @@ exports.getAllMessariStablecoins = async () => {
 
     allCoins.forEach((coin) => {
         if (coin.profile.sector == 'Stablecoins' && !global.EXCLUDE_COINS.includes(coin.symbol)) {
-            // format platforms
             let platforms = [];
 
             try {

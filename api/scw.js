@@ -54,7 +54,9 @@ async function getCurrencyRates() {
     const eur_price_in_usd = eur_rates.USD;
     currency_prices_in_usd['EUR'] = eur_price_in_usd;
 
-    // convert to USD price
+    /*-----------------------------------------------
+    convert to USD price
+    -----------------------------------------------*/
     Object.keys(eur_rates).forEach((currency) => {
         const x_price_in_eur = 1 / eur_rates[currency];
         currency_prices_in_usd[currency] = x_price_in_eur * eur_price_in_usd;
