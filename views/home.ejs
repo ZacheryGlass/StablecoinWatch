@@ -158,7 +158,9 @@
 
                                 <!-- symbol -->
                                 <li class="symbol">
-                                    <img class="coin_logo" src="<%= coin.img_url %>" alt="" />
+                                    <% let img = coin.img_url; %>
+                                    <% if(!img) img = '/default-logo.png'; %>
+                                    <img class="coin_logo" src="<%= img %>" alt="" />
                                     <%= coin.symbol %>
                                 </li>
 
