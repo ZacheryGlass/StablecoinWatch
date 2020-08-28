@@ -176,18 +176,18 @@
                                 <% } %>
 
                                 <!-- market cap -->
-                                <% if (coin.main.mcap_s) { %>
-                                    <li><%= coin.main.mcap_s %></li>
-                                <% } else if (coin.scw.mcap_s) { %>
-                                    <li><%= coin.scw.mcap_s %></li>
+                                <% if (coin.main.circulating_mcap_s) { %>
+                                    <li><%= coin.main.circulating_mcap_s %></li>
+                                <% } else if (coin.scw.circulating_mcap_s) { %>
+                                    <li><%= coin.scw.circulating_mcap_s %></li>
                                 <% } else { %>
                                         <li>No data</li>
                                 <% } %>
 
                                 <!-- market cap dominance -->
-                                <% if (coin.main.mcap && data.metrics.totalMCap) { %>
+                                <% if (coin.main.circulating_mcap && data.metrics.totalMCap) { %>
                                     <li class='mcap_dom'>
-                                        <%= ((coin.main.mcap/data.metrics.totalMCap)*100).toFixed(2) %>%
+                                        <%= ((coin.main.circulating_mcap/data.metrics.totalMCap)*100).toFixed(2) %>%
                                     </li>
                                 <% } else { %>
                                     <li class='mcap_dom'>
@@ -213,8 +213,8 @@
                                                             <%= platform.name %>: 
                                                         </div>
                                                         <div class="b">
-                                                            <% if (platform.supply && coin.main.total_supply) { %>
-                                                                <% let pct =  Math.min(100, ((platform.supply / coin.scw.total_supply) * 100))%>
+                                                            <% if (platform.circulating_supply && coin.main.circulating_supply) { %>
+                                                                <% let pct =  Math.min(100, ((platform.circulating_supply / coin.scw.circulating_supply) * 100))%>
                                                                 <% sum += pct; %>
                                                                 <% if (pct < 0.005) { %>
                                                                     <%=pct.toFixed(3) %>%

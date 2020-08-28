@@ -129,20 +129,20 @@ exports.getCMCStablecoins = async (ticker_list) => {
                     ? [
                           new Platform(
                               md.platform.name == 'Binance Coin' ? 'BNB Chain' : md.platform.name,
-                              md.platform.token_address,
-                              null // platform total supply - fetched from Blockchain
+                              md.platform.token_address
                           ),
                       ]
                     : [new Platform(md.name)];
                 scoin.cmc.desc = urlify(md.description);
-                scoin.cmc.mcap = q.quote ? q.quote.USD.market_cap : null;
-                scoin.cmc.mcap_s = toDollarString(scoin.cmc.mcap);
                 scoin.cmc.volume = q.quote ? q.quote.USD.volume_24h : null;
-                scoin.cmc.volume_s = toDollarString(scoin.cmc.volume);
                 scoin.img_url = md.logo;
                 scoin.cmc.price = q.quote ? q.quote.USD.price : null;
                 scoin.cmc.total_supply = q.total_supply;
                 scoin.cmc.circulating_supply = q.circulating_supply;
+                scoin.cmc.circulating_mcap = q.quote ? q.quote.USD.market_cap : null;
+                scoin.cmc.total_mcap =
+                    scoin.cmc.total_supply * scoin.cmc.price ||
+                    (scoin.cmc.total_supply / scoin.cmc.circulating_supply) * scoin.cmc.circulating_mcap;
 
                 coin_list_ret.push(scoin);
             });

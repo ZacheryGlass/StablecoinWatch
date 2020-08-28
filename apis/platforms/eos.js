@@ -11,12 +11,12 @@ const client = createDfuseClient({
 
 /*---------------------------------------------------------
 Function:
-        eos.getTokenSupply
+        eos.getTokenTotalSupply
 Description:
         Get the total supply of the token at the provided
         address.
 ---------------------------------------------------------*/
-exports.getTokenSupply = async (address) => {
+exports.getTokenTotalSupply = async (address) => {
     let resp;
 
     /*----------------------------------------------------
@@ -61,4 +61,4 @@ exports.getTokenSupply = async (address) => {
                 return Number(supply);
             })
     ); // no catch here - allow errors to propogate up.
-}; // getTokenSupply()
+}; // getTokenTotalSupply()

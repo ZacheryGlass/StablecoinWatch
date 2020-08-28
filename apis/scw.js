@@ -213,5 +213,20 @@ exports.getSCWStablecoins = async () => {
     coin.platforms.push(new Platform('Ethereum', '0x1c5857e110cd8411054660f60b5de6a6958cfae2'));
     sc.push(coin);
 
+    /*-----------------------------------------------
+    QCash
+    -----------------------------------------------*/
+    coin = new Stablecoin();
+    coin.symbol = 'QC';
+    coin.platforms.push(
+        new Platform(
+            'Qtum',
+            'f2033ede578e17fa6231047265010445bca8cf1c',
+            ['QQCsHgSmAgBK3sCeUF9Whzm7qgFURuuSAk'],
+            10000000000
+        )
+    );
+    sc.push(coin);
+
     return sc;
 }; // getSCWStablecoins()

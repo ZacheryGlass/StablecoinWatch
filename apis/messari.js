@@ -43,12 +43,13 @@ exports.getAllMessariStablecoins = async () => {
             scoin.symbol = coin.symbol;
             scoin.platforms = platforms;
             scoin.msri.desc = coin.profile.overview;
-            scoin.msri.price = coin.metrics.market_data.price_usd
-                ? coin.metrics.market_data.price_usd.toFixed(3)
-                : null;
-            scoin.msri.mcap = coin.metrics.marketcap.current_marketcap_usd;
+            scoin.msri.price = coin.metrics.market_data.price_usd ? coin.metrics.market_data.price_usd : null;
+            scoin.msri.circulating_mcap = coin.metrics.marketcap.current_marketcap_usd;
             scoin.msri.volume = coin.metrics.market_data.real_volume_last_24_hours;
-            scoin.cmc.circulating_supply = coin.metrics.supply.circulating;
+            scoin.msri.circulating_supply = coin.metrics.supply.circulating;
+            scoin.msri.total_mcap =
+                scoin.msri.total_supply * scoin.msri.price ||
+                (scoin.msri.total_supply / scoin.msri.circulating_supply) * scoin.msri.circulating_mcap;
             ret_list.push(scoin);
         } // if is stablecoin
     }); // for each

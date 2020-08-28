@@ -57,6 +57,8 @@ async function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
                     let cmc_pltfm = cmc_coin.platforms.find((p) => p.name === scw_pltfm.name);
                     if (cmc_pltfm) {
                         if (scw_pltfm.contract_address) cmc_pltfm.contract_address = scw_pltfm.contract_address;
+                        if (scw_pltfm.exclude_addresses) cmc_pltfm.exclude_addresses = scw_pltfm.exclude_addresses;
+                        if (scw_pltfm.total_supply) cmc_pltfm.total_supply = scw_pltfm.total_supply;
                     } else {
                         cmc_coin.platforms.push(scw_pltfm);
                     }
@@ -135,7 +137,7 @@ function updateStablecoinData(new_coin_list, old_coin_list) {
     /*----------------------------------------------------
     Sort the stablecoins list
     ----------------------------------------------------*/
-    old_coin_list.sort(util.sortObjByNumProperty('main', 'mcap'));
+    old_coin_list.sort(util.sortObjByNumProperty('main', 'circulating_mcap'));
 
     return old_coin_list;
 } // updateStablecoinData()
@@ -148,7 +150,7 @@ Description:
 ---------------------------------------------------------*/
 function calcPlatformData(scoin_list) {
     let all_platforms = [];
-    let mcap_total = 0;
+    let mcap_sum = 0;
 
     /*----------------------------------------------------
     Loop each coin
@@ -166,18 +168,18 @@ function calcPlatformData(scoin_list) {
         loop each platform for this coin
         ----------------------------------------------------*/
         scoin.platforms.forEach((pltfm) => {
-            console.debug(`${scoin.name} on ${pltfm.name}: ${pltfm.supply}`);
+            console.debug(`${scoin.name} on ${pltfm.name}: ${pltfm.total_supply}`);
 
             /*----------------------------------------------------
-            calculate the market cap of this coinon this platform
+            calculate the market cap of this coin on this platform
             ----------------------------------------------------*/
             let mcap_on_pltfm = 0;
-            if (scoin.platforms.length == 1) mcap_on_pltfm = scoin.main.mcap;
-            else if (scoin.main.price) mcap_on_pltfm = pltfm.supply * scoin.main.price;
-            else mcap_on_pltfm = (pltfm.supply / scoin.scw.total_supply) * scoin.main.mcap;
+            if (scoin.platforms.length == 1) mcap_on_pltfm = scoin.main.circulating_mcap;
+            else if (scoin.main.price) mcap_on_pltfm = pltfm.circulating_supply * scoin.main.price;
+            else mcap_on_pltfm = (pltfm.circulating_supply / scoin.scw.circulating_supply) * scoin.main.circulating_mcap;
             if (!mcap_on_pltfm) mcap_on_pltfm = 0;
 
-            mcap_total += mcap_on_pltfm;
+            mcap_sum += mcap_on_pltfm;
 
             /*----------------------------------------------------
             check if the current coin's platform is already in 
@@ -186,35 +188,35 @@ function calcPlatformData(scoin_list) {
             let gbl_pltfm = all_platforms.find((p) => p.name == pltfm.name);
 
             if (gbl_pltfm) {
-                gbl_pltfm.total_mcap += mcap_on_pltfm;
+                gbl_pltfm.mcap_sum += mcap_on_pltfm;
             } else {
                 all_platforms.push({
                     name: pltfm.name,
-                    total_mcap: mcap_on_pltfm,
+                    mcap_sum: mcap_on_pltfm,
                     uri: pltfm.name.replace(' ', '_'),
                 });
             } // if-else
         }); // for each platform
     }); // for each scoin
 
-    if (DATA.totalMCap - mcap_total > 1000000) {
+    if (DATA.totalMCap - mcap_sum > 1000000) {
         console.warn('Total market cap on all platforms != total market cap on all coins');
         all_platforms.push({
             name: 'Other / Unknown',
-            total_mcap: DATA.totalMCap - mcap_total,
+            mcap_sum: DATA.totalMCap - mcap_sum,
         });
     }
 
     /*----------------------------------------------------
     Sort platform list
     ----------------------------------------------------*/
-    all_platforms.sort(util.sortObjByNumProperty('total_mcap'));
+    all_platforms.sort(util.sortObjByNumProperty('mcap_sum'));
 
     /*----------------------------------------------------
     Add string representatoin of supply on platform
     ----------------------------------------------------*/
     all_platforms.forEach((pltfm) => {
-        pltfm.total_mcap_s = util.toDollarString(pltfm.total_mcap);
+        pltfm.mcap_sum_s = util.toDollarString(pltfm.mcap_sum);
     });
 
     /*----------------------------------------------------
@@ -236,7 +238,7 @@ function calcMetrics(coin_list) {
     };
 
     coin_list.forEach(async (scoin) => {
-        if (scoin.main.mcap) new_metrics.totalMCap += scoin.main.mcap;
+        if (scoin.main.circulating_mcap) new_metrics.totalMCap += scoin.main.circulating_mcap;
         if (scoin.main.volume) new_metrics.totalVolume += scoin.main.volume;
     });
 
