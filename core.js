@@ -166,15 +166,15 @@ function calcPlatformData(scoin_list) {
         loop each platform for this coin
         ----------------------------------------------------*/
         scoin.platforms.forEach((pltfm) => {
-            console.debug(`${scoin.name} on ${pltfm.name}: ${pltfm.supply}`);
+            console.debug(`${scoin.name} on ${pltfm.name}: ${pltfm.total_supply}`);
 
             /*----------------------------------------------------
             calculate the market cap of this coinon this platform
             ----------------------------------------------------*/
             let mcap_on_pltfm = 0;
             if (scoin.platforms.length == 1) mcap_on_pltfm = scoin.main.mcap;
-            else if (scoin.main.price) mcap_on_pltfm = pltfm.supply * scoin.main.price;
-            else mcap_on_pltfm = (pltfm.supply / scoin.scw.total_supply) * scoin.main.mcap;
+            else if (scoin.main.price) mcap_on_pltfm = pltfm.total_supply * scoin.main.price;
+            else mcap_on_pltfm = (pltfm.total_supply / scoin.scw.total_supply) * scoin.main.mcap;
             if (!mcap_on_pltfm) mcap_on_pltfm = 0;
 
             mcap_total += mcap_on_pltfm;

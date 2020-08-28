@@ -196,8 +196,8 @@
                             </div>
                             <div class="supply-item supply-amount">
                                 <!-- formats number with commas -->
-                                <% if( typeof(coin.platforms[i].supply) == 'number') { %>
-                                    <%= coin.platforms[i].supply.toFixed().toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") %> <%= coin.symbol %>
+                                <% if( typeof(coin.platforms[i].total_supply) == 'number') { %>
+                                    <%= coin.platforms[i].total_supply.toFixed().toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") %> <%= coin.symbol %>
                                 <% } else { %>
                                     ? <%= coin.symbol %>
                                 <% } %>
@@ -225,7 +225,7 @@
                         </tr>
                         <tr>
                             <td>Coin Market Cap</td>
-                            <td><%= coin.cmc.price %></td>
+                            <td><%= Number(coin.cmc.price).toFixed(3) %></td>
                             <td><%= coin.cmc.mcap_s %></td>
                             <% try { %>
                             <td><%= coin.cmc.total_supply_s.replace('$', '') %></td>
@@ -235,7 +235,7 @@
                         </tr>
                         <tr>
                             <td>Messari</td>
-                            <td><%= coin.msri.price %></td>
+                            <td><%= Number(coin.msri.price).toFixed(3) %></td>
                             <td><%= coin.msri.mcap_s %></td>
                             <% try { %>
                             <td><%= coin.msri.total_supply_s.replace('$', '') %></td>
@@ -245,7 +245,7 @@
                         </tr>
                         <tr>
                             <td>Stablecoin Watch</td>
-                            <td><%= coin.scw.price %></td>
+                            <td><%= Number(coin.scw.price).toFixed(3) %></td>
                             <td><%= coin.scw.mcap_s %></td>
                             <% try { %>
                             <td><%= coin.scw.total_supply_s.replace('$', '') %></td>
@@ -313,8 +313,8 @@
                     label: '% on Platforms',
                     data: [
                         <% for (let i = 0; i < coin.platforms.length; i++) { %>
-                            <% if( typeof(coin.platforms[i].supply) == 'number') { %>
-                                <%= ((coin.platforms[i].supply/coin.scw.total_supply)*100).toFixed(2) %>,
+                            <% if( typeof(coin.platforms[i].total_supply) == 'number') { %>
+                                <%= ((coin.platforms[i].total_supply/coin.scw.total_supply)*100).toFixed(2) %>,
                             <% } else { %>
                                 undefined,
                             <% } %>

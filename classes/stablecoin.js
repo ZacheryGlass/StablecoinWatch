@@ -100,7 +100,7 @@ class Stablecoin {
         ----------------------------------------------------*/
         this.scw.total_supply = 0;
         this.platforms.forEach((p) => {
-            if (p && p.supply) this.scw.total_supply += p.supply;
+            if (p && p.total_supply) this.scw.total_supply += p.total_supply;
         });
 
         /*----------------------------------------------------
@@ -158,14 +158,16 @@ class Stablecoin {
                     } else if (!PLATFORM_API[platform.name].getTokenSupply) {
                         throw `API for ${platform.name} platform does not support function 'getTokenSupply()'.`;
                     } else {
-                        platform.supply = await PLATFORM_API[platform.name].getTokenSupply(platform.contract_address);
+                        platform.total_supply = await PLATFORM_API[platform.name].getTokenSupply(
+                            platform.contract_address
+                        );
                     }
                 } catch (e) {
                     if (this.platforms.length == 1) {
                         console.warn(
                             `Using Total Supply as platform supply for ${this.name} on ${platform.name} due to API error: ${e}`
                         );
-                        this.platforms[0].supply = this.main.total_supply;
+                        this.platforms[0].total_supply = this.main.total_supply;
                     } else {
                         console.error(`Could not get ${this.name} supply on ${platform.name}: ${e}`);
                     }
@@ -175,7 +177,7 @@ class Stablecoin {
         /*----------------------------------------------------
         sort platforms by supply
         ----------------------------------------------------*/
-        this.platforms.sort(util.sortObjByNumProperty('supply'));
+        this.platforms.sort(util.sortObjByNumProperty('total_supply'));
     } // updatePlatformsSupply()
 }
 
