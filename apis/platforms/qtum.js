@@ -1,12 +1,13 @@
-let fetch = require('node-fetch');
-class QtumInterface {
+const PlatformInterface = require('./platform_interface');
+
+class QtumInterface extends PlatformInterface {
     ENDPOINT = 'http://qtum.info/api';
 
     /*---------------------------------------------------------
     Function:
-            getTokenTotalSupply
+            getTokenBalanceAtAddress
     Description:
-            Fetches the the balance at an address for the 
+            Fetches the balance at an address for the 
             specified token
     ---------------------------------------------------------*/
     async getTokenBalanceAtAddress(token_contract_address, address) {
@@ -33,27 +34,6 @@ class QtumInterface {
             .then((data) => data.qrc20.totalSupply / 10 ** data.qrc20.decimals)
             .catch(console.error);
     } // getTokenTotalSupply
-
-    /*---------------------------------------------------------
-    Function:
-            getTokenCirculatingSupply
-    Description:
-            Fetches the circulating supply for token specified
-            by 'token_contract_address'
-    Note:   The parameter 'total_supply' is optional but 
-            prevents an additional API call.
-    ---------------------------------------------------------*/
-    async getTokenCirculatingSupply(token_contract_address, exclude_addresses, total_supply) {
-
-        if (!total_supply) total_supply = await this.getTokenTotalSupply(token_contract_address);
-
-        const exclude_total = await Promise.all(
-            exclude_addresses.map((addr) => this.getTokenBalanceAtAddress(token_contract_address, addr))
-        ).then((exclude_amounts) => exclude_amounts.reduce((a, b) => a + b));
-
-        return total_supply - exclude_total;
-    } // total_supply
 } // PlatformInterface
 
-let q = new QtumInterface();
-// module.exports = Qtum;
+module.exports = Qtum;
