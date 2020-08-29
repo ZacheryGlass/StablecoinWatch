@@ -155,10 +155,10 @@ class Stablecoin {
                 try {
                     if (!PLATFORM_API[platform.name]) {
                         throw `No API available for ${platform.name} platform.`;
-                    } else if (!PLATFORM_API[platform.name].getTokenSupply) {
-                        throw `API for ${platform.name} platform does not support function 'getTokenSupply()'.`;
+                    } else if (!PLATFORM_API[platform.name].getTokenTotalSupply) {
+                        throw `API for ${platform.name} platform does not support function 'getTokenTotalSupply()'.`;
                     } else {
-                        platform.total_supply = await PLATFORM_API[platform.name].getTokenSupply(
+                        platform.total_supply = await PLATFORM_API[platform.name].getTokenTotalSupply(
                             platform.contract_address
                         );
                     }

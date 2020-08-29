@@ -49,4 +49,4 @@ async function getTokenSupplyByAddress(address) {
 /*---------------------------------------------------------
     ADDITIONAL EXPORTS
 ---------------------------------------------------------*/
-exports.getTokenSupply = getTokenSupplyByAddress;
+exports.getTokenTotalSupply = getTokenSupplyByAddress;

@@ -3,6 +3,6 @@
 // client.initChain();
 // const c = new rpc('http://data-seed-prealpha-1-s1.binance.org/');
 
-exports.getTokenSupply = async (address) => {
+exports.getTokenTotalSupply = async (address) => {
     return 0;
-}; // getTokenSupply
+}; // getTokenTotalSupply

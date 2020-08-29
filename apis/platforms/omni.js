@@ -9,12 +9,12 @@ const util = require('../../util');
 
 /*---------------------------------------------------------
 Function:
-        omni.getTokenSupply
+        omni.getTokenTotalSupply
 Description:
         Fetches the Omni exporer to get the total supply
         for coin specified by 'token_id'
 ---------------------------------------------------------*/
-exports.getTokenSupply = async (token_id) => {
+exports.getTokenTotalSupply = async (token_id) => {
     const omni_api_url = `https://api.omniexplorer.info/v1/property/${token_id}`;
     const response = await fetch(omni_api_url);
     const data = await response.json();

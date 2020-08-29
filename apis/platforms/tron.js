@@ -44,7 +44,7 @@ exports.getAssets = async (address) => {
 };
 */
 
-exports.getTokenSupply = async (address) => {
+exports.getTokenTotalSupply = async (address) => {
     tronWeb.setAddress(address);
     return tronWeb
         .contract()

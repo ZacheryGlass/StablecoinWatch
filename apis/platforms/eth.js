@@ -14,7 +14,7 @@ const web3 = new Web3(new Web3.providers.HttpProvider(`https://mainnet.infura.io
     FUNCTIONS
 ---------------------------------------------------------*/
 
-exports.getTokenSupply = async (contract_address) => {
+exports.getTokenTotalSupply = async (contract_address) => {
     /*---------------------------------------------------------
     Special case for DAI as it is not held in a single contract
     token supply explained here 
