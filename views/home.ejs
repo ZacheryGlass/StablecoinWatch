@@ -213,8 +213,8 @@
                                                             <%= platform.name %>: 
                                                         </div>
                                                         <div class="b">
-                                                            <% if (platform.total_supply && coin.main.total_supply) { %>
-                                                                <% let pct =  Math.min(100, ((platform.total_supply / coin.scw.total_supply) * 100))%>
+                                                            <% if (platform.circulating_supply && coin.main.circulating_supply) { %>
+                                                                <% let pct =  Math.min(100, ((platform.circulating_supply / coin.scw.circulating_supply) * 100))%>
                                                                 <% sum += pct; %>
                                                                 <% if (pct < 0.005) { %>
                                                                     <%=pct.toFixed(3) %>%

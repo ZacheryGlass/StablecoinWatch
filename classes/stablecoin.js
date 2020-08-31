@@ -101,7 +101,8 @@ class Stablecoin {
         this.main.total_supply = Number(this.cmc.total_supply ? this.cmc.total_supply : this.msri.total_supply);
 
         /*----------------------------------------------------
-        TODO
+        set main Circulating Supply source,
+	used by updatPlatformsSupply()
         ----------------------------------------------------*/
         this.main.circulating_supply = Number(
             this.cmc.circulating_supply ? this.cmc.circulating_supply : this.msri.circulating_supply
@@ -230,7 +231,7 @@ class Stablecoin {
         /*----------------------------------------------------
         sort platforms by supply
         ----------------------------------------------------*/
-        this.platforms.sort(util.sortObjByNumProperty('total_supply'));
+        this.platforms.sort(util.sortObjByNumProperty('circulating_supply'));
     } // updatePlatformsSupply()
 }
 

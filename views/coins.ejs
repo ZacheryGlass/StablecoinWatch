@@ -196,8 +196,8 @@
                             </div>
                             <div class="supply-item supply-amount">
                                 <!-- formats number with commas -->
-                                <% if( typeof(coin.platforms[i].total_supply) == 'number') { %>
-                                    <%= coin.platforms[i].total_supply.toFixed().toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") %> <%= coin.symbol %>
+                                <% if( typeof(coin.platforms[i].circulating_supply) == 'number') { %>
+                                    <%= coin.platforms[i].circulating_supply.toFixed().toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") %> <%= coin.symbol %>
                                 <% } else { %>
                                     ? <%= coin.symbol %>
                                 <% } %>
@@ -325,8 +325,8 @@
                     label: '% on Platforms',
                     data: [
                         <% for (let i = 0; i < coin.platforms.length; i++) { %>
-                            <% if( typeof(coin.platforms[i].total_supply) == 'number') { %>
-                                <%= ((coin.platforms[i].total_supply/coin.scw.total_supply)*100).toFixed(2) %>,
+                            <% if( typeof(coin.platforms[i].circulating_supply) == 'number') { %>
+                                <%= ((coin.platforms[i].circulating_supply/coin.scw.circulating_supply)*100).toFixed(2) %>,
                             <% } else { %>
                                 undefined,
                             <% } %>

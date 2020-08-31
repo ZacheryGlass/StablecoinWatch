@@ -175,8 +175,8 @@ function calcPlatformData(scoin_list) {
             ----------------------------------------------------*/
             let mcap_on_pltfm = 0;
             if (scoin.platforms.length == 1) mcap_on_pltfm = scoin.main.circulating_mcap;
-            else if (scoin.main.price) mcap_on_pltfm = pltfm.total_supply * scoin.main.price;
-            else mcap_on_pltfm = (pltfm.total_supply / scoin.scw.total_supply) * scoin.main.circulating_mcap;
+            else if (scoin.main.price) mcap_on_pltfm = pltfm.circulating_supply * scoin.main.price;
+            else mcap_on_pltfm = (pltfm.circulating_supply / scoin.scw.circulating_supply) * scoin.main.circulating_mcap;
             if (!mcap_on_pltfm) mcap_on_pltfm = 0;
 
             mcap_total += mcap_on_pltfm;
