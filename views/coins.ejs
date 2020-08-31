@@ -230,7 +230,7 @@
                                     <%= Number(coin.cmc.price).toFixed(3) %>
                                 <% } %>
                             </td>
-                            <td><%= coin.cmc.mcap_s %></td>
+                            <td><%= coin.cmc.circulating_mcap_s %></td>
                             <% try { %>
                             <td><%= coin.cmc.total_supply_s.replace('$', '') %></td>
                             <% } catch {} %>
@@ -244,7 +244,7 @@
                                     <%= Number(coin.msri.price).toFixed(3) %>
                                 <% } %>
                             </td>
-                            <td><%= coin.msri.mcap_s %></td>
+                            <td><%= coin.msri.circulating_mcap_s %></td>
                             <% try { %>
                             <td><%= coin.msri.total_supply_s.replace('$', '') %></td>
                             <% } catch {} %>
@@ -258,7 +258,7 @@
                                     <%= Number(coin.scw.price).toFixed(3) %>
                                 <% } %>
                             </td>
-                            <td><%= coin.scw.mcap_s %></td>
+                            <td><%= coin.scw.circulating_mcap_s %></td>
                             <% try { %>
                             <td><%= coin.scw.total_supply_s.replace('$', '') %></td>
                             <% } catch {} %>

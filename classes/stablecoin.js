@@ -45,21 +45,25 @@ class Stablecoin {
     async updateStrings() {
         this.uri = this.symbol;
 
-        this.cmc.mcap_s = util.toDollarString(this.cmc.mcap);
+        this.cmc.total_mcap_s = util.toDollarString(this.cmc.total_mcap);
+        this.cmc.circulating_mcap_s = util.toDollarString(this.cmc.circulating_mcap);
         this.cmc.total_supply_s = util.toDollarString(this.cmc.total_supply);
-        this.cmc.volume_s = util.toDollarString(this.cmc.volume);
         this.cmc.circulating_supply_s = util.toDollarString(this.cmc.circulating_supply);
+        this.cmc.volume_s = util.toDollarString(this.cmc.volume);
 
-        this.msri.mcap_s = util.toDollarString(this.msri.mcap);
-        this.msri.total_supply_s = util.toDollarString(this.cmc.total_supply);
-        this.msri.volume_s = util.toDollarString(this.msri.volume);
+        this.msri.total_mcap_s = util.toDollarString(this.msri.total_mcap);
+        this.msri.circulating_mcap_s = util.toDollarString(this.msri.circulating_mcap);
+        this.msri.total_supply_s = util.toDollarString(this.msri.total_supply);
         this.msri.circulating_supply_s = util.toDollarString(this.msri.circulating_supply);
+        this.msri.volume_s = util.toDollarString(this.msri.volume);
 
-        this.scw.mcap_s = util.toDollarString(this.scw.mcap);
+        this.scw.total_mcap_s = util.toDollarString(this.scw.total_mcap);
+        this.scw.circulating_mcap_s = util.toDollarString(this.scw.circulating_mcap);
         this.scw.total_supply_s = util.toDollarString(this.scw.total_supply);
         this.scw.circulating_supply_s = util.toDollarString(this.scw.circulating_supply);
 
-        this.main.mcap_s = util.toDollarString(this.main.mcap);
+        this.main.total_mcap_s = util.toDollarString(this.main.total_mcap);
+        this.main.circulating_mcap_s = util.toDollarString(this.main.circulating_mcap);
         this.main.volume_s = util.toDollarString(this.main.volume);
     } // updateStrings()
 
@@ -75,11 +79,15 @@ class Stablecoin {
             computed from these base-metrics. 
     ---------------------------------------------------------*/
     async updateDerivedMetrics() {
-        this.main = {};
+        /*----------------------------------------------------
+        if no coin logo, use default
+        ----------------------------------------------------*/
+        if (!this.img_url) this.img_url = '/default-logo.png';
 
         /*----------------------------------------------------
         set main price source
         ----------------------------------------------------*/
+        this.main = {};
         this.main.price = Number(this.cmc.price ? this.cmc.price : this.msri.price ? this.msri.price : this.scw.price);
 
         /*----------------------------------------------------
@@ -121,9 +129,14 @@ class Stablecoin {
         });
 
         /*----------------------------------------------------
-        set scw market cap
+        set scw total market cap
         ----------------------------------------------------*/
-        this.scw.mcap = this.main.price * this.scw.total_supply;
+        this.scw.total_mcap = this.main.price * this.scw.total_supply;
+
+        /*----------------------------------------------------
+        set scw circulating market cap
+        ----------------------------------------------------*/
+        this.scw.circulating_mcap = this.main.price * this.scw.circulating_supply;
 
         /*----------------------------------------------------
         always use scw total supply as main
@@ -138,14 +151,21 @@ class Stablecoin {
         /*----------------------------------------------------
         set main Market Cap source
         ----------------------------------------------------*/
-        if (this.scw.mcap) this.main.mcap = this.scw.mcap;
-        else if (this.cmc.mcap) this.main.mcap = this.cmc.mcap;
-        else if (this.msri.mcap) this.main.mcap = this.msri.mcap;
-        this.main.mcap = Number(this.main.mcap);
+        if (this.scw.circulating_mcap) {
+            this.main.total_mcap = this.scw.total_mcap;
+            this.main.circulating_mcap = this.scw.circulating_mcap;
+        } else if (this.cmc.circulating_mcap) {
+            this.main.total_mcap = this.cmc.total_mcap;
+            this.main.circulating_mcap = this.cmc.circulating_mcap;
+        } else if (this.msri.circulating_mcap) {
+            this.main.total_mcap = this.msri.total_mcap;
+            this.main.circulating_mcap = this.msri.circulating_mcap;
+        }
+        this.main.total_mcap = Number(this.main.total_mcap);
+        this.main.circulating_mcap = Number(this.main.circulating_mcap);
 
-        if (this.cmc.mcap > this.main.mcap) {
+        if (this.cmc.total_mcap > this.main.total_mcap) {
             console.warn('CMC Market Cap is larger than main');
-            this.main.mcap = this.cmc.mcap;
         }
 
         /*----------------------------------------------------

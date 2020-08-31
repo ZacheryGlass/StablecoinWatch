@@ -176,18 +176,18 @@
                                 <% } %>
 
                                 <!-- market cap -->
-                                <% if (coin.main.mcap_s) { %>
-                                    <li><%= coin.main.mcap_s %></li>
-                                <% } else if (coin.scw.mcap_s) { %>
-                                    <li><%= coin.scw.mcap_s %></li>
+                                <% if (coin.main.circulating_mcap_s) { %>
+                                    <li><%= coin.main.circulating_mcap_s %></li>
+                                <% } else if (coin.scw.circulating_mcap_s) { %>
+                                    <li><%= coin.scw.circulating_mcap_s %></li>
                                 <% } else { %>
                                         <li>No data</li>
                                 <% } %>
 
                                 <!-- market cap dominance -->
-                                <% if (coin.main.mcap && data.metrics.totalMCap) { %>
+                                <% if (coin.main.circulating_mcap && data.metrics.totalMCap) { %>
                                     <li class='mcap_dom'>
-                                        <%= ((coin.main.mcap/data.metrics.totalMCap)*100).toFixed(2) %>%
+                                        <%= ((coin.main.circulating_mcap/data.metrics.totalMCap)*100).toFixed(2) %>%
                                     </li>
                                 <% } else { %>
                                     <li class='mcap_dom'>

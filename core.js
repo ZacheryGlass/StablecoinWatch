@@ -137,7 +137,7 @@ function updateStablecoinData(new_coin_list, old_coin_list) {
     /*----------------------------------------------------
     Sort the stablecoins list
     ----------------------------------------------------*/
-    old_coin_list.sort(util.sortObjByNumProperty('main', 'mcap'));
+    old_coin_list.sort(util.sortObjByNumProperty('main', 'circulating_mcap'));
 
     return old_coin_list;
 } // updateStablecoinData()
@@ -171,12 +171,12 @@ function calcPlatformData(scoin_list) {
             console.debug(`${scoin.name} on ${pltfm.name}: ${pltfm.total_supply}`);
 
             /*----------------------------------------------------
-            calculate the market cap of this coinon this platform
+            calculate the market cap of this coin on this platform
             ----------------------------------------------------*/
             let mcap_on_pltfm = 0;
-            if (scoin.platforms.length == 1) mcap_on_pltfm = scoin.main.mcap;
+            if (scoin.platforms.length == 1) mcap_on_pltfm = scoin.main.circulating_mcap;
             else if (scoin.main.price) mcap_on_pltfm = pltfm.total_supply * scoin.main.price;
-            else mcap_on_pltfm = (pltfm.total_supply / scoin.scw.total_supply) * scoin.main.mcap;
+            else mcap_on_pltfm = (pltfm.total_supply / scoin.scw.total_supply) * scoin.main.circulating_mcap;
             if (!mcap_on_pltfm) mcap_on_pltfm = 0;
 
             mcap_total += mcap_on_pltfm;
@@ -238,7 +238,7 @@ function calcMetrics(coin_list) {
     };
 
     coin_list.forEach(async (scoin) => {
-        if (scoin.main.mcap) new_metrics.totalMCap += scoin.main.mcap;
+        if (scoin.main.circulating_mcap) new_metrics.totalMCap += scoin.main.circulating_mcap;
         if (scoin.main.volume) new_metrics.totalVolume += scoin.main.volume;
     });
 
