@@ -44,3 +44,5 @@ class PlatformInterface {
         return total_supply - exclude_total;
     } // total_supply
 }
+
+module.exports = PlatformInterface;

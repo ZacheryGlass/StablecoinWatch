@@ -10,6 +10,7 @@ const PLATFORM_API = {
     EOS: require('../apis/platforms/eos'),
     Algorand: require('../apis/platforms/algo'),
     'Bitcoin (Liquid)': require('../apis/platforms/liquid'),
+    Qtum: require('../apis/platforms/qtum'),
 };
 
 class Stablecoin {
@@ -91,6 +92,13 @@ class Stablecoin {
         this.main.total_supply = Number(this.cmc.total_supply ? this.cmc.total_supply : this.msri.total_supply);
 
         /*----------------------------------------------------
+        TODO
+        ----------------------------------------------------*/
+        this.main.circulating_supply = Number(
+            this.cmc.circulating_supply ? this.cmc.circulating_supply : this.msri.circulating_supply
+        );
+
+        /*----------------------------------------------------
         set supply data
         ----------------------------------------------------*/
         await this.updatePlatformsSupply();
@@ -104,6 +112,14 @@ class Stablecoin {
         });
 
         /*----------------------------------------------------
+        set scw circulating supply
+        ----------------------------------------------------*/
+        this.scw.circulating_supply = 0;
+        this.platforms.forEach((p) => {
+            if (p && p.circulating_supply) this.scw.circulating_supply += p.circulating_supply;
+        });
+
+        /*----------------------------------------------------
         set scw market cap
         ----------------------------------------------------*/
         this.scw.mcap = this.main.price * this.scw.total_supply;
@@ -112,6 +128,11 @@ class Stablecoin {
         always use scw total supply as main
         ----------------------------------------------------*/
         this.main.total_supply = this.scw.total_supply;
+
+        /*----------------------------------------------------
+        always use scw circulating supply as main
+        ----------------------------------------------------*/
+        this.main.circulating_supply = this.scw.circulating_supply;
 
         /*----------------------------------------------------
         set main Market Cap source
@@ -158,9 +179,19 @@ class Stablecoin {
                     } else if (!PLATFORM_API[platform.name].getTokenTotalSupply) {
                         throw `API for ${platform.name} platform does not support function 'getTokenTotalSupply()'.`;
                     } else {
-                        platform.total_supply = await PLATFORM_API[platform.name].getTokenTotalSupply(
-                            platform.contract_address
-                        );
+                        let ts = await PLATFORM_API[platform.name].getTokenTotalSupply(platform.contract_address);
+
+                        platform.total_supply = ts ? ts : platform.total_supply;
+
+                        if (platform.exclude_addresses && platform.exclude_addresses.length != 0) {
+                            platform.circulating_supply = await PLATFORM_API[platform.name].getTokenCirculatingSupply(
+                                platform.contract_address,
+                                platform.exclude_addresses,
+                                platform.total_supply
+                            );
+                        } else {
+                            platform.circulating_supply = platform.total_supply;
+                        }
                     }
                 } catch (e) {
                     if (this.platforms.length == 1) {
@@ -168,6 +199,7 @@ class Stablecoin {
                             `Using Total Supply as platform supply for ${this.name} on ${platform.name} due to API error: ${e}`
                         );
                         this.platforms[0].total_supply = this.main.total_supply;
+                        this.platforms[0].circulating_supply = this.main.circulating_supply;
                     } else {
                         console.error(`Could not get ${this.name} supply on ${platform.name}: ${e}`);
                     }

@@ -1,3 +1,4 @@
+// global.fetch = require('node-fetch');
 const PlatformInterface = require('./platform_interface');
 
 class QtumInterface extends PlatformInterface {
@@ -29,11 +30,23 @@ class QtumInterface extends PlatformInterface {
     async getTokenTotalSupply(token_contract_address) {
         const request = `${this.ENDPOINT}/contract/${token_contract_address}`;
 
-        return fetch(request)
-            .then((resp) => resp.json())
-            .then((data) => data.qrc20.totalSupply / 10 ** data.qrc20.decimals)
-            .catch(console.error);
+        console.log(request);
+        return 
+            fetch(request)
+                .then((resp) => resp.json())
+                .then((data) => data.qrc20.totalSupply / 10 ** data.qrc20.decimals)
+                .catch(console.error)
+        ;
     } // getTokenTotalSupply
 } // PlatformInterface
 
-module.exports = Qtum;
+// let x = new QtumInterface();
+// x.getTokenCirculatingSupply(
+//     'f2033ede578e17fa6231047265010445bca8cf1c',
+//     ['QQCsHgSmAgBK3sCeUF9Whzm7qgFURuuSAk'],
+//     10000000000
+// ).then(console.log);
+
+// x.getTokenTotalSupply('f2033ede578e17fa6231047265010445bca8cf1c').then(console.log);
+
+module.exports = QtumInterface;
