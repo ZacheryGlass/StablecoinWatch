@@ -31,12 +31,10 @@ class QtumInterface extends PlatformInterface {
         const request = `${this.ENDPOINT}/contract/${token_contract_address}`;
 
         console.log(request);
-        return 
-            fetch(request)
-                .then((resp) => resp.json())
-                .then((data) => data.qrc20.totalSupply / 10 ** data.qrc20.decimals)
-                .catch(console.error)
-        ;
+        return fetch(request)
+            .then((resp) => resp.json())
+            .then((data) => data.qrc20.totalSupply / 10 ** data.qrc20.decimals)
+            .catch(console.error);
     } // getTokenTotalSupply
 } // PlatformInterface
 

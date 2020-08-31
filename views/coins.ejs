@@ -225,7 +225,11 @@
                         </tr>
                         <tr>
                             <td>Coin Market Cap</td>
-                            <td><%= Number(coin.cmc.price).toFixed(3) %></td>
+                            <td>
+                                <% if (coin.cmc.price) { %>
+                                    <%= Number(coin.cmc.price).toFixed(3) %>
+                                <% } %>
+                            </td>
                             <td><%= coin.cmc.mcap_s %></td>
                             <% try { %>
                             <td><%= coin.cmc.total_supply_s.replace('$', '') %></td>
@@ -235,7 +239,11 @@
                         </tr>
                         <tr>
                             <td>Messari</td>
-                            <td><%= Number(coin.msri.price).toFixed(3) %></td>
+                            <td>
+                                <% if (coin.msri.price) { %>
+                                    <%= Number(coin.msri.price).toFixed(3) %>
+                                <% } %>
+                            </td>
                             <td><%= coin.msri.mcap_s %></td>
                             <% try { %>
                             <td><%= coin.msri.total_supply_s.replace('$', '') %></td>
@@ -245,7 +253,11 @@
                         </tr>
                         <tr>
                             <td>Stablecoin Watch</td>
-                            <td><%= Number(coin.scw.price).toFixed(3) %></td>
+                            <td>
+                                <% if (coin.scw.price) { %>
+                                    <%= Number(coin.scw.price).toFixed(3) %>
+                                <% } %>
+                            </td>
                             <td><%= coin.scw.mcap_s %></td>
                             <% try { %>
                             <td><%= coin.scw.total_supply_s.replace('$', '') %></td>

@@ -10,7 +10,7 @@ const PLATFORM_API = {
     EOS: require('../apis/platforms/eos'),
     Algorand: require('../apis/platforms/algo'),
     'Bitcoin (Liquid)': require('../apis/platforms/liquid'),
-    Qtum: require('../apis/platforms/qtum'),
+    Qtum: new require('../apis/platforms/qtum'),
 };
 
 class Stablecoin {
@@ -57,6 +57,7 @@ class Stablecoin {
 
         this.scw.mcap_s = util.toDollarString(this.scw.mcap);
         this.scw.total_supply_s = util.toDollarString(this.scw.total_supply);
+        this.scw.circulating_supply_s = util.toDollarString(this.scw.circulating_supply);
 
         this.main.mcap_s = util.toDollarString(this.main.mcap);
         this.main.volume_s = util.toDollarString(this.main.volume);

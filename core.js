@@ -57,6 +57,8 @@ async function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
                     let cmc_pltfm = cmc_coin.platforms.find((p) => p.name === scw_pltfm.name);
                     if (cmc_pltfm) {
                         if (scw_pltfm.contract_address) cmc_pltfm.contract_address = scw_pltfm.contract_address;
+                        if (scw_pltfm.exclude_addresses) cmc_pltfm.exclude_addresses = scw_pltfm.exclude_addresses;
+                        if (scw_pltfm.total_supply) cmc_pltfm.total_supply = scw_pltfm.total_supply;
                     } else {
                         cmc_coin.platforms.push(scw_pltfm);
                     }
