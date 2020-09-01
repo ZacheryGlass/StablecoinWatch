@@ -2,7 +2,7 @@
     "name": "stablecoinwatch",
     "version": "1.0.0",
     "description": "",
-    "main": "app.js",
+    "main": "app/app.js",
     "dependencies": {
         "@binance-chain/javascript-sdk": "^4.0.5",
         "@dfuse/client": "^0.3.14",

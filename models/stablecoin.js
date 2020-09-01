@@ -1,18 +1,28 @@
-const util = require('../util');
+/*---------------------------------------------------------
+    IMPORTS
+---------------------------------------------------------*/
+const util = require('../app/util');
 const Platform = require('./platform');
+const PInterface = require('../interface/platform');
 
+/*---------------------------------------------------------
+    MODULE CONSTANTS
+---------------------------------------------------------*/
 const PLATFORM_API = {
-    Ethereum: require('../apis/platforms/eth'),
-    Bitcoin: require('../apis/platforms/omni'),
-    Tron: require('../apis/platforms/tron'),
-    'BNB Chain': require('../apis/platforms/bnb'),
-    'Bitcoin Cash': require('../apis/platforms/bch'),
-    EOS: require('../apis/platforms/eos'),
-    Algorand: require('../apis/platforms/algo'),
-    'Bitcoin (Liquid)': require('../apis/platforms/liquid'),
-    Qtum: new require('../apis/platforms/qtum'),
+    Ethereum: new PInterface.Ethereum(),
+    Bitcoin: new PInterface.Bitcoin(),
+    Tron: new PInterface.Tron(),
+    'BNB Chain': new PInterface.BNB(),
+    'Bitcoin Cash': new PInterface.BitcoinCash(),
+    EOS: new PInterface.EOS(),
+    Algorand: new PInterface.Algorand(),
+    'Bitcoin (Liquid)': new PInterface.Liquid(),
+    Qtum: new PInterface.Qtum(),
 };
 
+/*---------------------------------------------------------
+    CLASS
+---------------------------------------------------------*/
 class Stablecoin {
     /*---------------------------------------------------------
     Function:
@@ -235,4 +245,7 @@ class Stablecoin {
     } // updatePlatformsSupply()
 }
 
+/*---------------------------------------------------------
+    EXPORTS
+---------------------------------------------------------*/
 module.exports = Stablecoin;
