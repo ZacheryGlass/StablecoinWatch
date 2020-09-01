@@ -1,18 +1,36 @@
+/*---------------------------------------------------------
+    IMPORTS
+---------------------------------------------------------*/
 const util = require('../util');
 const Platform = require('./platform');
+const Ethereum = require('../apis/platforms/eth');
+const Bitcoin = require('../apis/platforms/omni');
+const Tron = require('../apis/platforms/tron');
+const BNB = require('../apis/platforms/bnb');
+const BitcoinCash = require('../apis/platforms/bch');
+const EOS = require('../apis/platforms/eos');
+const Algorand = require('../apis/platforms/algo');
+const Liquid = require('../apis/platforms/liquid');
+const Qtum = require('../apis/platforms/qtum');
 
+/*---------------------------------------------------------
+    MODULE CONSTANTS
+---------------------------------------------------------*/
 const PLATFORM_API = {
-    Ethereum: require('../apis/platforms/eth'),
-    Bitcoin: require('../apis/platforms/omni'),
-    Tron: require('../apis/platforms/tron'),
-    'BNB Chain': require('../apis/platforms/bnb'),
-    'Bitcoin Cash': require('../apis/platforms/bch'),
-    EOS: require('../apis/platforms/eos'),
-    Algorand: require('../apis/platforms/algo'),
-    'Bitcoin (Liquid)': require('../apis/platforms/liquid'),
-    Qtum: new require('../apis/platforms/qtum'),
+    Ethereum: new Ethereum(),
+    Bitcoin: new Bitcoin(),
+    Tron: new Tron(),
+    'BNB Chain': new BNB(),
+    'Bitcoin Cash': new BitcoinCash(),
+    EOS: new EOS(),
+    Algorand: new Algorand(),
+    'Bitcoin (Liquid)': new Liquid(),
+    Qtum: new Qtum(),
 };
 
+/*---------------------------------------------------------
+    CLASS
+---------------------------------------------------------*/
 class Stablecoin {
     /*---------------------------------------------------------
     Function:
