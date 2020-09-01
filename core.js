@@ -150,7 +150,7 @@ Description:
 ---------------------------------------------------------*/
 function calcPlatformData(scoin_list) {
     let all_platforms = [];
-    let mcap_total = 0;
+    let mcap_sum = 0;
 
     /*----------------------------------------------------
     Loop each coin
@@ -179,7 +179,7 @@ function calcPlatformData(scoin_list) {
             else mcap_on_pltfm = (pltfm.circulating_supply / scoin.scw.circulating_supply) * scoin.main.circulating_mcap;
             if (!mcap_on_pltfm) mcap_on_pltfm = 0;
 
-            mcap_total += mcap_on_pltfm;
+            mcap_sum += mcap_on_pltfm;
 
             /*----------------------------------------------------
             check if the current coin's platform is already in 
@@ -188,35 +188,35 @@ function calcPlatformData(scoin_list) {
             let gbl_pltfm = all_platforms.find((p) => p.name == pltfm.name);
 
             if (gbl_pltfm) {
-                gbl_pltfm.total_mcap += mcap_on_pltfm;
+                gbl_pltfm.mcap_sum += mcap_on_pltfm;
             } else {
                 all_platforms.push({
                     name: pltfm.name,
-                    total_mcap: mcap_on_pltfm,
+                    mcap_sum: mcap_on_pltfm,
                     uri: pltfm.name.replace(' ', '_'),
                 });
             } // if-else
         }); // for each platform
     }); // for each scoin
 
-    if (DATA.totalMCap - mcap_total > 1000000) {
+    if (DATA.totalMCap - mcap_sum > 1000000) {
         console.warn('Total market cap on all platforms != total market cap on all coins');
         all_platforms.push({
             name: 'Other / Unknown',
-            total_mcap: DATA.totalMCap - mcap_total,
+            mcap_sum: DATA.totalMCap - mcap_sum,
         });
     }
 
     /*----------------------------------------------------
     Sort platform list
     ----------------------------------------------------*/
-    all_platforms.sort(util.sortObjByNumProperty('total_mcap'));
+    all_platforms.sort(util.sortObjByNumProperty('mcap_sum'));
 
     /*----------------------------------------------------
     Add string representatoin of supply on platform
     ----------------------------------------------------*/
     all_platforms.forEach((pltfm) => {
-        pltfm.total_mcap_s = util.toDollarString(pltfm.total_mcap);
+        pltfm.mcap_sum_s = util.toDollarString(pltfm.mcap_sum);
     });
 
     /*----------------------------------------------------
