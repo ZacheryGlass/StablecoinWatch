@@ -1,8 +1,8 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const PlatformInterface = require('../platform_interface');
-const keys = require('../../keys');
+const PlatformInterface = require('./platform_interface');
+const keys = require('../../app/keys');
 const { createDfuseClient, createHttpClient } = require('@dfuse/client');
 
 

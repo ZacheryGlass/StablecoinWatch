@@ -1,11 +1,11 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const Stablecoin = require('../classes/stablecoin');
-const Platform = require('../classes/platform');
+const Stablecoin = require('../../models/stablecoin');
+const Platform = require('../../models/platform');
 const cron = require('node-cron');
-const keys = require('../keys');
-const util = require('../util');
+const keys = require('../../app/keys');
+const util = require('../../app/util');
 
 /*---------------------------------------------------------
     MODULE-SCOPED VARIABLES

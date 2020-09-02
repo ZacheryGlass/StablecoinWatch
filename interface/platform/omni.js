@@ -1,8 +1,8 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const PlatformInterface = require('../platform_interface');
-const util = require('../../util');
+const PlatformInterface = require('./platform_interface');
+const util = require('../../app/util');
 
 /*---------------------------------------------------------
     CLASS

@@ -1,31 +1,23 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const util = require('../util');
+const util = require('../app/util');
 const Platform = require('./platform');
-const Ethereum = require('../apis/platforms/eth');
-const Bitcoin = require('../apis/platforms/omni');
-const Tron = require('../apis/platforms/tron');
-const BNB = require('../apis/platforms/bnb');
-const BitcoinCash = require('../apis/platforms/bch');
-const EOS = require('../apis/platforms/eos');
-const Algorand = require('../apis/platforms/algo');
-const Liquid = require('../apis/platforms/liquid');
-const Qtum = require('../apis/platforms/qtum');
+const PInterface = require('../interface/platform');
 
 /*---------------------------------------------------------
     MODULE CONSTANTS
 ---------------------------------------------------------*/
 const PLATFORM_API = {
-    Ethereum: new Ethereum(),
-    Bitcoin: new Bitcoin(),
-    Tron: new Tron(),
-    'BNB Chain': new BNB(),
-    'Bitcoin Cash': new BitcoinCash(),
-    EOS: new EOS(),
-    Algorand: new Algorand(),
-    'Bitcoin (Liquid)': new Liquid(),
-    Qtum: new Qtum(),
+    Ethereum: new PInterface.Ethereum(),
+    Bitcoin: new PInterface.Bitcoin(),
+    Tron: new PInterface.Tron(),
+    'BNB Chain': new PInterface.BNB(),
+    'Bitcoin Cash': new PInterface.BitcoinCash(),
+    EOS: new PInterface.EOS(),
+    Algorand: new PInterface.Algorand(),
+    'Bitcoin (Liquid)': new PInterface.Liquid(),
+    Qtum: new PInterface.Qtum(),
 };
 
 /*---------------------------------------------------------

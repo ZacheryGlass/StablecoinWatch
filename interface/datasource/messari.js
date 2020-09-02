@@ -3,9 +3,9 @@
 ---------------------------------------------------------*/
 const Messari = require('messari-api');
 const MessariClient = new Messari();
-const util = require('../util');
-const Stablecoin = require('../classes/stablecoin');
-const Platform = require('../classes/platform');
+const util = require('../../app/util');
+const Stablecoin = require('../../models/stablecoin');
+const Platform = require('../../models/platform');
 
 /*---------------------------------------------------------
     FUNCTIONS

@@ -1,10 +1,10 @@
-const keys = require('../keys');
+const keys = require('../../app/keys');
 const CoinMarketCap = require('coinmarketcap-api');
 const cmc_api = new CoinMarketCap(keys.cmc);
-const Stablecoin = require('../classes/stablecoin');
-const Platform = require('../classes/platform');
-const { cmc } = require('../keys');
-const { urlify, toDollarString } = require('../util');
+const Stablecoin = require('../../models/stablecoin');
+const Platform = require('../../models/platform');
+const { cmc } = require('../../app/keys');
+const { urlify, toDollarString } = require('../../app/util');
 const cron = require('node-cron');
 
 /*---------------------------------------------------------
@@ -127,11 +127,11 @@ exports.getCMCStablecoins = async (ticker_list) => {
                 scoin.symbol = md.symbol;
                 scoin.platforms = md.platform
                     ? [
-                          new Platform(
-                              md.platform.name == 'Binance Coin' ? 'BNB Chain' : md.platform.name,
-                              md.platform.token_address
-                          ),
-                      ]
+                        new Platform(
+                            md.platform.name == 'Binance Coin' ? 'BNB Chain' : md.platform.name,
+                            md.platform.token_address
+                        ),
+                    ]
                     : [new Platform(md.name)];
                 scoin.cmc.desc = urlify(md.description);
                 scoin.cmc.volume = q.quote ? q.quote.USD.volume_24h : null;

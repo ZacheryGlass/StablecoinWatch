@@ -2,7 +2,7 @@
     IMPORTS
 ---------------------------------------------------------*/
 const express = require('express');
-const { data } = require('./core');
+const { data } = require('../app/core');
 
 /*---------------------------------------------------------
     constants

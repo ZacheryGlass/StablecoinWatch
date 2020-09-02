@@ -1,10 +1,10 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const messari = require('./apis/messari');
-const scw = require('./apis/scw');
+const messari = require('../interface/datasource/messari');
+const scw = require('../interface/datasource/scw');
 const util = require('./util');
-const cmc = require('./apis/cmc');
+const cmc = require('../interface/datasource/cmc');
 
 /*---------------------------------------------------------
     MODULE-SCOPED VARIABLES
@@ -86,7 +86,7 @@ async function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
 Function:
         fetchStablecoins
 Description:
-        Pull Stablecoin data from various supported APIs.
+        Pull Stablecoin data from various supported interface/datasource.
         This function will build and return a list of
         Stablecoin objects.
 ---------------------------------------------------------*/
@@ -99,7 +99,7 @@ async function fetchStablecoins() {
     let fetching_scw = scw.getSCWStablecoins();
 
     /*----------------------------------------------------
-    Combined data from multiple APIs
+    Combined data from multiple interface/datasource
     ----------------------------------------------------*/
     return Promise.all([fetching_msri, fetching_cmc, fetching_scw])
         .then(async (scoins_arr) => {
