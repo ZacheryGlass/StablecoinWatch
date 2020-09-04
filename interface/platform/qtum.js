@@ -1,6 +1,8 @@
-
 const PlatformInterface = require('./platform_interface');
 
+/*---------------------------------------------------------
+    CLASS
+---------------------------------------------------------*/
 class QtumInterface extends PlatformInterface {
     /*---------------------------------------------------------
     API Endpoint URL
@@ -31,4 +33,7 @@ class QtumInterface extends PlatformInterface {
     } // getTokenTotalSupply
 } // QtumInterface
 
+/*---------------------------------------------------------
+    EXPORTS
+---------------------------------------------------------*/
 module.exports = QtumInterface;

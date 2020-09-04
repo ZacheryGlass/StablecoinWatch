@@ -1,14 +1,16 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const messari = require('../interface/datasource/messari');
-const scw = require('../interface/datasource/scw');
 const util = require('./util');
-const cmc = require('../interface/datasource/cmc');
+const cron = require('node-cron');
+const MSRIInterface = require('../interface/datasource/messari');
+const SCWInterface = require('../interface/datasource/scw');
+const CMCInterface = require('../interface/datasource/cmc');
 
 /*---------------------------------------------------------
     MODULE-SCOPED VARIABLES
 ---------------------------------------------------------*/
+let INTF = null;
 let DATA = {
     stablecoins: [],
     platform_data: [],
@@ -21,6 +23,32 @@ let DATA = {
 /*---------------------------------------------------------
     FUNCTIONS
 ---------------------------------------------------------*/
+
+/*---------------------------------------------------------
+Function: start
+Description: start data gathering. Update rate
+    should be divisible by/into 60.
+---------------------------------------------------------*/
+function start(update_rate) {
+    /*----------------------------------------------------
+    Init datasource APIs
+    ----------------------------------------------------*/
+    INTF = {
+        messari: new MSRIInterface(15), // 15 mins
+        coinMarketCap: new CMCInterface(60 * 12), // 12 hours
+        stablecoinWatch: new SCWInterface(60), // 1 hour
+    };
+
+    /*----------------------------------------------------
+    update data for first time
+    ----------------------------------------------------*/
+    update();
+
+    /*----------------------------------------------------
+    Schedule data update at specified rate
+    ----------------------------------------------------*/
+    cron.schedule(`*/${update_rate} * * * *`, update);
+} /* start() */
 
 /*---------------------------------------------------------
 Function:
@@ -86,23 +114,23 @@ async function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
 Function:
         fetchStablecoins
 Description:
-        Pull Stablecoin data from various supported interface/datasource.
-        This function will build and return a list of
-        Stablecoin objects.
+        Pull Stablecoin data from various supported interface/
+        datasource. This function will build and return a
+        list of Stablecoin objects.
 ---------------------------------------------------------*/
 async function fetchStablecoins() {
     /*----------------------------------------------------
     Pull new stablecoins data
     ----------------------------------------------------*/
-    let fetching_msri = messari.getAllMessariStablecoins();
-    let fetching_cmc = cmc.getAllCMCStablecoins();
-    let fetching_scw = scw.getSCWStablecoins();
+    let fetching_msri = INTF.messari.getStablecoins();
+    let fetching_cmc = INTF.coinMarketCap.getStablecoins();
+    let fetching_scw = INTF.stablecoinWatch.getStablecoins();
 
     /*----------------------------------------------------
     Combined data from multiple interface/datasource
     ----------------------------------------------------*/
     return Promise.all([fetching_msri, fetching_cmc, fetching_scw])
-        .then(async (scoins_arr) => {
+        .then((scoins_arr) => {
             return combineCoins(scoins_arr[0], scoins_arr[1], scoins_arr[2]);
         })
         .catch((e) => {
@@ -176,7 +204,8 @@ function calcPlatformData(scoin_list) {
             let mcap_on_pltfm = 0;
             if (scoin.platforms.length == 1) mcap_on_pltfm = scoin.main.circulating_mcap;
             else if (scoin.main.price) mcap_on_pltfm = pltfm.circulating_supply * scoin.main.price;
-            else mcap_on_pltfm = (pltfm.circulating_supply / scoin.scw.circulating_supply) * scoin.main.circulating_mcap;
+            else
+                mcap_on_pltfm = (pltfm.circulating_supply / scoin.scw.circulating_supply) * scoin.main.circulating_mcap;
             if (!mcap_on_pltfm) mcap_on_pltfm = 0;
 
             mcap_sum += mcap_on_pltfm;
@@ -250,11 +279,11 @@ function calcMetrics(coin_list) {
 
 /*---------------------------------------------------------
 Function:
-        updateData
+        update
 Description:
         Update all coin and platform data globally
 ---------------------------------------------------------*/
-async function updateData() {
+async function update() {
     try {
         let coins = await fetchStablecoins();
         DATA.stablecoins = updateStablecoinData(coins, DATA.stablecoins);
@@ -264,10 +293,10 @@ async function updateData() {
     } catch (e) {
         console.error(` ***CRITICAL*** Could not update data: ${e}`);
     }
-} // updateData()
+} // update()
 
 /*---------------------------------------------------------
     EXPORTS
 ---------------------------------------------------------*/
-exports.updateData = updateData;
+exports.start = start;
 exports.data = DATA;

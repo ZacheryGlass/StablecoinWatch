@@ -64,7 +64,7 @@ class AlgorandInterface extends PlatformInterface {
             return total_minted - amount_not_yet_issued;
         }
     }
-} // AlgorandInterface
+} /* AlgorandInterface */
 
 /*---------------------------------------------------------
     EXPORTS

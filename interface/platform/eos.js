@@ -5,7 +5,9 @@ const PlatformInterface = require('./platform_interface');
 const keys = require('../../app/keys');
 const { createDfuseClient, createHttpClient } = require('@dfuse/client');
 
-
+/*---------------------------------------------------------
+    CLASS
+---------------------------------------------------------*/
 class EOSInterface extends PlatformInterface {
     /*---------------------------------------------------------
     API Endpoint URL

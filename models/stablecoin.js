@@ -245,4 +245,7 @@ class Stablecoin {
     } // updatePlatformsSupply()
 }
 
+/*---------------------------------------------------------
+    EXPORTS
+---------------------------------------------------------*/
 module.exports = Stablecoin;

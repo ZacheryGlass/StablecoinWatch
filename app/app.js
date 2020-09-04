@@ -10,11 +10,9 @@ global.EXCLUDE_COINS = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC', '1GOLD'];
     IMPORTS
 ---------------------------------------------------------*/
 const express = require('express');
-const cron = require('node-cron');
-const util = require('./util');
-const { updateData } = require('./core');
-const routes = require('../routes/routes');
 path = require('path');
+const routes = require('../routes/routes');
+const { start } = require('./core');
 
 /*---------------------------------------------------------
     CONSTANTS
@@ -23,14 +21,9 @@ const MINS_BETWEEN_UPDATE = 15;
 const PORT = process.env.PORT || 3000;
 
 /*---------------------------------------------------------
-    SCHEDULED TASKS
----------------------------------------------------------*/
-updateData();
-cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, updateData);
-
-/*---------------------------------------------------------
     APP SETUP
 ---------------------------------------------------------*/
+start(MINS_BETWEEN_UPDATE);
 const app = express();
 app.set('view engine', 'ejs');
 app.use(express.static(path.join(__dirname, '../res/css')));

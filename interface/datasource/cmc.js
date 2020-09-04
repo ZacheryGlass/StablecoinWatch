@@ -1,29 +1,31 @@
-const keys = require('../keys');
+const keys = require('../../app/keys');
 const CoinMarketCap = require('coinmarketcap-api');
-const cmc_api = new CoinMarketCap(keys.cmc);
-const Stablecoin = require('../classes/stablecoin');
-const Platform = require('../classes/platform');
-const { urlify, toDollarString } = require('../util');
-const cron = require('node-cron');
+const Stablecoin = require('../../models/stablecoin');
+const Platform = require('../../models/platform');
+const { urlify } = require('../../app/util');
+const DataSourceInterface = require('./datasource_interface');
 
 /*---------------------------------------------------------
-    SCHEDULED TASKS
+    CLASS
 ---------------------------------------------------------*/
-
-class CoinMarketCap extends DataSourceInterface {
-    MINS_BETWEEN_UPDATE = 60 * 12; /* 12 hours */
-    glb_cmc_tickers = [];
-
-    constructor(mins_between_update) {}
+class CoinMarketCapInterface extends DataSourceInterface {
+    client = null;
 
     /*---------------------------------------------------------
-    Function:
-            cmcCheckError
-    Description:
-            Checks the return status of an CoinMarketCap API
-            reponse to see if an error code was set.
+    Function:   constructor
+    Description: call super class constructor
     ---------------------------------------------------------*/
-    cmcCheckError(status) {
+    constructor(update_rate) {
+        super(update_rate);
+        this.client = new CoinMarketCap(keys.cmc);
+    }
+
+    /*---------------------------------------------------------
+    Function:    checkError
+    Description: Checks the return status of an CoinMarketCap API
+                 reponse to see if an error code was set.
+    ---------------------------------------------------------*/
+    checkError(status) {
         console.info(`${status.timestamp}: Used ${status.credit_count} CMC Credits`);
 
         if (status.error_code) {
@@ -31,82 +33,50 @@ class CoinMarketCap extends DataSourceInterface {
             let msg = status.error_message;
             throw `CMC API ERROR ${code}: ${msg}`;
         }
-    } // end cmcCheckError()
+    } /* checkError() */
 
     /*---------------------------------------------------------
-    Function:
-            buildCMCStablecoinList
-    Description:
-            This pulls the CoinMarketCap API to build a list of
-            Stablecoins, as defined by CMC.
+    Function:    sync
+    Description: This pulls the CoinMarketCap API to build a list
+                 of Stablecoins, as defined by CMC.
     ---------------------------------------------------------*/
-    async buildCMCStablecoinList() {
-        /*----------------------------------------------------
-        CMC doesn't tag all stablecoins correctly so forcefully
-        add to list here coins that are on CMC but not tagged
-        ----------------------------------------------------*/
-        glb_cmc_tickers = ['DAI', 'AMPL', 'SUSD', 'XAUT', 'USDT'];
+    async sync() {
+        // let self = this;
 
-        if (global.DEBUG) return; // don't waste cmc api credits
-
-        return cmc_api
-            .getTickers({ limit: 3000 })
+        await this.client
+            .getTickers({ limit: 2000 })
             .then((resp) => {
                 console.info('Built CMC Coin List');
-                this.cmcCheckError(resp.status);
+                this.checkError(resp.status);
+
+                /*----------------------------------------------------
+                CMC doesn't tag all stablecoins correctly so forcefully
+                add to list here coins that are on CMC but not tagged
+                ----------------------------------------------------*/
+                let tickers = ['DAI', 'AMPL', 'SUSD', 'XAUT', 'USDT'];
+
                 resp.data.forEach((coin) => {
                     if (
                         (coin.tags.includes('stablecoin-asset-backed') || coin.tags.includes('stablecoin')) &&
                         !global.EXCLUDE_COINS.includes(coin.symbol)
-                    ) {
-                        glb_cmc_tickers.push(coin.symbol);
-                    }
+                    )
+                        tickers.push(coin.symbol);
                 });
+                let fetching_metadata = this.client.getMetadata({ symbol: tickers }); // this call can be avoided as the same data is already in resp - probably
+                let fetching_quote = this.client.getQuotes({ symbol: tickers });
+                return Promise.all([fetching_metadata, fetching_quote]);
             })
-            .catch((err) => {
-                console.error(`Could not fetch CMC API: ${err}`);
-            });
-    } // buildCMCStablecoinList()
-
-    /*---------------------------------------------------------
-    Function:
-            cmc.getCMCStablecoins()
-    Description:
-            This function returns all coins listed as stablecoins
-            on CoinMarketCap API.
-    Note:   This includes coins pegged to assets other than the
-            US Dollar, but oddly does not some coins such as DAI
-    ---------------------------------------------------------*/
-    async getAllCMCStablecoins() {
-        if (!glb_cmc_tickers || glb_cmc_tickers.length == 0) {
-            console.warn('getAllCMCStablecoins: No CMC tickers cached, building new list now.');
-            await this.buildCMCStablecoinList();
-        }
-        return this.getCMCStablecoins(glb_cmc_tickers);
-    } // end getCMCStablecoins()
-
-    /*---------------------------------------------------------
-    Function:
-            cmc.getCMCStablecoins()
-    Description:
-            Get a list of Stablecoin Objects from a list of tickers
-    ---------------------------------------------------------*/
-    async getCMCStablecoins(ticker_list) {
-        let fetching_metadata = cmc_api.getMetadata({ symbol: ticker_list });
-        let fetching_quote = cmc_api.getQuotes({ symbol: ticker_list });
-
-        return Promise.all([fetching_metadata, fetching_quote]).then(
-            (scoins_arr) => {
+            .then((scoins_arr) => {
                 let metadata_resp = scoins_arr[0];
                 let quote_resp = scoins_arr[1];
-                this.cmcCheckError(metadata_resp.status);
-                this.cmcCheckError(quote_resp.status);
+                this.checkError(metadata_resp.status);
+                this.checkError(quote_resp.status);
 
                 /*----------------------------------------------------
-                build return list
+                build stablecoin list
                 ----------------------------------------------------*/
-                let coin_list_ret = [];
-                Object.keys(metadata_resp.data).forEach(function (key, i) {
+                this.stablecoins = [];
+                Object.keys(metadata_resp.data).forEach((key, i) => {
                     let md = metadata_resp.data[key];
                     let q = {};
 
@@ -119,29 +89,32 @@ class CoinMarketCap extends DataSourceInterface {
                         ? [
                               new Platform(
                                   md.platform.name == 'Binance Coin' ? 'BNB Chain' : md.platform.name,
-                                  md.platform.token_address,
-                                  null // platform total supply - fetched from Blockchain
+                                  md.platform.token_address
                               ),
                           ]
                         : [new Platform(md.name)];
                     scoin.cmc.desc = urlify(md.description);
-                    scoin.cmc.mcap = q.quote ? q.quote.USD.market_cap : null;
-                    scoin.cmc.mcap_s = toDollarString(scoin.cmc.mcap);
                     scoin.cmc.volume = q.quote ? q.quote.USD.volume_24h : null;
-                    scoin.cmc.volume_s = toDollarString(scoin.cmc.volume);
                     scoin.img_url = md.logo;
                     scoin.cmc.price = q.quote ? q.quote.USD.price : null;
                     scoin.cmc.total_supply = q.total_supply;
                     scoin.cmc.circulating_supply = q.circulating_supply;
-			scoin.cmc.circulating_mcap = q.quote ? q.quote.USD.market_cap : null;
-	                scoin.cmc.total_mcap =
-	                    scoin.cmc.total_supply * scoin.cmc.price ||
-	                    (scoin.cmc.total_supply / scoin.cmc.circulating_supply) * scoin.cmc.circulating_mcap;
+                    scoin.cmc.circulating_mcap = q.quote ? q.quote.USD.market_cap : null;
+                    scoin.cmc.total_mcap =
+                        scoin.cmc.total_supply * scoin.cmc.price ||
+                        (scoin.cmc.total_supply / scoin.cmc.circulating_supply) * scoin.cmc.circulating_mcap;
 
-                    coin_list_ret.push(scoin);
+                    this.stablecoins.push(scoin);
                 });
-                return coin_list_ret;
-            } // then
-        );
-    } // end getCMCStablecoins()
-}
+            })
+            .catch((err) => {
+                console.error(`Could not fetch CMC API: ${err}`);
+            });
+        return;
+    } /* sync() */
+} /* CoinMarketCapInterface */
+
+/*---------------------------------------------------------
+    EXPORTS
+---------------------------------------------------------*/
+module.exports = CoinMarketCapInterface;

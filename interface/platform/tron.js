@@ -7,6 +7,9 @@ const TronWeb = require('tronweb');
 // const tronGrid = new TronGrid(tronWeb);
 // tronGrid.setExperimental('experimental key');
 
+/*---------------------------------------------------------
+    CLASS
+---------------------------------------------------------*/
 class TronInterface extends PlatformInterface {
     /*---------------------------------------------------------
     API Endpoint URL
@@ -67,7 +70,6 @@ class TronInterface extends PlatformInterface {
         return tronGrid.asset.get(address);
     };
     *******************************************************/
-
 } // TronInterface
 
 /*---------------------------------------------------------
