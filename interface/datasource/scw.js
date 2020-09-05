@@ -186,7 +186,7 @@ class StablecoinWatchInterface extends DataSourceInterface {
     Function:
             getCurrencyRates
     Description:
-            TODO
+            Get fiat currency prices
     Note:   API limited to 1000/month (1/hour)
     ---------------------------------------------------------*/
     async getCurrencyRates() {

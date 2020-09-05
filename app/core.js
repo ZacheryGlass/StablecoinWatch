@@ -228,7 +228,7 @@ function calcPlatformData(scoin_list) {
         }); // for each platform
     }); // for each scoin
 
-    if (DATA.totalMCap - mcap_sum > 1000000) {
+    if (DATA.metrics.totalMCap - mcap_sum > 1000000) {
         console.warn('Total market cap on all platforms != total market cap on all coins');
         all_platforms.push({
             name: 'Other / Unknown',
@@ -268,7 +268,7 @@ function calcMetrics(coin_list) {
 
     coin_list.forEach(async (scoin) => {
         if (scoin.main.circulating_mcap) new_metrics.totalMCap += scoin.main.circulating_mcap;
-        if (scoin.main.volume) new_metrics.totalVolume += scoin.main.volume;
+        if (scoin.main.volume) new_metrics.totalVolume += scoin.main.volume || 0;
     });
 
     new_metrics.totalMCap_s = util.toDollarString(new_metrics.totalMCap);

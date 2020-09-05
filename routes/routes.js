@@ -20,8 +20,8 @@ router.get('/', async (req, res) => {
     let eth_data = data.platform_data.find((chain) => chain.name === 'Ethereum');
     res.render('home', {
         data: data,
-        totalETHMCap: eth_data.total_mcap,
-        totalETHMCap_s: eth_data.total_mcap_s,
+        totalETHMCap: eth_data.mcap_sum,
+        totalETHMCap_s: eth_data.mcap_sum_s,
         active: 'home',
     });
 }); // home
@@ -33,8 +33,8 @@ router.get('/platforms', async (req, res) => {
     let eth_data = data.platform_data.find((chain) => chain.name === 'Ethereum');
     res.render('chains', {
         data: data,
-        totalETHMCap: eth_data.total_mcap,
-        totalETHMCap_s: eth_data.total_mcap_s,
+        totalETHMCap: eth_data.mcap_sum,
+        totalETHMCap_s: eth_data.mcap_sum_s,
         active: 'chains',
     });
 }); // chains
@@ -49,8 +49,8 @@ router.get('/coins/:symbol', async (req, res) => {
     let eth_data = data.platform_data.find((chain) => chain.name === 'Ethereum');
     res.render('coins', {
         data: data,
-        totalETHMCap: eth_data.total_mcap,
-        totalETHMCap_s: eth_data.total_mcap_s,
+        totalETHMCap: eth_data.mcap_sum,
+        totalETHMCap_s: eth_data.mcap_sum_s,
         coin: coin,
         active: '',
     });
@@ -66,8 +66,8 @@ router.get('/platforms/:name', async (req, res) => {
     let eth_data = data.platform_data.find((chain) => chain.name === 'Ethereum');
     res.render('platforms', {
         data: data,
-        totalETHMCap: eth_data.total_mcap,
-        totalETHMCap_s: eth_data.total_mcap_s,
+        totalETHMCap: eth_data.mcap_sum,
+        totalETHMCap_s: eth_data.mcap_sum_s,
         platform: platform,
         active: '',
     });
@@ -80,8 +80,8 @@ router.get('/donate', async (req, res) => {
     let eth_data = data.platform_data.find((chain) => chain.name === 'Ethereum');
     res.render('donate', {
         data: data,
-        totalETHMCap: eth_data.total_mcap,
-        totalETHMCap_s: eth_data.total_mcap_s,
+        totalETHMCap: eth_data.mcap_sum,
+        totalETHMCap_s: eth_data.mcap_sum_s,
         active: 'donate',
     });
 }); // donate

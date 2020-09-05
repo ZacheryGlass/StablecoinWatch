@@ -73,7 +73,6 @@
                 <div class="content">
                     <canvas id="chart" width="40" height="40"></canvas>
                 </div>
-
                     <section class="tbl_wrapper">
                         <!-- Row title -->
                         <main class="row title">
@@ -96,8 +95,8 @@
                                             <a href=""><%= p.name %></a>
                                         </strong>
                                     </li>
-                                    <li><%= p.total_mcap_s %></li>
-                                    <% let pct = ( p.total_mcap / data.metrics.totalMCap ) * 100; %>
+                                    <li><%= p.mcap_sum_s %></li>
+                                    <% let pct = ( p.mcap_sum / data.metrics.totalMCap ) * 100; %>
                                     <li><%=(pct).toFixed(2)%>%</li>
                                 </ul>
                             </article>
@@ -132,7 +131,7 @@
                         <% let top_5_total = 0; %>
                         <% for (let i = 0; i < data.platform_data.length; i++) { %>
                             <% if( i < 5 ) { %>
-                                <% let pct = Number((( data.platform_data[i].total_mcap / data.metrics.totalMCap ) * 100).toFixed(2)) %>
+                                <% let pct = Number((( data.platform_data[i].mcap_sum / data.metrics.totalMCap ) * 100).toFixed(2)) %>
                                 <% top_5_total += pct %>
                                 <%= pct %>,
                             <% } else { break; } %>
