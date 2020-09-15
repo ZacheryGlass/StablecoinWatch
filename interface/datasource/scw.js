@@ -29,7 +29,8 @@ class StablecoinWatchInterface extends DataSourceInterface {
     Note:   Many stablecoins are not tracked by other datasources,
             or are missing data so they are manually tracked here
     ---------------------------------------------------------*/
-    buildList() {
+    buildList(self) {
+        if (!self) self = this;
         let coin;
         let sc = [];
 
@@ -38,7 +39,7 @@ class StablecoinWatchInterface extends DataSourceInterface {
         -----------------------------------------------*/
         coin = new Stablecoin();
         coin.symbol = 'BITCNY';
-        coin.scw.price = Number(this.currency_prices_in_usd.CNY.toFixed(3));
+        coin.scw.price = Number(self.currency_prices_in_usd.CNY.toFixed(3));
         sc.push(coin);
 
         /*-----------------------------------------------
@@ -86,7 +87,7 @@ class StablecoinWatchInterface extends DataSourceInterface {
         coin = new Stablecoin();
         coin.name = 'Tether EUR';
         coin.symbol = 'EURT';
-        coin.scw.price = Number(this.currency_prices_in_usd.EUR.toFixed(3));
+        coin.scw.price = Number(self.currency_prices_in_usd.EUR.toFixed(3));
         coin.platforms.push(new Platform('Ethereum', '0xabdf147870235fcfc34153828c769a70b3fae01f'));
         coin.platforms.push(new Platform('Bitcoin', 41));
         coin.scw.desc = `Tether is fiat-collateralized stablecoin that offers individuals the
@@ -102,7 +103,7 @@ class StablecoinWatchInterface extends DataSourceInterface {
         coin = new Stablecoin();
         coin.name = 'Tether CNH';
         coin.symbol = 'CNHT';
-        coin.scw.price = Number(this.currency_prices_in_usd.CNY.toFixed(3));
+        coin.scw.price = Number(self.currency_prices_in_usd.CNY.toFixed(3));
         coin.platforms.push(new Platform('Ethereum', '0x6e109e9dd7fa1a58bc3eff667e8e41fc3cc07aef'));
         coin.scw.desc = 'https://wallet.tether.to/transparency';
         coin.img_url = '/tether.png';
@@ -189,7 +190,8 @@ class StablecoinWatchInterface extends DataSourceInterface {
             Get fiat currency prices
     Note:   API limited to 1000/month (1/hour)
     ---------------------------------------------------------*/
-    async getCurrencyRates() {
+    async getCurrencyRates(self) {
+        if (!self) self = this;
         let eur_rates;
 
         if (global.DEBUG) {
@@ -205,17 +207,17 @@ class StablecoinWatchInterface extends DataSourceInterface {
         }
 
         const eur_price_in_usd = eur_rates.USD;
-        this.currency_prices_in_usd['EUR'] = eur_price_in_usd;
+        self.currency_prices_in_usd['EUR'] = eur_price_in_usd;
 
         /*-----------------------------------------------
         convert to USD price
         -----------------------------------------------*/
         Object.keys(eur_rates).forEach((currency) => {
             const x_price_in_eur = 1 / eur_rates[currency];
-            this.currency_prices_in_usd[currency] = x_price_in_eur * eur_price_in_usd;
+            self.currency_prices_in_usd[currency] = x_price_in_eur * eur_price_in_usd;
         });
 
-        return this.currency_prices_in_usd;
+        return self.currency_prices_in_usd;
     } /* getCurrencyRates */
 
     /*---------------------------------------------------------
@@ -223,9 +225,10 @@ class StablecoinWatchInterface extends DataSourceInterface {
     Description:  This pulls the Messari API to build a list
                  of Stablecoins, as defined by CMC.
     ---------------------------------------------------------*/
-    async sync() {
-        await this.getCurrencyRates();
-        this.stablecoins = this.buildList();
+    async sync(self) {
+        if (!self) self = this;
+        await self.getCurrencyRates(self);
+        self.stablecoins = self.buildList(self);
         return;
     }
 } /* StablecoinWatchInterface */

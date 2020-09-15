@@ -40,14 +40,14 @@ class CoinMarketCapInterface extends DataSourceInterface {
     Description: This pulls the CoinMarketCap API to build a list
                  of Stablecoins, as defined by CMC.
     ---------------------------------------------------------*/
-    async sync() {
-        // let self = this;
+    async sync(self) {
+        if (!self) self = this;
 
-        await this.client
+        await self.client
             .getTickers({ limit: 2000 })
             .then((resp) => {
                 console.info('Built CMC Coin List');
-                this.checkError(resp.status);
+                self.checkError(resp.status);
 
                 /*----------------------------------------------------
                 CMC doesn't tag all stablecoins correctly so forcefully
@@ -62,20 +62,20 @@ class CoinMarketCapInterface extends DataSourceInterface {
                     )
                         tickers.push(coin.symbol);
                 });
-                let fetching_metadata = this.client.getMetadata({ symbol: tickers }); // this call can be avoided as the same data is already in resp - probably
-                let fetching_quote = this.client.getQuotes({ symbol: tickers });
+                let fetching_metadata = self.client.getMetadata({ symbol: tickers }); // this call can be avoided as the same data is already in resp - probably
+                let fetching_quote = self.client.getQuotes({ symbol: tickers });
                 return Promise.all([fetching_metadata, fetching_quote]);
             })
             .then((scoins_arr) => {
                 let metadata_resp = scoins_arr[0];
                 let quote_resp = scoins_arr[1];
-                this.checkError(metadata_resp.status);
-                this.checkError(quote_resp.status);
+                self.checkError(metadata_resp.status);
+                self.checkError(quote_resp.status);
 
                 /*----------------------------------------------------
                 build stablecoin list
                 ----------------------------------------------------*/
-                this.stablecoins = [];
+                self.stablecoins = [];
                 Object.keys(metadata_resp.data).forEach((key, i) => {
                     let md = metadata_resp.data[key];
                     let q = {};
@@ -104,7 +104,7 @@ class CoinMarketCapInterface extends DataSourceInterface {
                         scoin.cmc.total_supply * scoin.cmc.price ||
                         (scoin.cmc.total_supply / scoin.cmc.circulating_supply) * scoin.cmc.circulating_mcap;
 
-                    this.stablecoins.push(scoin);
+                    self.stablecoins.push(scoin);
                 });
             })
             .catch((err) => {

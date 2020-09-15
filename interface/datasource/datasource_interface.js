@@ -23,8 +23,11 @@ class DataSourceInterface {
     Description:
     ---------------------------------------------------------*/
     constructor(update_rate) {
-        if (!update_rate) throw new Error('Update rate is required.');
-        cron.schedule(`*/${update_rate} * * * *`, this.sync);
+        if (!update_rate) throw new Error('update_rate is required.');
+        this.update_rate = update_rate;
+        cron.schedule(`*/${update_rate} * * * *`, () => {
+            this.sync(this);
+        });
     }
 
     /*---------------------------------------------------------
@@ -35,7 +38,7 @@ class DataSourceInterface {
         be defined in the child class as it's implementation is
         API specific.
     ---------------------------------------------------------*/
-    async sync() {
+    async sync(self) {
         throw new Error('Function sync is not defined in child class');
     } /* sync() */
 

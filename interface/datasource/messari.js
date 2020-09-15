@@ -27,10 +27,11 @@ class MessariInterface extends DataSourceInterface {
     Description:  This pulls the Messari API to build a list
                  of Stablecoins, as defined by CMC.
     ---------------------------------------------------------*/
-    async sync() {
-        this.stablecoins = [];
+    async sync(self) {
+        if (!self) self = this;
+        self.stablecoins = [];
 
-        let response = await this.client.assets.all({ limit: 500 });
+        let response = await self.client.assets.all({ limit: 500 });
         const allCoins = response.data.data;
 
         allCoins.forEach((coin) => {
@@ -60,7 +61,7 @@ class MessariInterface extends DataSourceInterface {
                 scoin.msri.total_mcap =
                     scoin.msri.total_supply * scoin.msri.price ||
                     (scoin.msri.total_supply / scoin.msri.circulating_supply) * scoin.msri.circulating_mcap;
-                this.stablecoins.push(scoin);
+                self.stablecoins.push(scoin);
             } // if is stablecoin
         }); // for each
         return;
