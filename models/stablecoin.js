@@ -213,8 +213,11 @@ class Stablecoin {
                     } else {
                         let ts = await PLATFORM_API[platform.name].getTokenTotalSupply(platform.contract_address);
 
+                        /* Set the total supply on this platform */
                         platform.total_supply = ts ? ts : platform.total_supply;
+                        platform.total_supply_s = util.toDollarString(platform.total_supply);
 
+                        /* Set the circulating on this platform */
                         if (platform.exclude_addresses && platform.exclude_addresses.length != 0) {
                             platform.circulating_supply = await PLATFORM_API[platform.name].getTokenCirculatingSupply(
                                 platform.contract_address,
@@ -224,6 +227,7 @@ class Stablecoin {
                         } else {
                             platform.circulating_supply = platform.total_supply;
                         }
+                        platform.circulating_supply_s = util.toDollarString(platform.total_supply);
                     }
                 } catch (e) {
                     if (this.platforms.length == 1) {

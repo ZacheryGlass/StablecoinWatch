@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Stablecoin Watch</title>
+    <link rel="stylesheet" type="text/css" href="/common.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+
+        .row ul.coinstats > li {
+            margin: 0;
+            font-size: 16px;
+            display: inline-block;
+            width: 15%;
+            box-sizing: border-box;
+            padding: 5px 10px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .row ul.coinstats > li.coinrank {
+            width: 10%;
+            text-align: center;
+        }
+
+        .row ul.coinstats > li.name,
+        .row ul.coinstats > li.symbol {
+            text-align: left;
+        }
+
+        img.coin_logo {
+            width: 20px;
+            height: 20px;
+            padding-right: 5px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        /****************************************
+                Mobile Support
+        *****************************************/
+
+        @media only screen and (max-width: 767px) {
+            main {
+                width: 100%;
+                overflow-x: auto;
+            }
+            .tbl_wrapper { 
+                width: 767px;
+            }
+            .supply_list li {
+                font-size: 12px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+
+        <!-- Header -->
+        <%- include('partials/header') %>
+        <!-- Header -->
+        <main>
+            <h1>All Stablecoins on <%=platform.name%></h1> 
+            <% if (data.stablecoins) { %>
+                <section class="tbl_wrapper">
+                    <!-- Row title -->
+                    <main class="row title">
+                        <ul class="coinstats">
+                            <li class="coinrank">#</li>
+                            <li class="name">Name</li>
+                            <li class="symbol">Symbol</li>
+                            <li>Price</li>
+                            <li>Market Cap</li>
+                            <li>% on <%= platform.name %></li>
+                        </ul>
+                    </main>
+
+                    <!-- for each coin -->
+                    <% let i = 0; %>
+                    <% data.stablecoins.forEach((coin) => {  %>
+
+                        <!-- Consider doing this on back-end            -->
+                        <!-- if no data, or not on this platform,       --> 
+                        <!-- skip this coin                             -->
+                        <% if (!coin.name || !coin.symbol) return;      %>
+                        <% let found = false;                           %>
+                        <% let coin_plfm;                               %>
+                        <% coin.platforms.forEach( p => {               %>
+                        <%    if( p.name == platform.name) {            %>                           
+                        <%      found = true;                           %>
+                        <%      coin_plfm = p;                          %>
+                        <%      }                                       %>
+                        <% });                                          %>
+                        <% if ( !found ) return;                        %>
+                        <% i++;                                         %>
+
+                        <!-- Row X -->
+                        <article class="row expand type<%=i%4+1%>">
+
+                            <ul class="coinstats">
+
+                                <!-- rank -->
+                                <li class="coinrank"><%= i %></li>
+
+                                <!-- name -->
+                                <li class="name">
+                                	<strong><a href="/coins/<%= coin.uri %>"><%= coin.name %></a></strong>
+                                </li>
+
+                                <!-- symbol -->
+                                <li class="symbol">
+                                    <img class="coin_logo" src="<%= coin.img_url %>" alt="" />
+                                    <%= coin.symbol %>
+                                </li>
+
+                                <!-- price -->
+                                <% if (coin.main.price) { %>
+                                    <% if (coin.main.price < 10) { %>
+                                        <li>$<%= coin.main.price.toFixed(3) %></li>
+                                    <% } else { %>
+                                        <li>$<%= coin.main.price.toFixed(2) %></li>
+                                    <% } %>        
+                                <% } else { %>
+                                    <li>No data</li>
+                                <% } %>
+
+                                <!-- market cap -->
+                                <% if (coin_plfm.circulating_supply_s) { %>
+                                    <li><%= coin_plfm.circulating_supply_s %></li>
+                                <% } else { %>
+                                        <li>No data</li>
+                                <% } %>
+
+                                <!-- % of total coin's market cap on this platform -->
+                                <% if (coin_plfm.circulating_supply && coin.scw.circulating_supply) { %>
+                                    <li><%= ((coin_plfm.circulating_supply / coin.scw.circulating_supply)*100).toFixed(2) %>%</li>
+                                <% } else { %>
+                                        <li>No data</li>
+                                <% } %>
+
+                            </ul>
+                        </article>
+                    <% }) %> <!-- forEach coin -->
+                </section>
+            <% } else { %>
+                <p>Something went wrong.</p>
+            <% } %>
+        </main>
+        <!-- Footer -->
+        <%- include('partials/footer') %>
+        <!-- Footer -->
+    </div>
+</body>
+</html>
