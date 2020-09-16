@@ -35,6 +35,23 @@ class EOSInterface extends PlatformInterface {
     }
 
     /*---------------------------------------------------------
+    Function:
+            getExplorerURL
+    Description:
+            Returns a web link the blockchain explorer. 'address'
+            parameter is optional.
+    ---------------------------------------------------------*/
+    getExplorerURL(address) {
+        if (!address) {
+            return 'https://bloks.io/';
+        } else {
+            // make this go to actual token page
+            // (instead of account page) in the future
+            return `https://bloks.io/account/${address}`;
+        }
+    }
+
+    /*---------------------------------------------------------
     Function:    getTokenTotalSupply
     Description: Get the total supply for token specified
                  by 'token_contract_address'

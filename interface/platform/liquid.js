@@ -1,9 +1,7 @@
-
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
 const PlatformInterface = require('./platform_interface');
-
 
 /*---------------------------------------------------------
     CLASS
@@ -21,6 +19,21 @@ class LiquidInterface extends PlatformInterface {
 
     /*---------------------------------------------------------
     Function:
+            getExplorerURL
+    Description:
+            Returns a web link the blockchain explorer. 'address'
+            parameter is optional.
+    ---------------------------------------------------------*/
+    getExplorerURL(address) {
+        if (!address) {
+            return 'https://blockstream.info/liquid/';
+        } else {
+            return `https://blockstream.info/liquid/asset/${address}`;
+        }
+    }
+
+    /*---------------------------------------------------------
+    Function:
             getTokenTotalSupply
     Description:
             Fetches the total supply for token specified
@@ -28,15 +41,14 @@ class LiquidInterface extends PlatformInterface {
     ---------------------------------------------------------*/
     async getTokenTotalSupply(id) {
         switch (id) {
-            case 'Tether USD':
+            case 'H4UWQS836njW4QJ6WfkGAPjaYtK2twLnZE':
                 return 16561000;
                 break;
 
             default:
-                throw new Error("No Liquid API!")
+                throw new Error('No Liquid API!');
                 break;
         }
-
     } // getTokenTotalSupply
 } // LiquidInterface
 
@@ -44,4 +56,3 @@ class LiquidInterface extends PlatformInterface {
     EXPORTS
 ---------------------------------------------------------*/
 module.exports = LiquidInterface;
-

@@ -31,6 +31,23 @@ class TronInterface extends PlatformInterface {
     }
 
     /*---------------------------------------------------------
+    Function:
+            getExplorerURL
+    Description:
+            Returns a web link the blockchain explorer. 'address'
+            parameter is optional.
+    ---------------------------------------------------------*/
+    getExplorerURL(address) {
+        if (!address) {
+            return 'https://tronscan.org/';
+        } else {
+            // make this go to actual token page
+            // instead of address page in the future.
+            return `https://tronscan.org/#/contract/${address}`;
+        }
+    }
+
+    /*---------------------------------------------------------
     Function:    getTokenTotalSupply
     Description: Gets the total supply for token specified
                  by 'address'

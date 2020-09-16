@@ -10,6 +10,21 @@ class QtumInterface extends PlatformInterface {
     url = 'http://qtum.info/api';
 
     /*---------------------------------------------------------
+    Function:
+            getExplorerURL
+    Description:
+            Returns a web link the blockchain explorer. 'address'
+            parameter is optional.
+    ---------------------------------------------------------*/
+    getExplorerURL(address) {
+        if (!address) {
+            return 'https://qtum.info//';
+        } else {
+            return `https://qtum.info/contract/${address}`;
+        }
+    }
+
+    /*---------------------------------------------------------
     Function:    getTokenBalanceAtAddress
     Description: Gets the balance at an address for specified token
     ---------------------------------------------------------*/

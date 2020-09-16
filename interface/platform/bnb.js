@@ -18,6 +18,17 @@ class BinanceChainInterface extends PlatformInterface {
     url = 'https://dex.binance.org';
 
     /*---------------------------------------------------------
+    Function:
+            getExplorerURL
+    Description:
+            Returns a web link the blockchain explorer. 'address'
+            parameter is optional.
+    ---------------------------------------------------------*/
+    getExplorerURL(address) {
+        return '/';
+    }
+
+    /*---------------------------------------------------------
     Function:    getTokenTotalSupply
     Description: Gets the total supply for token specified
                  by 'token_id'

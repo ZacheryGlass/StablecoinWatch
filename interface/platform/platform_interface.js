@@ -1,6 +1,17 @@
 class PlatformInterface {
     /*---------------------------------------------------------
     Function:
+            getExplorerURL
+    Description:
+            Returns a web link the blockchain explorer. 'address'
+            parameter is optional.
+    ---------------------------------------------------------*/
+    getExplorerURL(address) {
+        throw new Error('Function getExplorerURL is not defined');
+    } // getExplorerURL
+
+    /*---------------------------------------------------------
+    Function:
             getTokenBalanceAtAddress
     Description:
             Fetches the balance at an address for the 

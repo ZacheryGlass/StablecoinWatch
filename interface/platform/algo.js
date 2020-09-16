@@ -47,6 +47,28 @@ class AlgorandInterface extends PlatformInterface {
     }
 
     /*---------------------------------------------------------
+    Function:
+            getExplorerURL
+    Description:
+            Returns a web link the blockchain explorer. 'address'
+            parameter is optional.
+    ---------------------------------------------------------*/
+    getExplorerURL(address) {
+        if (!address) {
+            return 'https://algoexplorer.io/';
+        } else {
+            this.getAccountInfo(address).then((info) => {
+                let coin_ids = Object.keys(info.thisassettotal);
+                if (coin_ids.length == 1) {
+                    return `https://algoexplorer.io/asset/${coin_ids[0]}`;
+                } else {
+                    return `https://algoexplorer.io/address/${address}`;
+                }
+            });
+        }
+    }
+
+    /*---------------------------------------------------------
     Function:    getTokenTotalSupply
     Description: Gets the Omni exporer to get the total supply
                  for coin specified by 'contract_address'

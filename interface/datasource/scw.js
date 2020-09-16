@@ -73,7 +73,7 @@ class StablecoinWatchInterface extends DataSourceInterface {
         coin.symbol = 'USDT';
         coin.platforms.push(new Platform('Tron', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'));
         coin.platforms.push(new Platform('Bitcoin', 31));
-        coin.platforms.push(new Platform('Bitcoin (Liquid)', 'Tether USD'));
+        coin.platforms.push(new Platform('Bitcoin (Liquid)', 'H4UWQS836njW4QJ6WfkGAPjaYtK2twLnZE'));
         coin.platforms.push(new Platform('EOS', 'tethertether'));
         coin.platforms.push(new Platform('Algorand', 'XIU7HGGAJ3QOTATPDSIIHPFVKMICXKHMOR2FJKHTVLII4FAOA3CYZQDLG4'));
         coin.platforms.push(

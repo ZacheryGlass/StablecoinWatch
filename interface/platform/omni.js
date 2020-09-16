@@ -14,6 +14,21 @@ class OmniInterface extends PlatformInterface {
     url = 'https://api.omniexplorer.info';
 
     /*---------------------------------------------------------
+    Function:
+            getExplorerURL
+    Description:
+            Returns a web link the blockchain explorer. 'token_id'
+            parameter is optional.
+    ---------------------------------------------------------*/
+    getExplorerURL(token_id) {
+        if (!token_id) {
+            return 'https://omniexplorer.info/';
+        } else {
+            return `https://omniexplorer.info/asset/${token_id}`;
+        }
+    }
+
+    /*---------------------------------------------------------
     Function:    getTokenTotalSupply
     Description: Gets the Omni exporer to get the total supply
                  for coin specified by 'token_id'

@@ -1,4 +1,3 @@
-
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
@@ -13,6 +12,21 @@ class BitcoinCashInterface extends PlatformInterface {
 
     /*---------------------------------------------------------
     Function:
+            getExplorerURL
+    Description:
+            Returns a web link the blockchain explorer. 'token_id'
+            parameter is optional.
+    ---------------------------------------------------------*/
+    getExplorerURL(token_id) {
+        if (!token_id) {
+            return 'https://simpleledger.info';
+        } else {
+            return `https://simpleledger.info/token/${token_id}`;
+        }
+    }
+
+    /*---------------------------------------------------------
+    Function:
             getTokenTotalSupply
     Description:
             Gets the total supply for token specified
@@ -24,7 +38,6 @@ class BitcoinCashInterface extends PlatformInterface {
         const total_token_supply = Number(data.quantity);
         return total_token_supply;
     } // getTokenTotalSupply
-
 } // BitcoinCashInterface
 
 /*---------------------------------------------------------

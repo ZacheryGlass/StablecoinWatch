@@ -211,9 +211,12 @@ class Stablecoin {
                     } else if (!PLATFORM_API[platform.name].getTokenTotalSupply) {
                         throw `API for ${platform.name} platform does not support function 'getTokenTotalSupply()'.`;
                     } else {
-                        let ts = await PLATFORM_API[platform.name].getTokenTotalSupply(platform.contract_address);
+                        /* Set the explorer URL */
+
+                        platform.contract_url = PLATFORM_API[platform.name].getExplorerURL(platform.contract_address);
 
                         /* Set the total supply on this platform */
+                        let ts = await PLATFORM_API[platform.name].getTokenTotalSupply(platform.contract_address);
                         platform.total_supply = ts ? ts : platform.total_supply;
                         platform.total_supply_s = util.toDollarString(platform.total_supply);
 

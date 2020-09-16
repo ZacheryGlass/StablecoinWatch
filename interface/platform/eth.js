@@ -31,15 +31,32 @@ class EthereumInterface extends PlatformInterface {
 
     /*---------------------------------------------------------
     Function:
+            getExplorerURL
+    Description:
+            Returns a web link the blockchain explorer. 'address'
+            parameter is optional.
+    ---------------------------------------------------------*/
+    getExplorerURL(address) {
+        if (!address) {
+            return 'https://etherscan.io/';
+        } else {
+            // make this go to actual token page
+            // instead of address page in the future.
+            // Using Etherscan API
+            return `https://etherscan.io/address/${address}`;
+        }
+    }
+
+    /*---------------------------------------------------------
+    Function:
             getTokenTotalSupply
     Description:
             Fetches the total supply for token specified
             by 'token_contract_address'
     ---------------------------------------------------------*/
     async getTokenTotalSupply(token_contract_address) {
-
         switch (token_contract_address) {
-            case '0x6b175474e89094c44da98b954eedeac495271d0f': /* DAI */
+            case '0x6b175474e89094c44da98b954eedeac495271d0f' /* DAI */:
                 /*---------------------------------------------------------
                 Special case for DAI as it is not held in a single contract
                 token supply explained here 
