@@ -158,8 +158,12 @@ function updateStablecoinData(new_coin_list, old_coin_list) {
         If this coin exists in the old coin list, replace it
         with the new coin data. Otherwise, add it to the list
         ----------------------------------------------------*/
-        if (old_coin) old_coin = cur_new_coin;
-        else old_coin_list.push(cur_new_coin);
+        if (old_coin) {
+            let index = old_coin_list.indexOf(old_coin);
+            if (index !== -1) old_coin_list[index] = cur_new_coin;
+        } else {
+            old_coin_list.push(cur_new_coin);
+        }
     }); // end loop through new_coin_list
 
     /*----------------------------------------------------
