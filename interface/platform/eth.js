@@ -89,7 +89,14 @@ class EthereumInterface extends PlatformInterface {
                 return Promise.all([p_totalSupply, p_decimals]).then(async (data) => {
                     const totalSupply = data[0];
                     const decimals = data[1];
-                    return totalSupply / 10 ** decimals;
+
+                    let total_supply = totalSupply / 10 ** decimals;
+
+                    /*---------------------------------------------------------
+                    Protect against garbage value returns. Arbitrary 1Bil limit.
+                    ---------------------------------------------------------*/
+                    if (total_supply > 100000000000) return 0;
+                    else return total_supply;
                 });
                 break;
         }
