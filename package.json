@@ -5,7 +5,7 @@
     "main": "app/app.js",
     "dependencies": {
         "@binance-chain/javascript-sdk": "^4.0.5",
-        "@dfuse/client": "^0.3.14",
+        "@dfuse/client": "^0.3.17",
         "algosdk": "^1.6.2",
         "coinmarketcap-api": "^3.1.1",
         "ejs": "^3.1.3",

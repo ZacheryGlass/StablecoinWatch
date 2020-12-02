@@ -12,7 +12,7 @@ class EOSInterface extends PlatformInterface {
     /*---------------------------------------------------------
     API Endpoint URL
     ---------------------------------------------------------*/
-    url = 'https://mainnet.eos.dfuse.io';
+    url = 'https://eos.dfuse.eosnation.io/';
 
     /*---------------------------------------------------------
     API Client
