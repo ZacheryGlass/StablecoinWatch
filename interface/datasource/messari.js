@@ -32,10 +32,10 @@ class MessariInterface extends DataSourceInterface {
         self.stablecoins = [];
 
         let response = await self.client.assets.all({ limit: 500 });
-        const allCoins = response.data.data;
+        const all_coins = response.data.data;
 
-        allCoins.forEach((coin) => {
-            if (coin.profile.sector == 'Stablecoins' && !global.EXCLUDE_COINS.includes(coin.symbol)) {
+        all_coins.forEach((coin) => {
+            if (coin.profile.sector == 'Stablecoins' && !global.EXCLUDE_LIST.includes(coin.symbol)) {
                 let platforms = [];
 
                 try {

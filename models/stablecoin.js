@@ -42,6 +42,7 @@ class Stablecoin {
         ----------------------------------------------------*/
         this.cmc = {};
         this.msri = {};
+        this.cgko = {};
         this.scw = {};
         this.main = {};
     } // constructor()
