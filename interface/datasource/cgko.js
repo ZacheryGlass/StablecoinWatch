@@ -1,12 +1,3 @@
-//temp
-global.EXCLUDE_LIST = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC', '1GOLD'];
-global.APPROVE_LIST = ['USDT'];
-global.fetch = require('node-fetch');
-global.WebSocket = require('ws');
-//temp
-
-
-// const keys = require('../../app/keys');
 const CoinGecko = require('coingecko-api');
 const Stablecoin = require('../../models/stablecoin');
 // const Platform = require('../../models/platform');
@@ -26,7 +17,6 @@ class CoinGeckoInterface extends DataSourceInterface {
     constructor(update_rate) {
         super(update_rate);
         this.client = new CoinGecko();
-        console.log('CREATED CLIENT') // temp
     }
 
     /*---------------------------------------------------------
@@ -53,6 +43,9 @@ class CoinGeckoInterface extends DataSourceInterface {
     async sync(self) {
         if (!self) self = this;
 
+        /*---------------------------------------------------------
+        Get list of top 500 coins on CoinGecko
+        ---------------------------------------------------------*/
         let resp = await this.client.coins.all({
             order: CoinGecko.ORDER.MARKET_CAP_DESC,
             per_page: 500,
@@ -60,15 +53,20 @@ class CoinGeckoInterface extends DataSourceInterface {
             localization: false,
             sparkline: false
         });
-
         this.checkError(resp);
-
         let all_coins = resp.data;
 
+        /*---------------------------------------------------------
+        Loop and retrieve data for each coin
+        ---------------------------------------------------------*/
         let stablecoins = [];
-        for( let i = 0; i < 150; i++ ) {
-            let coin = all_coins[i];
+        for( let i = 0; i < 500; i++ ) {
             
+            let coin = all_coins[i];
+
+            /*---------------------------------------------------------
+            Retrieve data for each coin
+            ---------------------------------------------------------*/
             const resp = await this.client.coins.fetch(coin.id, {
                 tickers: false,
                 market_data: true,
@@ -78,13 +76,15 @@ class CoinGeckoInterface extends DataSourceInterface {
                 sparkline: false,
             });
             this.checkError(resp);
-
             coin = resp.data;
 
+            /*---------------------------------------------------------
+            If this coin is tagged as a stablecoin by CoinGecko, create
+            a Stablecoin object and append to list
+            ---------------------------------------------------------*/
             if (!global.EXCLUDE_LIST.includes(coin.symbol.toUpperCase()) 
               && (coin.categories.includes('Stablecoins') || coin.categories.includes('Rebase Tokens'))) {
-                
-                console.log('Found stablecoin ', coin.name);
+                // console.info('Found stablecoin ', coin.name);
                 let scoin = new Stablecoin();
                 scoin.name = coin.name;
                 scoin.symbol = coin.symbol.toUpperCase();
@@ -111,35 +111,36 @@ class CoinGeckoInterface extends DataSourceInterface {
                 
                 stablecoins.push(scoin);
 
-            } // if is stablecoin
+            } /* if tagged as stablecoin */
 
-            
             /*---------------------------------------------------------
             CoinGecko API limit is 100 calls per minute. We do 1 call 
             for each iteration of this for loop. So every 100 calls, we 
-            need to sleep for 1 minute. 
+            need to sleep for 1 minute. Unfortunately there is no way
+            to batch these API calls.
             ---------------------------------------------------------*/
-            const api_limit = 50; /* 90 instead of 100 for saftey */
+            const api_limit = 90; /* 90 instead of 100 for saftey */
             if( i && i % api_limit == 0) {
                 console.log('Sleeping for 1 min');
                 await sleep(1000 * 60);
                 console.log('Done Sleeping');
             }
 
-        }// for
+        } /* for-loop */
 
+        /*---------------------------------------------------------
+        Done building stablecoin list, replace old list with the
+        new one we've built.
+        ---------------------------------------------------------*/
         self.stablecoins = stablecoins;
-
-        console.log(self.stablecoins.length);
-        
+        console.info("CoinGecko Sync Done");
         return;
 
     } /* sync() */
 
 } /* CoinGeckoInterface */
 
-
-
-const interface = new CoinGeckoInterface(60 * 12);
-
-interface.sync();
+/*---------------------------------------------------------
+    EXPORTS
+---------------------------------------------------------*/
+module.exports = CoinGeckoInterface;

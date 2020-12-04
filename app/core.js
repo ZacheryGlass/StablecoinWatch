@@ -6,6 +6,7 @@ const cron = require('node-cron');
 const MSRIInterface = require('../interface/datasource/messari');
 const SCWInterface = require('../interface/datasource/scw');
 const CMCInterface = require('../interface/datasource/cmc');
+const CGKOInterface = require('../interface/datasource/cgko');
 
 /*---------------------------------------------------------
     MODULE-SCOPED VARIABLES
@@ -37,6 +38,7 @@ function start(update_rate) {
         messari: new MSRIInterface(15), // 15 mins
         coinMarketCap: new CMCInterface(60 * 12), // 12 hours
         stablecoinWatch: new SCWInterface(60), // 1 hour
+        coinGecko: new CMCInterface(60), // 1 hour 
     };
 
     /*----------------------------------------------------
@@ -56,8 +58,9 @@ Function:
 Description:
         Combine the data from mutlipe sources into a
         a single Stablecoin object.
+Node:   This function needs a re-write to be more generic
 ---------------------------------------------------------*/
-async function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
+async function combineCoins(msri_coins_list, cmc_coins_list, cgko_coins_list, scw_coins_list) {
     /*----------------------------------------------------
     Loop through each CMC coin
     ----------------------------------------------------*/
@@ -76,6 +79,21 @@ async function combineCoins(msri_coins_list, cmc_coins_list, scw_coins_list) {
                 }
             });
         } // if (msri_coin)
+
+        /*----------------------------------------------------
+        for the current cmc coin, check if the same coin exists
+        in the cgko coin list
+        ----------------------------------------------------*/
+        let cgko_coin = cgko_coins_list.find((c) => c.symbol === cmc_coin.symbol);
+        if (cgko_coin) {
+            cmc_coin.cgko = cgko_coin.cgko;
+            // cgko_coin.platforms.forEach((cgko_pltfm) => {
+            //     let cmc_pltfm = cmc_coin.platforms.find((p) => p.name === cgko_pltfm.name);
+            //     if (!cmc_pltfm) {
+            //         cmc_coin.platforms.push(cgko_pltfm);
+            //     }
+            // });
+        } // if (cgko_coin)
 
         let scw_coin = scw_coins_list.find((c) => c.symbol === cmc_coin.symbol);
         if (scw_coin) {
@@ -117,6 +135,8 @@ Description:
         Pull Stablecoin data from various supported interface/
         datasource. This function will build and return a
         list of Stablecoin objects.
+NOTE:   This function needs a re-write to be more generic
+        with regards to multiple API support
 ---------------------------------------------------------*/
 async function fetchStablecoins() {
     /*----------------------------------------------------
@@ -124,14 +144,15 @@ async function fetchStablecoins() {
     ----------------------------------------------------*/
     let fetching_msri = INTF.messari.getStablecoins();
     let fetching_cmc = INTF.coinMarketCap.getStablecoins();
+    let fetching_cgko = INTF.coinGecko.getStablecoins();
     let fetching_scw = INTF.stablecoinWatch.getStablecoins();
 
     /*----------------------------------------------------
     Combined data from multiple interface/datasource
     ----------------------------------------------------*/
-    return Promise.all([fetching_msri, fetching_cmc, fetching_scw])
+    return Promise.all([fetching_msri, fetching_cmc, fetching_cgko, fetching_scw])
         .then((scoins_arr) => {
-            return combineCoins(scoins_arr[0], scoins_arr[1], scoins_arr[2]);
+            return combineCoins(scoins_arr[0], scoins_arr[1], scoins_arr[2], scoins_arr[3]);
         })
         .catch((e) => {
             console.error(e);

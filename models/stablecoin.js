@@ -9,15 +9,15 @@ const PInterface = require('../interface/platform');
     MODULE CONSTANTS
 ---------------------------------------------------------*/
 const PLATFORM_API = {
-    Ethereum: new PInterface.Ethereum(),
-    Bitcoin: new PInterface.Bitcoin(),
-    Tron: new PInterface.Tron(),
-    'BNB Chain': new PInterface.BNB(),
-    'Bitcoin Cash': new PInterface.BitcoinCash(),
-    EOS: new PInterface.EOS(),
-    Algorand: new PInterface.Algorand(),
+    'Ethereum':         new PInterface.Ethereum(),
+    'Bitcoin':          new PInterface.Bitcoin(),
+    'Tron':             new PInterface.Tron(),
+    'BNB Chain':        new PInterface.BNB(),
+    'Bitcoin Cash':     new PInterface.BitcoinCash(),
+    'EOS':              new PInterface.EOS(),
+    'Algorand':         new PInterface.Algorand(),
     'Bitcoin (Liquid)': new PInterface.Liquid(),
-    Qtum: new PInterface.Qtum(),
+    'Qtum':             new PInterface.Qtum(),
 };
 
 /*---------------------------------------------------------
