@@ -57,7 +57,7 @@ class AlgorandInterface extends PlatformInterface {
         if (!address) {
             return 'https://algoexplorer.io/';
         } else {
-            this.getAccountInfo(address).then((info) => {
+            return this.getAccountInfo(address).then((info) => {
                 let coin_ids = Object.keys(info.thisassettotal);
                 if (coin_ids.length == 1) {
                     return `https://algoexplorer.io/asset/${coin_ids[0]}`;

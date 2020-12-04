@@ -55,26 +55,26 @@ class Stablecoin {
     async updateStrings() {
         this.uri = this.symbol;
 
-        this.cmc.total_mcap_s = util.toDollarString(this.cmc.total_mcap);
-        this.cmc.circulating_mcap_s = util.toDollarString(this.cmc.circulating_mcap);
-        this.cmc.total_supply_s = util.toDollarString(this.cmc.total_supply);
-        this.cmc.circulating_supply_s = util.toDollarString(this.cmc.circulating_supply);
-        this.cmc.volume_s = util.toDollarString(this.cmc.volume);
+        this.cmc.total_mcap_s           = util.toDollarString(this.cmc.total_mcap);
+        this.cmc.circulating_mcap_s     = util.toDollarString(this.cmc.circulating_mcap);
+        this.cmc.total_supply_s         = util.toDollarString(this.cmc.total_supply);
+        this.cmc.circulating_supply_s   = util.toDollarString(this.cmc.circulating_supply);
+        this.cmc.volume_s               = util.toDollarString(this.cmc.volume);
 
-        this.msri.total_mcap_s = util.toDollarString(this.msri.total_mcap);
-        this.msri.circulating_mcap_s = util.toDollarString(this.msri.circulating_mcap);
-        this.msri.total_supply_s = util.toDollarString(this.msri.total_supply);
-        this.msri.circulating_supply_s = util.toDollarString(this.msri.circulating_supply);
-        this.msri.volume_s = util.toDollarString(this.msri.volume);
+        this.msri.total_mcap_s          = util.toDollarString(this.msri.total_mcap);
+        this.msri.circulating_mcap_s    = util.toDollarString(this.msri.circulating_mcap);
+        this.msri.total_supply_s        = util.toDollarString(this.msri.total_supply);
+        this.msri.circulating_supply_s  = util.toDollarString(this.msri.circulating_supply);
+        this.msri.volume_s              = util.toDollarString(this.msri.volume);
 
-        this.scw.total_mcap_s = util.toDollarString(this.scw.total_mcap);
-        this.scw.circulating_mcap_s = util.toDollarString(this.scw.circulating_mcap);
-        this.scw.total_supply_s = util.toDollarString(this.scw.total_supply);
-        this.scw.circulating_supply_s = util.toDollarString(this.scw.circulating_supply);
+        this.scw.total_mcap_s           = util.toDollarString(this.scw.total_mcap);
+        this.scw.circulating_mcap_s     = util.toDollarString(this.scw.circulating_mcap);
+        this.scw.total_supply_s         = util.toDollarString(this.scw.total_supply);
+        this.scw.circulating_supply_s   = util.toDollarString(this.scw.circulating_supply);
 
-        this.main.total_mcap_s = util.toDollarString(this.main.total_mcap);
-        this.main.circulating_mcap_s = util.toDollarString(this.main.circulating_mcap);
-        this.main.volume_s = util.toDollarString(this.main.volume);
+        this.main.total_mcap_s          = util.toDollarString(this.main.total_mcap);
+        this.main.circulating_mcap_s    = util.toDollarString(this.main.circulating_mcap);
+        this.main.volume_s              = util.toDollarString(this.main.volume);
     } // updateStrings()
 
     /*---------------------------------------------------------
@@ -112,7 +112,7 @@ class Stablecoin {
 
         /*----------------------------------------------------
         set main Circulating Supply source,
-	used by updatPlatformsSupply()
+	    used by updatPlatformsSupply()
         ----------------------------------------------------*/
         this.main.circulating_supply = Number(
             this.cmc.circulating_supply ? this.cmc.circulating_supply : this.msri.circulating_supply
@@ -213,7 +213,7 @@ class Stablecoin {
                     } else {
                         /* Set the explorer URL */
 
-                        platform.contract_url = PLATFORM_API[platform.name].getExplorerURL(platform.contract_address);
+                        platform.contract_url = await PLATFORM_API[platform.name].getExplorerURL(platform.contract_address);
 
                         /* Set the total supply on this platform */
                         let ts = await PLATFORM_API[platform.name].getTokenTotalSupply(platform.contract_address);

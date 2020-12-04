@@ -19,8 +19,10 @@ class PlatformInterface {
     Note:   This function is expected to be defined by the 
             inheriting class
     ---------------------------------------------------------*/
-    getTokenBalanceAtAddress() {
-        throw new Error('Function getTokenBalanceAtAddress is not defined');
+    getTokenBalanceAtAddress(token_contract_address, address) {
+        console.warn(`Function getTokenBalanceAtAddress is not defined.`);
+        return 0;
+        // throw new Error('Function getTokenBalanceAtAddress is not defined');
     } // getTokenBalanceAtAddress
 
     /*---------------------------------------------------------

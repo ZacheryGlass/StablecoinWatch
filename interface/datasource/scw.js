@@ -71,8 +71,21 @@ class StablecoinWatchInterface extends DataSourceInterface {
         -----------------------------------------------*/
         coin = new Stablecoin();
         coin.symbol = 'USDT';
-        coin.platforms.push(new Platform('Tron', 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'));
-        coin.platforms.push(new Platform('Bitcoin', 31));
+        coin.platforms.push(new Platform(
+            'Ethereum',
+            '0xdac17f958d2ee523a2206206994597c13d831ec7',
+            ['0x5754284f345afc66a98fbb0a0afe71e0f007b949']  /* Tether Treasury ERC20 */
+        ));
+        coin.platforms.push(new Platform(
+            'Tron',
+            'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
+            ['TKHuVq1oKVruCGLvqVexFs6dawKv6fQgFs'] /* Tether Treasury TRC20 */
+        ));
+        coin.platforms.push(new Platform(
+            'Bitcoin',
+            31,
+            ['1NTMakcgVwQpMdGxRQnFKyb3G1FAJysSfz'] /* Tether Treasury Omni */
+        ));
         coin.platforms.push(new Platform('Bitcoin (Liquid)', 'H4UWQS836njW4QJ6WfkGAPjaYtK2twLnZE'));
         coin.platforms.push(new Platform('EOS', 'tethertether'));
         coin.platforms.push(new Platform('Algorand', 'XIU7HGGAJ3QOTATPDSIIHPFVKMICXKHMOR2FJKHTVLII4FAOA3CYZQDLG4'));
@@ -88,8 +101,16 @@ class StablecoinWatchInterface extends DataSourceInterface {
         coin.name = 'Tether EUR';
         coin.symbol = 'EURT';
         coin.scw.price = Number(self.currency_prices_in_usd.EUR.toFixed(3));
-        coin.platforms.push(new Platform('Ethereum', '0xabdf147870235fcfc34153828c769a70b3fae01f'));
-        coin.platforms.push(new Platform('Bitcoin', 41));
+        coin.platforms.push(new Platform(
+            'Bitcoin',
+            41,
+            ['1NTMakcgVwQpMdGxRQnFKyb3G1FAJysSfz'] /* Tether Treasury Omni */
+        ));
+        coin.platforms.push(new Platform(
+            'Ethereum',
+            '0xabdf147870235fcfc34153828c769a70b3fae01f'
+            ['0x5754284f345afc66a98fbb0a0afe71e0f007b949']  /* Tether Treasury ERC20 */
+        ));
         coin.scw.desc = `Tether is fiat-collateralized stablecoin that offers individuals the
                         advantages of transacting with blockchain-based assets while mitigating price risk.
                         Tether is primarily issued on the Ethereum and Bitcoin blockchains and corresponds on
@@ -104,18 +125,26 @@ class StablecoinWatchInterface extends DataSourceInterface {
         coin.name = 'Tether CNH';
         coin.symbol = 'CNHT';
         coin.scw.price = Number(self.currency_prices_in_usd.CNY.toFixed(3));
-        coin.platforms.push(new Platform('Ethereum', '0x6e109e9dd7fa1a58bc3eff667e8e41fc3cc07aef'));
+        coin.platforms.push(new Platform(
+            'Ethereum',
+            '0x6e109e9dd7fa1a58bc3eff667e8e41fc3cc07aef'
+            ['0x5754284f345afc66a98fbb0a0afe71e0f007b949']  /* Tether Treasury ERC20 */
+            ));
         coin.scw.desc = 'https://wallet.tether.to/transparency';
         coin.img_url = '/tether.png';
         sc.push(coin);
 
         /*-----------------------------------------------
-        Token Gold
+        Tether Gold
         -----------------------------------------------*/
         coin = new Stablecoin();
-        coin.name = 'Token Gold';
+        coin.name = 'Tether Gold';
         coin.symbol = 'XAUT';
-        coin.platforms.push(new Platform('Ethereum', '0x4922a015c4407F87432B179bb209e125432E4a2A'));
+        coin.platforms.push(new Platform(
+            'Ethereum',
+            '0x4922a015c4407F87432B179bb209e125432E4a2A',
+            ['0x5754284f345afc66a98fbb0a0afe71e0f007b949']  /* Tether Treasury ERC20 */
+        ));
         coin.scw.desc = util.urlify(
             `Tether Gold (XAUT) is a cryptocurrency with a value meant to mirror the value of
                 the Gold. According to their site, Tether converts  cash into digital currency, to
@@ -125,6 +154,21 @@ class StablecoinWatchInterface extends DataSourceInterface {
                 https://wallet.tether.to/transparency`
         );
         coin.img_url = '/tether-gold-logo.svg';
+        sc.push(coin);
+
+        /*-----------------------------------------------
+        USDC
+        -----------------------------------------------*/
+        coin = new Stablecoin();
+        coin.symbol = 'USDC';
+        coin.platforms.push(
+            new Platform(
+                'Ethereum',
+                '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+                ['0xAa05F7C7eb9AF63D6cC03C36c4f4Ef6c37431EE0'] // Blacklisted: https://www.centre.io/pdfs/attestation/grant-thornton_circle_usdc_reserves_20201123.pdf
+        ));
+        coin.platforms.push(new Platform('Algorand', '2UEQTE5QDNXPI7M3TU44G6SYKLFWLPQO7EBZM7K7MHMQQMFI4QJPLHQFHM', []));
+        coin.platforms.push(new Platform('Solana', 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'));
         sc.push(coin);
 
         /*-----------------------------------------------

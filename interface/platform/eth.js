@@ -48,6 +48,23 @@ class EthereumInterface extends PlatformInterface {
     }
 
     /*---------------------------------------------------------
+    Function:    getTokenBalanceAtAddress
+    Description: Gets the balance at an address for specified token
+    ---------------------------------------------------------*/
+    async getTokenBalanceAtAddress(token_contract_address, address) {
+        const erc20Contract = new ERC20Contract(this.client, token_contract_address);
+        let p_token_balance = erc20Contract.balanceOf(address).call();
+        let p_decimals = erc20Contract.decimals().call();
+        return Promise.all([p_token_balance, p_decimals]).then(async (data) => {
+            const totalBalance = data[0];
+            const decimals = data[1];
+            return totalBalance / 10 ** decimals;
+        });
+
+    } // getTokenBalanceAtAddress
+
+
+    /*---------------------------------------------------------
     Function:
             getTokenTotalSupply
     Description:
