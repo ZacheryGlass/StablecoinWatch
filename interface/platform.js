@@ -7,3 +7,4 @@ module.exports.EOS = require('./platform/eos');
 module.exports.Algorand = require('./platform/algo');
 module.exports.Liquid = require('./platform/liquid');
 module.exports.Qtum = require('./platform/qtum');
+module.exports.Solana = require('./platform/sol');

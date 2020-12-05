@@ -18,6 +18,7 @@ const PLATFORM_API = {
     Algorand: new PInterface.Algorand(),
     'Bitcoin (Liquid)': new PInterface.Liquid(),
     Qtum: new PInterface.Qtum(),
+    Solana: new PInterface.Solana(),
 };
 
 /*---------------------------------------------------------
