@@ -28,7 +28,7 @@ class LiquidInterface extends PlatformInterface {
         if (!address) {
             return 'https://blockstream.info/liquid/';
         } else {
-            return `https://blockstream.info/liquid/asset/${address}`;
+            return `https://blockstream.info/liquid/address/${address}`;
         }
     }
 
