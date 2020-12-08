@@ -206,38 +206,27 @@
                                 <% if (coin.platforms.length > 1) { %>
                                     <li class="platform">
                                         <ul class="supply_list">
-                                            <% let sum = 0; coin.platforms.forEach((platform, j) => { %>
+                                            <% let sum = 0; for (let j = 0; j < Math.min(coin.platforms.length,3); j++) { %>
+                                                <% let platform = coin.platforms[j]; %>
                                                 <li class="p_grid">
-                                                    <% if (j < 2) { %>
-                                                        <div class="a">
-                                                            <%= platform.name %>: 
-                                                        </div>
+                                                    <% if (j == 2 && coin.platforms.length > 3) { %>
+                                                        <a href="/coins/<%= coin.uri %>"><div class="a">Other:</div></a>
+                                                        <a href="/coins/<%= coin.uri %>"><div class="b"><%= (100-sum).toFixed(1)%>%</div></a>
+                                                    <% } else { %>
+                                                        <div class="a"> <%= platform.name %>: </div>
                                                         <div class="b">
                                                             <% if (platform.circulating_supply && coin.main.circulating_supply) { %>
                                                                 <% let pct =  Math.min(100, ((platform.circulating_supply / coin.scw.circulating_supply) * 100))%>
                                                                 <% sum += pct; %>
-                                                                <% if (pct < 0.005) { %>
-                                                                    <%=pct.toFixed(3) %>%
-                                                                <% } else if (pct < 0.05){ %>
-                                                                    <%=pct.toFixed(2) %>%
-                                                                <% } else if (pct < 0.5){ %>
-                                                                    <%=pct.toFixed(1) %>%
-                                                                <% } else { %>
-                                                                    <%=pct.toFixed(0) %>%
-                                                                <% } %>
-                                                            <% } else { %>
-                                                                ?%
-                                                            <% } %>
+                                                                <%=pct.toFixed(1) %>%
+                                                            <% } else { %>  ?% <% } %>
                                                         </div>
-                                                    <% } else if (j == 2) { %>
-                                                            <div class="a">Other:</div>
-                                                            <div class="b"><a href="/coins/<%= coin.uri %>"><%= (100-sum).toFixed()%>%</a></div>
                                                     <% } %>
                                                 </li>
-                                            <% }); %>
+                                            <% } %>
                                         </ul>
                                     </li>
-                                <% } else { %> <!-- if more than 1 platform -->
+                                <% } else { %> <!-- 1 platform -->
                                     <li class="platform">
                                         <%= coin.platforms[0].name %>
                                     </li>
