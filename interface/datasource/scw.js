@@ -108,7 +108,7 @@ class StablecoinWatchInterface extends DataSourceInterface {
         ));
         coin.platforms.push(new Platform(
             'Ethereum',
-            '0xabdf147870235fcfc34153828c769a70b3fae01f'
+            '0xabdf147870235fcfc34153828c769a70b3fae01f',
             ['0x5754284f345afc66a98fbb0a0afe71e0f007b949']  /* Tether Treasury ERC20 */
         ));
         coin.scw.desc = `Tether is fiat-collateralized stablecoin that offers individuals the
