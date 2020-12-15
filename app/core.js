@@ -38,7 +38,7 @@ function start(update_rate) {
         messari: new MSRIInterface(15), // 15 mins
         coinMarketCap: new CMCInterface(60 * 12), // 12 hours
         stablecoinWatch: new SCWInterface(60), // 1 hour
-        coinGecko: new CMCInterface(60), // 1 hour 
+        coinGecko: new CGKOInterface(60), // 1 hour 
     };
 
     /*----------------------------------------------------

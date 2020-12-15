@@ -275,6 +275,20 @@
                             <td><%= coin.msri.volume_s %></td>
                         </tr>
                         <tr>
+                            <td>CoinGecko</td>
+                            <td>
+                                <% if (coin.cgko.price) { %>
+                                    <%= Number(coin.cgko.price).toFixed(3) %>
+                                <% } %>
+                            </td>
+                            <td><%= coin.cgko.circulating_mcap_s %></td>
+                            <% try { %>
+                            <td><%= coin.cgko.total_supply_s.replace('$', '') %></td>
+                            <% } catch {} %>
+                            <td><%= coin.cgko.circulating_supply_s %></td>
+                            <td><%= coin.cgko.volume_s %></td>
+                        </tr>
+                        <tr>
                             <td>Stablecoin Watch</td>
                             <td>
                                 <% if (coin.scw.price) { %>
