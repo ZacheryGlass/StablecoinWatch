@@ -8,7 +8,13 @@ const DataSourceInterface = require('./datasource_interface');
     CLASS
 ---------------------------------------------------------*/
 class CoinGeckoInterface extends DataSourceInterface {
+    
     client = null;
+
+    endpoint = 'https://api.coingecko.com/api/v3/';
+
+    api_calls = [];
+    syncing = false;
 
     /*---------------------------------------------------------
     Function:   constructor
@@ -20,6 +26,33 @@ class CoinGeckoInterface extends DataSourceInterface {
     }
 
     /*---------------------------------------------------------
+    Function:    checkRateLimit
+    Description: 
+    ---------------------------------------------------------*/
+    async checkRateLimit() {
+        const MILLISECOND = 1;
+        const SECOND = 1000 * MILLISECOND;
+        const MINUTE = 60 * SECOND;
+        const MAX_CALLS_PER_MIN = 60; /* Limit is supposedly 100 but was getting rate limited at 90 so using 60 to be safe */
+
+        // record the time of the latest API call
+        this.api_calls.unshift( Date.now() );
+
+        // console.debug('CGKO REQUESTS: ', this.api_calls.length);
+        if( this.api_calls.length >= MAX_CALLS_PER_MIN) {
+            let ms_since_nth_call = Date.now() - this.api_calls.pop();
+            let ms_to_sleep = MINUTE - ms_since_nth_call;
+            ms_to_sleep = Math.max( ms_to_sleep, 0 );
+            
+            if(ms_to_sleep) {
+                console.debug(`CoinGecko rate limit hit, sleeping for ${ms_to_sleep}ms`);
+                await sleep( ms_to_sleep );
+            }
+        }
+
+    } /* checkRateLimit */
+
+    /*---------------------------------------------------------
     Function:    checkError
     Description: Checks the return status of an CoinGecko API
                  reponse to see if an error code was set.
@@ -28,7 +61,7 @@ class CoinGeckoInterface extends DataSourceInterface {
         if (!resp.success) {
             let code = resp.code;
             let msg = resp.message;
-            if (resp.data[0] && resp.data[0].error ) {
+            if (resp.data && resp.data[0] && resp.data[0].error ) {
                 msg = resp.data[0].error;
             } 
             throw `CGKO API ERROR ${code}: ${msg}`;
@@ -43,40 +76,72 @@ class CoinGeckoInterface extends DataSourceInterface {
     async sync(self) {
         if (!self) self = this;
 
+        
         /*---------------------------------------------------------
-        Get list of top 500 coins on CoinGecko
+        Check lock
         ---------------------------------------------------------*/
-        let resp = await this.client.coins.all({
+        if(self.syncing) return;
+
+        /*---------------------------------------------------------
+        Lock 'syncing' mutex
+        ---------------------------------------------------------*/
+        self.syncing = true;
+        
+
+
+        /*---------------------------------------------------------
+        Get list of top N coins on CoinGecko
+        API would only return 250 at a time so this may require 
+        multiple API calls
+        ---------------------------------------------------------*/
+        const N = 250;
+
+        await self.checkRateLimit();
+        let resp = await self.client.coins.all({
             order: CoinGecko.ORDER.MARKET_CAP_DESC,
-            per_page: 500,
+            per_page: N, // 250 is max
             page: 1,
             localization: false,
             sparkline: false
         });
-        this.checkError(resp);
+        self.checkError(resp);
+
         let all_coins = resp.data;
 
         /*---------------------------------------------------------
         Loop and retrieve data for each coin
         ---------------------------------------------------------*/
         let stablecoins = [];
-        for( let i = 0; i < 500; i++ ) {
+        for( let i = 0; i < N; i++ ) {
             
             let coin = all_coins[i];
 
+            if( !coin || !coin.id ) continue;
+            
             /*---------------------------------------------------------
             Retrieve data for each coin
             ---------------------------------------------------------*/
-            const resp = await this.client.coins.fetch(coin.id, {
-                tickers: false,
-                market_data: true,
-                community_data: false,
-                developer_data: false,
-                localization: false,
-                sparkline: false,
-            });
-            this.checkError(resp);
+            await self.checkRateLimit();
+            try {
+                resp = await self.client.coins.fetch(coin.id, {
+                    tickers: false,
+                    market_data: true,
+                    community_data: false,
+                    developer_data: false,
+                    localization: false,
+                    sparkline: false,
+                });
+            } catch (e) {
+                console.warn( `CoinGecko API Error when feching data for ${coin.id}:\n\t${e}`)
+                continue;
+            }
+            
+            /*---------------------------------------------------------
+            Validate response
+            ---------------------------------------------------------*/
+            self.checkError(resp);
             coin = resp.data;
+            if( !coin || !coin.symbol) continue;
 
             /*---------------------------------------------------------
             If this coin is tagged as a stablecoin by CoinGecko, create
@@ -84,7 +149,6 @@ class CoinGeckoInterface extends DataSourceInterface {
             ---------------------------------------------------------*/
             if (!global.EXCLUDE_LIST.includes(coin.symbol.toUpperCase()) 
               && (coin.categories.includes('Stablecoins') || coin.categories.includes('Rebase Tokens'))) {
-                // console.info('Found stablecoin ', coin.name);
                 let scoin = new Stablecoin();
                 scoin.name = coin.name;
                 scoin.symbol = coin.symbol.toUpperCase();
@@ -110,21 +174,7 @@ class CoinGeckoInterface extends DataSourceInterface {
                 // coin.market_data.market_cap_change_percentage_24h
                 
                 stablecoins.push(scoin);
-
             } /* if tagged as stablecoin */
-
-            /*---------------------------------------------------------
-            CoinGecko API limit is 100 calls per minute. We do 1 call 
-            for each iteration of this for loop. So every 100 calls, we 
-            need to sleep for 1 minute. Unfortunately there is no way
-            to batch these API calls.
-            ---------------------------------------------------------*/
-            const api_limit = 90; /* 90 instead of 100 for saftey */
-            if( i && i % api_limit == 0) {
-                console.log('Sleeping for 1 min');
-                await sleep(1000 * 60);
-                console.log('Done Sleeping');
-            }
 
         } /* for-loop */
 
@@ -133,7 +183,14 @@ class CoinGeckoInterface extends DataSourceInterface {
         new one we've built.
         ---------------------------------------------------------*/
         self.stablecoins = stablecoins;
+        
         console.info("CoinGecko Sync Done");
+        
+        /*---------------------------------------------------------
+        Unlock
+        ---------------------------------------------------------*/
+        self.syncing = false;
+
         return;
 
     } /* sync() */

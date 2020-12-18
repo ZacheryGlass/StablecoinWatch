@@ -27,7 +27,8 @@ class StablecoinWatchInterface extends DataSourceInterface {
     Description:
             Get coins tracked by StablecoinWatch.
     Note:   Many stablecoins are not tracked by other datasources,
-            or are missing data so they are manually tracked here
+            or are missing data so they are manually tracked here.
+         ***This should probably move to a database eventually***
     ---------------------------------------------------------*/
     buildList(self) {
         if (!self) self = this;
@@ -142,16 +143,16 @@ class StablecoinWatchInterface extends DataSourceInterface {
         );
         sc.push(coin);
 
-        /*-----------------------------------------------
-        Serum
-        -----------------------------------------------*/
-        coin = new Stablecoin();
-        coin.name = 'SerumUSD';
-        coin.symbol = 'SRM';
-        coin.scw.desc =
-            'SerumUSD is Serum’s SPL and ERC20 USD stablecoin. A decentralized stable coin with no single point of failure.';
-        coin.platforms.push(new Platform('Ethereum', '0x476c5e26a75bd202a9683ffd34359c0cc15be0ff'));
-        sc.push(coin);
+        // /*-----------------------------------------------
+        // Serum
+        // -----------------------------------------------*/
+        // coin = new Stablecoin();
+        // coin.name = 'SerumUSD';
+        // coin.symbol = 'SRM';
+        // coin.scw.desc =
+        //     'SerumUSD is Serum’s SPL and ERC20 USD stablecoin. A decentralized stable coin with no single point of failure.';
+        // coin.platforms.push(new Platform('Ethereum', '0x476c5e26a75bd202a9683ffd34359c0cc15be0ff'));
+        // sc.push(coin);
 
         /*-----------------------------------------------
         Reserve

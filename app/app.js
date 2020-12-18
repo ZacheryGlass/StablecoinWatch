@@ -1,7 +1,6 @@
 /*---------------------------------------------------------
     GLOBALS SETTINGS
 ---------------------------------------------------------*/
-// global.DEBUG = true;
 global.fetch = require('node-fetch');
 global.WebSocket = require('ws');
 global.EXCLUDE_LIST = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC', '1GOLD'];
