@@ -56,32 +56,32 @@ class Stablecoin {
     async updateStrings() {
         this.uri = this.symbol;
 
-        this.cmc.total_mcap_s = util.toDollarString(this.cmc.total_mcap);
-        this.cmc.circulating_mcap_s = util.toDollarString(this.cmc.circulating_mcap);
-        this.cmc.total_supply_s = util.toDollarString(this.cmc.total_supply);
-        this.cmc.circulating_supply_s = util.toDollarString(this.cmc.circulating_supply);
-        this.cmc.volume_s = util.toDollarString(this.cmc.volume);
+        this.cmc.total_mcap_s           = util.toDollarString(this.cmc.total_mcap);
+        this.cmc.circulating_mcap_s     = util.toDollarString(this.cmc.circulating_mcap);
+        this.cmc.total_supply_s         = util.toDollarString(this.cmc.total_supply);
+        this.cmc.circulating_supply_s   = util.toDollarString(this.cmc.circulating_supply);
+        this.cmc.volume_s               = util.toDollarString(this.cmc.volume);
 
-        this.msri.total_mcap_s = util.toDollarString(this.msri.total_mcap);
-        this.msri.circulating_mcap_s = util.toDollarString(this.msri.circulating_mcap);
-        this.msri.total_supply_s = util.toDollarString(this.msri.total_supply);
-        this.msri.circulating_supply_s = util.toDollarString(this.msri.circulating_supply);
-        this.msri.volume_s = util.toDollarString(this.msri.volume);
+        this.msri.total_mcap_s          = util.toDollarString(this.msri.total_mcap);
+        this.msri.circulating_mcap_s    = util.toDollarString(this.msri.circulating_mcap);
+        this.msri.total_supply_s        = util.toDollarString(this.msri.total_supply);
+        this.msri.circulating_supply_s  = util.toDollarString(this.msri.circulating_supply);
+        this.msri.volume_s              = util.toDollarString(this.msri.volume);
 
-        this.cgko.total_mcap_s = util.toDollarString(this.cgko.total_mcap);
-        this.cgko.circulating_mcap_s = util.toDollarString(this.cgko.circulating_mcap);
-        this.cgko.total_supply_s = util.toDollarString(this.cgko.total_supply);
-        this.cgko.circulating_supply_s = util.toDollarString(this.cgko.circulating_supply);
-        this.cgko.volume_s = util.toDollarString(this.cgko.volume);
+        this.cgko.total_mcap_s          = util.toDollarString(this.cgko.total_mcap);
+        this.cgko.circulating_mcap_s    = util.toDollarString(this.cgko.circulating_mcap);
+        this.cgko.total_supply_s        = util.toDollarString(this.cgko.total_supply);
+        this.cgko.circulating_supply_s  = util.toDollarString(this.cgko.circulating_supply);
+        this.cgko.volume_s              = util.toDollarString(this.cgko.volume);
 
-        this.scw.total_mcap_s = util.toDollarString(this.scw.total_mcap);
-        this.scw.circulating_mcap_s = util.toDollarString(this.scw.circulating_mcap);
-        this.scw.total_supply_s = util.toDollarString(this.scw.total_supply);
-        this.scw.circulating_supply_s = util.toDollarString(this.scw.circulating_supply);
+        this.scw.total_mcap_s           = util.toDollarString(this.scw.total_mcap);
+        this.scw.circulating_mcap_s     = util.toDollarString(this.scw.circulating_mcap);
+        this.scw.total_supply_s         = util.toDollarString(this.scw.total_supply);
+        this.scw.circulating_supply_s   = util.toDollarString(this.scw.circulating_supply);
 
-        this.main.total_mcap_s = util.toDollarString(this.main.total_mcap);
-        this.main.circulating_mcap_s = util.toDollarString(this.main.circulating_mcap);
-        this.main.volume_s = util.toDollarString(this.main.volume);
+        this.main.total_mcap_s          = util.toDollarString(this.main.total_mcap);
+        this.main.circulating_mcap_s    = util.toDollarString(this.main.circulating_mcap);
+        this.main.volume_s              = util.toDollarString(this.main.volume);
     } // updateStrings()
 
     /*---------------------------------------------------------

@@ -43,8 +43,12 @@ class CoinMarketCapInterface extends DataSourceInterface {
     async sync(self) {
         if (!self) self = this;
 
+        let n = 2000;
+        if( global.DEBUG ) 
+            n = 200;
+
         await self.client
-            .getTickers({ limit: 2000 })
+            .getTickers({ limit: n })
             .then((resp) => {
                 console.info('Built CMC Coin List');
                 self.checkError(resp.status);

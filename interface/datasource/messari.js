@@ -31,7 +31,11 @@ class MessariInterface extends DataSourceInterface {
         if (!self) self = this;
         self.stablecoins = [];
 
-        let response = await self.client.assets.all({ limit: 500 });
+        let n = 500;
+        if( global.DEBUG ) 
+            n = 200;
+
+        let response = await self.client.assets.all({ limit: n });
         const all_coins = response.data.data;
 
         all_coins.forEach((coin) => {
@@ -64,6 +68,7 @@ class MessariInterface extends DataSourceInterface {
                 self.stablecoins.push(scoin);
             } // if is stablecoin
         }); // for each
+        
         return;
     }
 } /* MessariInterface */

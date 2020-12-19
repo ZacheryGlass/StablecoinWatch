@@ -11,7 +11,6 @@ class CoinGeckoInterface extends DataSourceInterface {
     
     client = null;
 
-    endpoint = 'https://api.coingecko.com/api/v3/';
 
     api_calls = [];
     syncing = false;
@@ -94,12 +93,15 @@ class CoinGeckoInterface extends DataSourceInterface {
         API would only return 250 at a time so this may require 
         multiple API calls
         ---------------------------------------------------------*/
-        const N = 250;
+        let n = 250;
+
+        if( global.DEBUG ) 
+            n = 50;
 
         await self.checkRateLimit();
         let resp = await self.client.coins.all({
             order: CoinGecko.ORDER.MARKET_CAP_DESC,
-            per_page: N, // 250 is max
+            per_page: n, // 250 is max
             page: 1,
             localization: false,
             sparkline: false
@@ -112,7 +114,7 @@ class CoinGeckoInterface extends DataSourceInterface {
         Loop and retrieve data for each coin
         ---------------------------------------------------------*/
         let stablecoins = [];
-        for( let i = 0; i < N; i++ ) {
+        for( let i = 0; i < n; i++ ) {
             
             let coin = all_coins[i];
 
