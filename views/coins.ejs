@@ -275,6 +275,20 @@
                             <td><%= coin.msri.volume_s %></td>
                         </tr>
                         <tr>
+                            <td>CoinGecko</td>
+                            <td>
+                                <% if (coin.cgko.price) { %>
+                                    <%= Number(coin.cgko.price).toFixed(3) %>
+                                <% } %>
+                            </td>
+                            <td><%= coin.cgko.circulating_mcap_s %></td>
+                            <% try { %>
+                            <td><%= coin.cgko.total_supply_s.replace('$', '') %></td>
+                            <% } catch {} %>
+                            <td><%= coin.cgko.circulating_supply_s %></td>
+                            <td><%= coin.cgko.volume_s %></td>
+                        </tr>
+                        <tr>
                             <td>Stablecoin Watch</td>
                             <td>
                                 <% if (coin.scw.price) { %>
@@ -300,16 +314,27 @@
                         <% if( coin.cmc.desc ) { %>
                             <button id="cmc_btn" class="bar-btn" onclick="showDesc('cmc')">CoinMarketCap</button>
                         <% } %>
+                        <% if( coin.cgko.desc ) { %>
+                            <button id="cgko_btn" class="bar-btn" onclick="showDesc('cgko')">CoinGecko</button>
+                        <% } %>
                         <% if( coin.scw && coin.scw.desc ) { %>
-                            <button id="cmc_btn" class="bar-btn" onclick="showDesc('scw')">Stablecoin Watch</button>
+                            <button id="scw_btn" class="bar-btn" onclick="showDesc('scw')">Stablecoin Watch</button>
                         <% } %>
                     </div>
 
                     <% let found = false; %>
 
                     <!-- Messari Description -->
-                    <% if( coin.msri.desc) { %> <div id="msri" class="desc-container">
+                    <% if( coin.msri.desc) { %>
+                        <div id="msri" class="desc-container">
                             <p><%- coin.msri.desc %></p>
+                        </div>
+                    <% found = true; } %>
+
+                    <!-- CoinGecko Description -->
+                    <% if( coin.cgko.desc) { %>
+                        <div id="cgko" class="desc-container" <% if( found ) { %> style="display:none" <% } %> >
+                            <p><%- coin.cgko.desc %></p>
                         </div>
                     <% found = true; } %>
 

@@ -1,10 +1,10 @@
 /*---------------------------------------------------------
     GLOBALS SETTINGS
 ---------------------------------------------------------*/
-// global.DEBUG = true;
 global.fetch = require('node-fetch');
 global.WebSocket = require('ws');
-global.EXCLUDE_COINS = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC', '1GOLD'];
+global.EXCLUDE_LIST = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC', '1GOLD'];
+global.APPROVE_LIST = ['DAI', 'AMPL', 'SUSD', 'XAUT', 'USDT'];
 
 /*---------------------------------------------------------
     IMPORTS

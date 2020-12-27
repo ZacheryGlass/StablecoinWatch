@@ -31,11 +31,15 @@ class MessariInterface extends DataSourceInterface {
         if (!self) self = this;
         self.stablecoins = [];
 
-        let response = await self.client.assets.all({ limit: 500 });
-        const allCoins = response.data.data;
+        let n = 500;
+        if( global.DEBUG ) 
+            n = 200;
 
-        allCoins.forEach((coin) => {
-            if (coin.profile.sector == 'Stablecoins' && !global.EXCLUDE_COINS.includes(coin.symbol)) {
+        let response = await self.client.assets.all({ limit: n });
+        const all_coins = response.data.data;
+
+        all_coins.forEach((coin) => {
+            if (coin.profile.sector == 'Stablecoins' && !global.EXCLUDE_LIST.includes(coin.symbol)) {
                 let platforms = [];
 
                 try {
@@ -64,6 +68,7 @@ class MessariInterface extends DataSourceInterface {
                 self.stablecoins.push(scoin);
             } // if is stablecoin
         }); // for each
+        
         return;
     }
 } /* MessariInterface */

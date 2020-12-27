@@ -43,7 +43,7 @@ router.get('/platforms', async (req, res) => {
     Coins
 -----------------------------------------------*/
 router.get('/coins/:symbol', async (req, res) => {
-    console.debug(req.params.symbol);
+    console.debug(`Request for coin page: ${req.params.symbol}`);
     const symbol = req.params.symbol;
     const coin = data.stablecoins.find((p) => p.symbol.toLowerCase() == symbol.toLowerCase());
     let eth_data = data.platform_data.find((chain) => chain.name === 'Ethereum');
@@ -60,8 +60,8 @@ router.get('/coins/:symbol', async (req, res) => {
     Platforms
 -----------------------------------------------*/
 router.get('/platforms/:name', async (req, res) => {
-    console.debug(req.params.name);
-    const name = req.params.name.replace('_', ' ');
+    console.debug(`Request for platform page: ${req.params.name}`);
+    const name = req.params.name.replace('_', ' '); /* had trouble with URL encoding */
     const platform = data.platform_data.find((p) => p.name.toLowerCase() == name.toLowerCase());
     let eth_data = data.platform_data.find((chain) => chain.name === 'Ethereum');
     res.render('platforms', {

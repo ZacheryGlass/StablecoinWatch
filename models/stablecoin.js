@@ -9,16 +9,16 @@ const PInterface = require('../interface/platform');
     MODULE CONSTANTS
 ---------------------------------------------------------*/
 const PLATFORM_API = {
-    Ethereum: new PInterface.Ethereum(),
-    Bitcoin: new PInterface.Bitcoin(),
-    Tron: new PInterface.Tron(),
-    'BNB Chain': new PInterface.BNB(),
-    'Bitcoin Cash': new PInterface.BitcoinCash(),
-    EOS: new PInterface.EOS(),
-    Algorand: new PInterface.Algorand(),
+    'Ethereum':         new PInterface.Ethereum(),
+    'Bitcoin':          new PInterface.Bitcoin(),
+    'Tron':             new PInterface.Tron(),
+    'BNB Chain':        new PInterface.BNB(),
+    'Bitcoin Cash':     new PInterface.BitcoinCash(),
+    'EOS':              new PInterface.EOS(),
+    'Algorand':         new PInterface.Algorand(),
     'Bitcoin (Liquid)': new PInterface.Liquid(),
-    Qtum: new PInterface.Qtum(),
-    Solana: new PInterface.Solana(),
+    'Qtum':             new PInterface.Qtum(),
+    'Solana': 		new PInterface.Solana(),
 };
 
 /*---------------------------------------------------------
@@ -43,6 +43,7 @@ class Stablecoin {
         ----------------------------------------------------*/
         this.cmc = {};
         this.msri = {};
+        this.cgko = {};
         this.scw = {};
         this.main = {};
     } // constructor()
@@ -67,6 +68,12 @@ class Stablecoin {
         this.msri.total_supply_s        = util.toDollarString(this.msri.total_supply);
         this.msri.circulating_supply_s  = util.toDollarString(this.msri.circulating_supply);
         this.msri.volume_s              = util.toDollarString(this.msri.volume);
+
+        this.cgko.total_mcap_s          = util.toDollarString(this.cgko.total_mcap);
+        this.cgko.circulating_mcap_s    = util.toDollarString(this.cgko.circulating_mcap);
+        this.cgko.total_supply_s        = util.toDollarString(this.cgko.total_supply);
+        this.cgko.circulating_supply_s  = util.toDollarString(this.cgko.circulating_supply);
+        this.cgko.volume_s              = util.toDollarString(this.cgko.volume);
 
         this.scw.total_mcap_s           = util.toDollarString(this.scw.total_mcap);
         this.scw.circulating_mcap_s     = util.toDollarString(this.scw.circulating_mcap);
@@ -113,7 +120,7 @@ class Stablecoin {
 
         /*----------------------------------------------------
         set main Circulating Supply source,
-	    used by updatPlatformsSupply()
+	used by updatPlatformsSupply()
         ----------------------------------------------------*/
         this.main.circulating_supply = Number(
             this.cmc.circulating_supply ? this.cmc.circulating_supply : this.msri.circulating_supply
@@ -214,7 +221,7 @@ class Stablecoin {
                     } else {
                         /* Set the explorer URL */
 
-                        platform.contract_url = await PLATFORM_API[platform.name].getExplorerURL(platform.contract_address);
+                        platform.contract_url = PLATFORM_API[platform.name].getExplorerURL(platform.contract_address);
 
                         /* Set the total supply on this platform */
                         let ts = await PLATFORM_API[platform.name].getTokenTotalSupply(platform.contract_address);

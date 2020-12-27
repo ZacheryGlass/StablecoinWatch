@@ -43,8 +43,12 @@ class CoinMarketCapInterface extends DataSourceInterface {
     async sync(self) {
         if (!self) self = this;
 
+        let n = 2000;
+        if( global.DEBUG ) 
+            n = 200;
+
         await self.client
-            .getTickers({ limit: 2000 })
+            .getTickers({ limit: n })
             .then((resp) => {
                 console.info('Built CMC Coin List');
                 self.checkError(resp.status);
@@ -53,12 +57,12 @@ class CoinMarketCapInterface extends DataSourceInterface {
                 CMC doesn't tag all stablecoins correctly so forcefully
                 add to list here coins that are on CMC but not tagged
                 ----------------------------------------------------*/
-                let tickers = ['DAI', 'AMPL', 'SUSD', 'XAUT', 'USDT'];
+                let tickers = global.APPROVE_LIST;
 
                 resp.data.forEach((coin) => {
                     if (
                         (coin.tags.includes('stablecoin-asset-backed') || coin.tags.includes('stablecoin')) &&
-                        !global.EXCLUDE_COINS.includes(coin.symbol)
+                        !global.EXCLUDE_LIST.includes(coin.symbol)
                     )
                         tickers.push(coin.symbol);
                 });
