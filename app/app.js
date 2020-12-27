@@ -3,7 +3,7 @@
 ---------------------------------------------------------*/
 global.fetch = require('node-fetch');
 global.WebSocket = require('ws');
-global.EXCLUDE_LIST = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC', '1GOLD'];
+global.EXCLUDE_LIST = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC', '1GOLD', 'BGBP'];
 global.APPROVE_LIST = ['DAI', 'AMPL', 'SUSD', 'XAUT', 'USDT'];
 
 /*---------------------------------------------------------

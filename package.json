@@ -5,7 +5,7 @@
     "main": "app/app.js",
     "dependencies": {
         "@dfuse/client": "^0.3.17",
-        "@solana/web3.js": "^0.87.1",
+        "@solana/web3.js": "^0.87.2",
         "algosdk": "^1.6.2",
         "coingecko-api": "^1.0.10",
         "coinmarketcap-api": "^3.1.1",

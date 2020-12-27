@@ -138,9 +138,9 @@ class StablecoinWatchInterface extends DataSourceInterface {
         coin.scw.price = Number(self.currency_prices_in_usd.CNY.toFixed(3));
         coin.platforms.push(new Platform(
             'Ethereum',
-            '0x6e109e9dd7fa1a58bc3eff667e8e41fc3cc07aef'
+            '0x6e109e9dd7fa1a58bc3eff667e8e41fc3cc07aef',
             ['0x5754284f345afc66a98fbb0a0afe71e0f007b949']  /* Tether Treasury ERC20 */
-            ));
+        ));
         coin.scw.desc = 'https://wallet.tether.to/transparency';
         coin.img_url = '/tether.png';
         sc.push(coin);
@@ -177,36 +177,10 @@ class StablecoinWatchInterface extends DataSourceInterface {
                 'Ethereum',
                 '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
                 ['0xAa05F7C7eb9AF63D6cC03C36c4f4Ef6c37431EE0'] // Blacklisted: https://www.centre.io/pdfs/attestation/grant-thornton_circle_usdc_reserves_20201123.pdf
-        ));
+            ));
         coin.platforms.push(new Platform('Algorand', '2UEQTE5QDNXPI7M3TU44G6SYKLFWLPQO7EBZM7K7MHMQQMFI4QJPLHQFHM', []));
         coin.platforms.push(new Platform('Solana', 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'));
         sc.push(coin);
-
-        /*-----------------------------------------------
-        HonestCoin
-        -----------------------------------------------*/
-        coin = new Stablecoin();
-        coin.name = 'HonestCoin';
-        coin.symbol = 'USDH';
-        coin.img_url = '/default-logo.png';
-        coin.scw.price = 1;
-        coin.scw.desc = `HonestCoin (USDH) describes themsleves as a fully regulated, 1 to 1 U.S. Dollar-backed
-            stablecoin that can be bought, sold, invested in or spent as freely as you wish.`;
-        coin.platforms.push(
-            new Platform('Bitcoin Cash', 'c4b0d62156b3fa5c8f3436079b5394f7edc1bef5dc1cd2f9d0c4d46f82cca479')
-        );
-        sc.push(coin);
-
-        // /*-----------------------------------------------
-        // Serum
-        // -----------------------------------------------*/
-        // coin = new Stablecoin();
-        // coin.name = 'SerumUSD';
-        // coin.symbol = 'SRM';
-        // coin.scw.desc =
-        //     'SerumUSD is Serum’s SPL and ERC20 USD stablecoin. A decentralized stable coin with no single point of failure.';
-        // coin.platforms.push(new Platform('Ethereum', '0x476c5e26a75bd202a9683ffd34359c0cc15be0ff'));
-        // sc.push(coin);
 
         /*-----------------------------------------------
         Reserve
