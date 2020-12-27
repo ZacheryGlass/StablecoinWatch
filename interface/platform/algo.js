@@ -45,7 +45,7 @@ class AlgorandInterface extends PlatformInterface {
         // record the time of the latest API call
         this.api_calls.unshift( Date.now() );
 
-        if( this.api_calls.length >= MAX_CALLS_PER_SEC) {
+        if( this.api_calls.length > MAX_CALLS_PER_SEC) {
             let ms_since_nth_call = Date.now() - this.api_calls.pop();
             let ms_to_sleep = 5*SECOND - ms_since_nth_call;
             ms_to_sleep = Math.max( ms_to_sleep, 0 );
@@ -118,9 +118,13 @@ class AlgorandInterface extends PlatformInterface {
 
         if (assets.length > 1) {
             throw `Error: Multiple tokens created by this address. Use getTokenSupplyById instead.`;
+        } else if (assets.length == 0 ) {
+            throw `Error: No tokens created by this address.`;
         } else {
+	    
             // get the total number of tokens issued
-            const total_minted = assets[0].params.total / 10 ** assets[0].params.decimals;
+	        const decimals = assets[0].params.decimals;
+            const total_minted = assets[0].params.total / 10 ** decimals;
             const asset_id = assets[0].index;
 
             // check how many tokens are held by the address that created this token.
@@ -129,7 +133,7 @@ class AlgorandInterface extends PlatformInterface {
             if( info.assets.length > 0) {
                 info.assets.forEach( asset => {
                     if( asset[`asset-id`] == asset_id) {
-                        amount_not_yet_issued = asset.amount / 10 ** assets[0].params.decimals;
+                        amount_not_yet_issued = asset.amount / 10 ** decimals;
                     }
                 });
             }
@@ -137,6 +141,88 @@ class AlgorandInterface extends PlatformInterface {
             return total_minted - amount_not_yet_issued;
         }
     }
+
+    /*---------------------------------------------------------
+    Function:    getTokenBalanceAtAddress
+    Description: TODO
+    ---------------------------------------------------------*/
+    async getTokenBalanceAtAddress(creator_address, lookup_address) {
+        let creator_address_info = await this.getAccountInfo(creator_address);
+
+        const assets = creator_address_info['created-assets'];
+	
+	if (assets.length > 1) {
+            throw `Error: Multiple tokens created by this address. Use getTokenBalanceAtAddressByID instead.`;
+        } else if (assets.length == 0 ) {
+            throw `Error: No tokens created by this address.`;
+        } else {
+            const token_id = assets[0].index;
+            const decimals = assets[0].params.decimals;
+            
+            // check how many tokens are held by the lookup_address
+            let balance = 0;
+            let lookup_address_info = await this.getAccountInfo(lookup_address);
+            if( lookup_address_info.assets.length > 0) {
+                lookup_address_info.assets.forEach( asset => {
+                    if( asset[`asset-id`] == token_id) {
+                        balance = asset.amount / 10 ** decimals;
+                    }
+                });
+            }
+            return balance;
+	    }
+    }
+
+    /*---------------------------------------------------------
+    Function:    getTokenBalanceAtAddressByID
+    Description: TODO
+    ---------------------------------------------------------*/
+    async getTokenBalanceAtAddressByID(asset_id, lookup_address) {
+
+        const info = await this.getAssetInfoByID(asset_id);
+        const decimals = info.params.decimals;
+
+        // check how many tokens are held by the lookup_address
+        let balance = 0;
+        let lookup_address_info = await this.getAccountInfo(lookup_address);
+        if( lookup_address_info.assets.length > 0) {
+            lookup_address_info.assets.forEach( asset => {
+                if( asset[`asset-id`] == asset_id) {
+                    balance = asset.amount / 10 ** decimals;
+                }
+            });
+        }
+
+        return balance;
+    }
+
+    /*---------------------------------------------------------
+    Function:    getTokenIdByAddress
+    Description: Get the SINGLE token created by this address
+    Note:        This function will fail the creator_address has
+                 created more than 1 token.
+    ---------------------------------------------------------*/
+    async getTokenIdByAddress(creator_address) {
+        const assets = await this.getTokenIdsByAddress(creator_address);
+
+        if (assets.length > 1) {
+            throw `Error: Multiple tokens created by this address.`;
+        } else if (assets.length == 0 ) {
+            throw `Error: No tokens created by this address.`;
+        } else {
+            return assets[0].index;
+        }
+    }
+
+    /*---------------------------------------------------------
+    Function:    getTokenIdByAddress
+    Description: Get *all* tokens created by this address
+    ---------------------------------------------------------*/
+    async getTokenIdsByAddress(creator_address) {
+        let address_info = await this.getAccountInfo(creator_address);
+        return address_info['created-assets'];
+    }
+
 } /* AlgorandInterface */
 
 /*---------------------------------------------------------
