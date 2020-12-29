@@ -4,7 +4,7 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const PlatformInterface = require('./platform_interface');
+const PlatformInterface = require('../platform_interface');
 const algosdk = require('algosdk');
 const keys = require('../../app/keys');
 const { sleep } = require('../../app/util');

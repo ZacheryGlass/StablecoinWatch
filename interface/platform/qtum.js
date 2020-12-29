@@ -1,4 +1,4 @@
-const PlatformInterface = require('./platform_interface');
+const PlatformInterface = require('../platform_interface');
 
 /*---------------------------------------------------------
     CLASS

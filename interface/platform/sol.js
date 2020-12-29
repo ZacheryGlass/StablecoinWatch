@@ -1,7 +1,7 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const PlatformInterface = require('./platform_interface');
+const PlatformInterface = require('../platform_interface');
 const solanaWeb3 = require('@solana/web3.js');
 
 /*---------------------------------------------------------

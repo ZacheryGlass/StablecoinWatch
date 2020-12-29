@@ -1,7 +1,7 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const PlatformInterface = require('./platform_interface');
+const PlatformInterface = require('../platform_interface');
 const TronWeb = require('tronweb');
 // const TronGrid = require('trongrid');
 // const tronGrid = new TronGrid(tronWeb);

@@ -3,7 +3,7 @@ const CoinMarketCap = require('coinmarketcap-api');
 const Stablecoin = require('../../models/stablecoin');
 const Platform = require('../../models/platform');
 const { urlify } = require('../../app/util');
-const DataSourceInterface = require('./datasource_interface');
+const DataSourceInterface = require('../datasource_interface');
 
 /*---------------------------------------------------------
     CLASS

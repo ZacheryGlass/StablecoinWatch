@@ -1,7 +1,7 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const PlatformInterface = require('./platform_interface');
+const PlatformInterface = require('../platform_interface');
 const keys = require('../../app/keys');
 const Web3 = require('web3');
 const ERC20Contract = require('erc20-contract-js');

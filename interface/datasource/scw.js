@@ -5,7 +5,7 @@ const Stablecoin = require('../../models/stablecoin');
 const Platform = require('../../models/platform');
 const keys = require('../../app/keys');
 const util = require('../../app/util');
-const DataSourceInterface = require('./datasource_interface');
+const DataSourceInterface = require('../datasource_interface');
 
 /*---------------------------------------------------------
     CLASS

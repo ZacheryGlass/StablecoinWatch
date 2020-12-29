@@ -3,15 +3,12 @@
 ---------------------------------------------------------*/
 const util = require('./util');
 const cron = require('node-cron');
-const MSRIInterface = require('../interface/datasource/messari');
-const SCWInterface = require('../interface/datasource/scw');
-const CMCInterface = require('../interface/datasource/cmc');
-const CGKOInterface = require('../interface/datasource/cgko');
+const DSInterface = require('../interface/datasource');
 
 /*---------------------------------------------------------
     MODULE-SCOPED VARIABLES
 ---------------------------------------------------------*/
-let INTF = null;
+let INTF = new Map(); 
 let DATA = {
     stablecoins: [],
     platform_data: [],
@@ -34,12 +31,10 @@ function start(update_rate) {
     /*----------------------------------------------------
     Init datasource APIs
     ----------------------------------------------------*/
-    INTF = {
-        messari: new MSRIInterface(15), // 15 mins
-        coinMarketCap: new CMCInterface(60 * 12), // 12 hours
-        stablecoinWatch: new SCWInterface(60), // 1 hour
-        coinGecko: new CGKOInterface(60), // 1 hour 
-    };
+    INTF.set( 'Messari',         new DSInterface.Messari(15)            ); // 15 mins
+    INTF.set( 'coinMarketCap',   new DSInterface.CoinMarketCap(60 * 12) ); // 12 hours
+    INTF.set( 'stablecoinWatch', new DSInterface.StablecoinWatch(60)    ); // 1 hour
+    INTF.set( 'coinGecko',       new DSInterface.CoinGecko(60)          ); // 1 hour 
 
     /*----------------------------------------------------
     update data for first time
@@ -54,79 +49,99 @@ function start(update_rate) {
 
 /*---------------------------------------------------------
 Function:
-        combineCoins
+        combineCoinLists
 Description:
         Combine the data from mutlipe sources into a
         a single Stablecoin object.
-Node:   This function needs a re-write to be more generic
+Note:   This function takes Map object. That is, (key, value)
+        pairs of which they *key* is the datasource name
+        and the *value* is an array of Stablecoin Objects.
+TODO:   When building the final combined list of stablecoins, 
+        this function will only add coins from the first array
+        in the map, or present in the 'StablecoinWatch' array.
+        Coins that exist in the second coin_list but not the first
+        will not be added to the final return array. This should
+        be reconsidered.
 ---------------------------------------------------------*/
-async function combineCoins(msri_coins_list, cmc_coins_list, cgko_coins_list, scw_coins_list) {
-    /*----------------------------------------------------
-    Loop through each CMC coin
-    ----------------------------------------------------*/
-    cmc_coins_list.forEach((cmc_coin) => {
-        /*----------------------------------------------------
-        for the current cmc coin, check if the same coin exists
-        in the cmc coin list
-        ----------------------------------------------------*/
-        let msri_coin = msri_coins_list.find((c) => c.symbol === cmc_coin.symbol);
-        if (msri_coin) {
-            cmc_coin.msri = msri_coin.msri;
-            msri_coin.platforms.forEach((msri_pltfm) => {
-                let cmc_pltfm = cmc_coin.platforms.find((p) => p.name === msri_pltfm.name);
-                if (!cmc_pltfm) {
-                    cmc_coin.platforms.push(msri_pltfm);
-                }
-            });
-        } // if (msri_coin)
+async function combineCoinLists(coin_lists_map) {
 
-        /*----------------------------------------------------
-        for the current cmc coin, check if the same coin exists
-        in the cgko coin list
-        ----------------------------------------------------*/
-        let cgko_coin = cgko_coins_list.find((c) => c.symbol === cmc_coin.symbol);
-        if (cgko_coin) {
-            cmc_coin.cgko = cgko_coin.cgko;
-            // cgko_coin.platforms.forEach((cgko_pltfm) => {
-            //     let cmc_pltfm = cmc_coin.platforms.find((p) => p.name === cgko_pltfm.name);
-            //     if (!cmc_pltfm) {
-            //         cmc_coin.platforms.push(cgko_pltfm);
-            //     }
-            // });
-        } // if (cgko_coin)
+    let first_datasource = true;
+    let final_coins_list;
+    
+    // loop through each datasource
+    for (const [datasource, coin_list] of coin_lists_map) {
+        
+        if(first_datasource == true) {
+            first_datasource = false;
+            final_coins_list = coin_list;
+            continue;
+        }
 
-        let scw_coin = scw_coins_list.find((c) => c.symbol === cmc_coin.symbol);
-        if (scw_coin) {
-            cmc_coin.scw = scw_coin.scw;
-            if (scw_coin.platforms)
-                scw_coin.platforms.forEach((scw_pltfm) => {
-                    let cmc_pltfm = cmc_coin.platforms.find((p) => p.name === scw_pltfm.name);
-                    if (cmc_pltfm) {
-                        if (scw_pltfm.contract_address) cmc_pltfm.contract_address = scw_pltfm.contract_address;
-                        if (scw_pltfm.exclude_addresses) cmc_pltfm.exclude_addresses = scw_pltfm.exclude_addresses;
-                        if (scw_pltfm.total_supply) cmc_pltfm.total_supply = scw_pltfm.total_supply;
+        final_coins_list.forEach((final_coin) => {
+            /*----------------------------------------------------
+            for each the coin in the final coin list, check if that
+            coin is found in the current datasource's coin list
+            ----------------------------------------------------*/
+            let cur_coin = coin_list.find((c) => c.symbol === final_coin.symbol);
+
+            if (cur_coin) {
+                /*----------------------------------------------------
+                if the same coin symbol is found in the list of coins
+                from this datasource, add the data from this
+                datasource into the final coin from final_coins_list
+                ----------------------------------------------------*/
+                final_coin[datasource] = cur_coin[datasource];
+
+                /*----------------------------------------------------
+                check if the coin data from this datasource contains 
+                any platforms that are not already in the final coin
+                ----------------------------------------------------*/
+                cur_coin.platforms.forEach((cur_pltfm) => {
+                    
+                    let final_pltfm = final_coin.platforms.find((p) => p.name === cur_pltfm.name);
+
+                    if (final_pltfm && datasource == 'StablecoinWatch') {
+                        /*------------------------------------------------------
+                        Same platform found in final coin data and current 
+                        datasouce data for this coin. 
+                        We track contract addresses and exclude addresses 
+                        (for circulating supply) locally. If the datasource is
+                        this application "StablecoinWatch", add this locally
+                        tracked info to this coin's platform data. 
+                        ------------------------------------------------------*/
+                        if (cur_pltfm.contract_address)  final_pltfm.contract_address  = cur_pltfm.contract_address;
+                        if (cur_pltfm.exclude_addresses) final_pltfm.exclude_addresses = cur_pltfm.exclude_addresses;
+                        if (cur_pltfm.total_supply)      final_pltfm.total_supply      = cur_pltfm.total_supply;
                     } else {
-                        cmc_coin.platforms.push(scw_pltfm);
+                        /*------------------------------------------------------
+                        Platform found in current datasource info for this coin,
+                        but not in our final coin info. So add the new platform
+                        to final coin data.
+                        ------------------------------------------------------*/
+                        final_coin.platforms.push(cur_pltfm);
                     }
                 });
-        } // if (scw_coin)
-    });
+            } // if (cur_coin)
+        }); // for each final_coin_list
 
-    /*----------------------------------------------------
-    Check for coins that exist in SCW data but not CMC
-    if found, push to cmc_coins_list
-    ----------------------------------------------------*/
-    scw_coins_list.forEach((scwcoin) => {
-        let cmc_coin = cmc_coins_list.find((c) => c.symbol === scwcoin.symbol);
-        if (!cmc_coin) cmc_coins_list.push(scwcoin);
-    });
+        /*----------------------------------------------------
+        Check for coins that exist in local data but not the
+        combined coin list. if found, push to final_coins_list
+        ----------------------------------------------------*/
+        if(datasource == 'StablecoinWatch') {
+            coin_list.forEach((scwcoin) => {
+                let final_coin = final_coins_list.find((c) => c.symbol === scwcoin.symbol);
+                if (!final_coin) final_coins_list.push(scwcoin);
+            });
+        }
+    } /* for coin_lists_map */
 
     /*----------------------------------------------------
     Update the platform-specific supply data for each coin
     and return the coin list
     ----------------------------------------------------*/
-    return Promise.all(cmc_coins_list.map(async (coin) => coin.updateDerivedMetrics()));
-} // end combineCoins()
+    return Promise.all(final_coins_list.map(async (coin) => coin.updateDerivedMetrics()));
+} // end combineCoinLists()
 
 /*---------------------------------------------------------
 Function:
@@ -138,21 +153,34 @@ Description:
 NOTE:   This function needs a re-write to be more generic
         with regards to multiple API support
 ---------------------------------------------------------*/
-async function fetchStablecoins() {
+async function fetchStablecoins(datasource_map) {
     /*----------------------------------------------------
     Pull new stablecoins data
     ----------------------------------------------------*/
-    let fetching_msri = INTF.messari.getStablecoins();
-    let fetching_cmc = INTF.coinMarketCap.getStablecoins();
-    let fetching_cgko = INTF.coinGecko.getStablecoins();
-    let fetching_scw = INTF.stablecoinWatch.getStablecoins();
+    let datasource_promises = [];
+    let datasource_names = [];
+
+    for (const [datasource_name, datasource_api] of datasource_map) {
+        // each datasource api should implement getStableCoins()
+        // TODO: add a check here to make sure the function is
+        // supported before calling it below
+        // NOTE: getStableCoins() is async, it returns a promise so
+        // we must wait on all the promises before continuing.
+        datasource_names.push( datasource_name );
+        datasource_promises.push( datasource_api.getStableCoins() );
+      }
 
     /*----------------------------------------------------
-    Combined data from multiple interface/datasource
+    Combined data from multiple datasources
     ----------------------------------------------------*/
-    return Promise.all([fetching_msri, fetching_cmc, fetching_cgko, fetching_scw])
-        .then((scoins_arr) => {
-            return combineCoins(scoins_arr[0], scoins_arr[1], scoins_arr[2], scoins_arr[3]);
+    return Promise.all(datasource_promises)
+        .then((datasource_coins_list) => {
+            // assert scoins_arr.length == datasource_names.length
+            let coin_lists = new Map();
+            for( let i = 0; i < datasource_names.length; i++) {
+                coin_lists.set( datasource_names[i], datasource_coins_list[i] );
+            }
+            return combineCoinLists(coin_lists);
         })
         .catch((e) => {
             console.error(e);
@@ -310,7 +338,7 @@ Description:
 ---------------------------------------------------------*/
 async function update() {
     try {
-        let coins = await fetchStablecoins();
+        let coins = await fetchStablecoins(INTF);
         DATA.stablecoins = updateStablecoinData(coins, DATA.stablecoins);
         DATA.metrics = calcMetrics(DATA.stablecoins);
         DATA.platform_data = calcPlatformData(DATA.stablecoins);
