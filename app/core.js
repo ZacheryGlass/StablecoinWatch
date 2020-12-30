@@ -112,7 +112,7 @@ async function combineCoinLists(coin_lists_map) {
                         if (cur_pltfm.contract_address)  final_pltfm.contract_address  = cur_pltfm.contract_address;
                         if (cur_pltfm.exclude_addresses) final_pltfm.exclude_addresses = cur_pltfm.exclude_addresses;
                         if (cur_pltfm.total_supply)      final_pltfm.total_supply      = cur_pltfm.total_supply;
-                    } else {
+                    } else if( !final_pltfm ) {
                         /*------------------------------------------------------
                         Platform found in current datasource info for this coin,
                         but not in our final coin info. So add the new platform
