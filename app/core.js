@@ -3,7 +3,7 @@
 ---------------------------------------------------------*/
 const util = require('./util');
 const cron = require('node-cron');
-const DSInterface = require('../interface/datasource');
+const { CoinGecko, CoinMarketCap, Messari, StablecoinWatch } = require('../interface/datasource');
 
 /*---------------------------------------------------------
     MODULE-SCOPED VARIABLES
@@ -31,10 +31,10 @@ function start(update_rate) {
     /*----------------------------------------------------
     Init datasource APIs
     ----------------------------------------------------*/
-    INTF.set( 'Messari',         new DSInterface.Messari(15)            ); // 15 mins
-    INTF.set( 'coinMarketCap',   new DSInterface.CoinMarketCap(60 * 12) ); // 12 hours
-    INTF.set( 'stablecoinWatch', new DSInterface.StablecoinWatch(60)    ); // 1 hour
-    INTF.set( 'coinGecko',       new DSInterface.CoinGecko(60)          ); // 1 hour 
+    INTF.set( 'CoinMarketCap',   new CoinMarketCap(60 * 12) ); // 12 hours
+    INTF.set( 'Messari',         new Messari(15)            ); // 15 mins
+    INTF.set( 'StablecoinWatch', new StablecoinWatch(60)    ); // 1 hour
+    INTF.set( 'CoinGecko',       new CoinGecko(60)          ); // 1 hour 
 
     /*----------------------------------------------------
     update data for first time
@@ -167,7 +167,7 @@ async function fetchStablecoins(datasource_map) {
         // NOTE: getStableCoins() is async, it returns a promise so
         // we must wait on all the promises before continuing.
         datasource_names.push( datasource_name );
-        datasource_promises.push( datasource_api.getStableCoins() );
+        datasource_promises.push( datasource_api.getStablecoins() );
       }
 
     /*----------------------------------------------------

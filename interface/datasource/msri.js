@@ -5,7 +5,7 @@ const Messari = require('messari-api');
 const { getTokenPlatform } = require('../../app/util');
 const Stablecoin = require('../../models/stablecoin');
 const Platform = require('../../models/platform');
-const DataSourceInterface = require('./datasource_interface');
+const DataSourceInterface = require('../datasource_interface');
 
 /*---------------------------------------------------------
     CLASS

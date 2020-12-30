@@ -2,7 +2,7 @@ const CoinGecko = require('coingecko-api');
 const Stablecoin = require('../../models/stablecoin');
 // const Platform = require('../../models/platform');
 const { urlify, sleep } = require('../../app/util');
-const DataSourceInterface = require('./datasource_interface');
+const DataSourceInterface = require('../datasource_interface');
 
 /*---------------------------------------------------------
     CLASS
