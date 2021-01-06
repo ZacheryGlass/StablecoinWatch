@@ -62,8 +62,8 @@ class BinanceChainInterface extends PlatformInterface {
     Function:    getTokenBalanceAtAddress
     Description: Wrapper function for getTokenBalanceAtAddressBySymbol
     ---------------------------------------------------------*/
-    async getTokenBalanceAtAddress(owner_address, address) {
-        return this.getTokenBalanceAtAddressByAddress(owner_address, address);
+    async getTokenBalanceAtAddress(symbol, address) {
+        return this.getTokenBalanceAtAddressBySymbol(symbol, address);
             
     } // getTokenBalanceAtAddress
 
@@ -97,27 +97,39 @@ class BinanceChainInterface extends PlatformInterface {
     ---------------------------------------------------------*/
     async getTokenBalanceAtAddressBySymbol(symbol, address) {
         return this.rate_limit_fetch(`${this.url}/account/${address}`)
-        .then((resp) => resp.json())
-        .then(data => {
-            let ret = 0;
-            data.balances.forEach( balance => {
-                if (balance.symbol == symbol) 
-                    ret = balance.free;
+            .then((resp) => resp.json())
+            .then(data => {
+                let ret = 0;
+                data.balances.forEach( balance => {
+                    if (balance.symbol == symbol) 
+                        ret = Number(balance.free) + Number(balance.frozen) + Number(balance.locked) ;
+                })
+                return Number(ret);
             })
-            return ret;
-        })
             
     } // getTokenBalanceAtAddressBySymbol
 
 
     /*---------------------------------------------------------
     Function:    getTokenTotalSupply
-    Description: Wrapper function for getTokenTotalSupplyByAddress
+    Description: Wrapper function
     ---------------------------------------------------------*/
-    async getTokenTotalSupply(owner_address) {
-        return this.getTokenTotalSupplyByAddress(owner_address);
+    async getTokenTotalSupply(symbol_or_address) {
+        let ret;
+        try {
+            ret = await this.getTokenTotalSupplyBySymbol(symbol_or_address);
+            if(!ret) ret = await this.getTokenTotalSupplyByAddress(symbol_or_address);
+        } catch {
+            try {
+                ret = await this.getTokenTotalSupplyByAddress(symbol_or_address);
+            } catch (e) {
+                throw new Error( `Cannot find BNB Symbol or Address: ${symbol_or_address}; ${e}`);
+            }
+        }
+        return Number(ret);
 
     } // getTokenTotalSupplyByAddress
+
 
     /*---------------------------------------------------------
     Function:    getTokenTotalSupplyByAddress

@@ -88,7 +88,7 @@ class CoinMarketCapInterface extends DataSourceInterface {
                     scoin.platforms = md.platform
                         ? [
                               new Platform(
-                                  md.platform.name == 'Binance Coin' ? 'BNB Chain' : md.platform.name,
+                                  md.platform.name == 'Binance Coin' ? 'Binance Chain' : md.platform.name,
                                   md.platform.token_address
                               ),
                           ]

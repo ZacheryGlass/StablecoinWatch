@@ -12,7 +12,7 @@ const PLATFORM_API = {
     Ethereum: new PInterface.Ethereum(),
     Bitcoin: new PInterface.Bitcoin(),
     Tron: new PInterface.Tron(),
-    'BNB Chain': new PInterface.BNB(),
+    'Binance Chain': new PInterface.BNB(),
     'Bitcoin Cash': new PInterface.BitcoinCash(),
     EOS: new PInterface.EOS(),
     Algorand: new PInterface.Algorand(),

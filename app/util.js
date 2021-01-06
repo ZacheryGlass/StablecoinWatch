@@ -151,7 +151,7 @@ exports.getTokenPlatform = (token) => {
     } else if (token.toUpperCase().startsWith('TRC')) {
         return 'Tron';
     } else if (token.toUpperCase().startsWith('BEP')) {
-        return 'BNB Chain';
+        return 'Binance Chain';
     } else if (token.toLowerCase() == 'omni') {
         return 'Bitcoin';
     } else if (token.toLowerCase() == 'slp') {

@@ -53,12 +53,17 @@ class StablecoinWatchInterface extends DataSourceInterface {
         /*-----------------------------------------------
         True USD
         -----------------------------------------------*/
+        // audit: Jan. 4, 20201
+        // https://core-api.real-time-attest.trustexplorer.io/TrueUSD/report/adad7a41-b83e-48b9-80db-120b36cb183b
+
+        
         coin = new Stablecoin();
         coin.symbol = 'TUSD';
         coin.platforms.push(new Platform('Ethereum', '0x0000000000085d4780B73119b644AE5ecd22b376'));
         coin.platforms.push(new Platform(
-            'BNB Chain',
-            'bnb100dxzy02a6k7vysc5g4kk4fqamr7jhjg4m83l0', /* TUSDB-888 */
+            'Binance Chain',
+            // 'bnb100dxzy02a6k7vysc5g4kk4fqamr7jhjg4m83l0', /* TUSDB-888 */
+            'TUSDB-888',
             ['bnb100dxzy02a6k7vysc5g4kk4fqamr7jhjg4m83l0', 'bnb1hn8ym9xht925jkncjpf7lhjnax6z8nv24fv2yq']            
             )); 
         sc.push(coin);
@@ -70,8 +75,9 @@ class StablecoinWatchInterface extends DataSourceInterface {
         coin.symbol = 'BUSD';
         coin.platforms.push(new Platform('Ethereum', '0x4fabb145d64652a948d72533023f6e7a623c7c53'));
         coin.platforms.push(new Platform(
-            'BNB Chain',
-            'bnb19v2ayq6k6e5x6ny3jdutdm6kpqn3n6mxheegvj', /* BUSD-BD1 */
+            'Binance Chain',
+            // 'bnb19v2ayq6k6e5x6ny3jdutdm6kpqn3n6mxheegvj', /* BUSD-BD1 */
+            'BUSD-BD1',
             [
                 'bnb19v2ayq6k6e5x6ny3jdutdm6kpqn3n6mxheegvj', /* Binance addresses */
                 'bnb1v8vkkymvhe2sf7gd2092ujc6hweta38xadu2pj', 

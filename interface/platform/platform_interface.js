@@ -51,9 +51,15 @@ class PlatformInterface {
         if (!total_supply) total_supply = await this.getTokenTotalSupply(token_contract_address);
 
         const exclude_total = await Promise.all(
-            exclude_addresses.map((addr) => this.getTokenBalanceAtAddress(token_contract_address, addr))
-        ).then((exclude_amounts) => exclude_amounts.reduce((a, b) => a + b));
-
+            exclude_addresses.map((addr) => {
+                return this.getTokenBalanceAtAddress(token_contract_address, addr)
+            })
+        ).then( (exclude_amounts) => {
+                if( exclude_amounts.length > 1)
+                    return exclude_amounts.reduce((a, b) => a + b);
+                else
+                    return exclude_amounts[0];
+        });
         return total_supply - exclude_total;
     } // total_supply
 }
