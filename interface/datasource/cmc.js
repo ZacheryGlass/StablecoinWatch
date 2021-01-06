@@ -85,14 +85,15 @@ class CoinMarketCapInterface extends DataSourceInterface {
                     let scoin = new Stablecoin();
                     scoin.name = md.name;
                     scoin.symbol = md.symbol;
-                    scoin.platforms = md.platform
-                        ? [
-                              new Platform(
-                                  md.platform.name == 'Binance Coin' ? 'Binance Chain' : md.platform.name,
-                                  md.platform.token_address
-                              ),
-                          ]
-                        : [new Platform(md.name)];
+                    if( md.symbol != 'BUSD' ) /* CMC gives false platform data for BUSD */
+                        scoin.platforms = md.platform
+                            ? [
+                                new Platform(
+                                    md.platform.name == 'Binance Coin' ? 'Binance Chain' : md.platform.name,
+                                    md.platform.token_address
+                                ),
+                            ]
+                            : [new Platform(md.name)];
                     scoin.cmc.desc = urlify(md.description);
                     scoin.cmc.volume = q.quote ? q.quote.USD.volume_24h : null;
                     scoin.img_url = md.logo;

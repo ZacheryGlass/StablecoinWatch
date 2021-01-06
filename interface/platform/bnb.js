@@ -30,10 +30,9 @@ class BinanceChainInterface extends PlatformInterface {
 
     /*---------------------------------------------------------
     Function:
-            getExplorerURL
+            rate_limit_fetch
     Description:
-            Returns a web link the blockchain explorer. 'address'
-            parameter is optional.
+            Fetch slowly
     ---------------------------------------------------------*/
     async rate_limit_fetch(url) {
         await sleep(1000);  /* Binance-Chain API rate limited to 1 call/sec */
@@ -47,12 +46,12 @@ class BinanceChainInterface extends PlatformInterface {
     Function:
             getExplorerURL
     Description:
-            Returns a web link the blockchain explorer. 'address'
+            Returns a web link the blockchain explorer. 'symbol'
             parameter is optional.
     ---------------------------------------------------------*/
-    getExplorerURL(address) {
-        if (address) 
-            return `https://explorer.binance.org/address/${address}`;
+    getExplorerURL(symbol) {
+        if (symbol) 
+            return `https://explorer.binance.org/asset/${symbol}`;
         else
             return `https://explorer.binance.org/`;
     } // getExplorerURL
