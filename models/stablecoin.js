@@ -12,7 +12,7 @@ const PLATFORM_API = {
     'Ethereum':         new PInterface.Ethereum(),
     'Bitcoin':          new PInterface.Bitcoin(),
     'Tron':             new PInterface.Tron(),
-    'BNB Chain':        new PInterface.BNB(),
+    'Binance Chain': new PInterface.BNB(),
     'Bitcoin Cash':     new PInterface.BitcoinCash(),
     'EOS':              new PInterface.EOS(),
     'Algorand':         new PInterface.Algorand(),
@@ -221,7 +221,7 @@ class Stablecoin {
                     } else {
                         /* Set the explorer URL */
 
-                        platform.contract_url = PLATFORM_API[platform.name].getExplorerURL(platform.contract_address);
+                        platform.contract_url = await PLATFORM_API[platform.name].getExplorerURL(platform.contract_address);
 
                         /* Set the total supply on this platform */
                         let ts = await PLATFORM_API[platform.name].getTokenTotalSupply(platform.contract_address);

@@ -4,7 +4,6 @@
     "description": "",
     "main": "app/app.js",
     "dependencies": {
-        "@binance-chain/javascript-sdk": "^4.0.5",
         "@dfuse/client": "^0.3.17",
         "@solana/web3.js": "^0.87.1",
         "algosdk": "^1.6.2",

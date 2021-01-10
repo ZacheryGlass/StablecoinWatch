@@ -54,14 +54,24 @@ class StablecoinWatchInterface extends DataSourceInterface {
         /*-----------------------------------------------
         True USD
         -----------------------------------------------*/
+        // audit: Jan. 4, 20201
+        // https://core-api.real-time-attest.trustexplorer.io/TrueUSD/report/adad7a41-b83e-48b9-80db-120b36cb183b
+
         coin = new Stablecoin();
         coin.symbol = 'TUSD';
         coin.platforms.push(new Platform('Ethereum', '0x0000000000085d4780B73119b644AE5ecd22b376'));
+        coin.platforms.push(new Platform(
+            'Binance Chain',
+            'TUSDB-888',
+            ['bnb100dxzy02a6k7vysc5g4kk4fqamr7jhjg4m83l0', 'bnb1hn8ym9xht925jkncjpf7lhjnax6z8nv24fv2yq']            
+            )); 
         sc.push(coin);
 
         /*-----------------------------------------------
         Binance USD
         -----------------------------------------------*/
+        // audit: https://www.paxos.com/wp-content/uploads/2020/12/BUSD-Examination-Report-November-2020-1.pdf
+
         coin = new Stablecoin();
         coin.symbol = 'BUSD';
         coin.platforms.push(new Platform('Ethereum', '0x4fabb145d64652a948d72533023f6e7a623c7c53'));
