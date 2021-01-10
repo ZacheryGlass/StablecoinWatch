@@ -204,6 +204,3 @@ class BinanceChainInterface extends PlatformInterface {
     EXPORTS
 ---------------------------------------------------------*/
 module.exports = BinanceChainInterface;
-
-// const BNB = new BinanceChainInterface();
-// BNB.getTokenTotalSupplyByAddress('bnb19v2ayq6k6e5x6ny3jdutdm6kpqn3n6mxheegvj', 'bnb19v2ayq6k6e5x6ny3jdutdm6kpqn3n6mxheegvj').then(console.log);
