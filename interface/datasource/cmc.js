@@ -85,7 +85,7 @@ class CoinMarketCapInterface extends DataSourceInterface {
                     let scoin = new Stablecoin();
                     scoin.name = md.name;
                     scoin.symbol = md.symbol;
-                    if( md.symbol != 'BUSD' ) /* CMC gives false platform data for BUSD */
+                    if( md.symbol != 'BUSD' && md.symbol != 'QC') /* CMC gives false platform data for BUSD */
                         scoin.platforms = md.platform
                             ? [
                                 new Platform(
