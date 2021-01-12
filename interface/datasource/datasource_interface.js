@@ -48,7 +48,6 @@ class DataSourceInterface {
     ---------------------------------------------------------*/
     async getStablecoins() {
         if (!this.stablecoins || this.stablecoins.length == 0) {
-            console.warn('getStablecoins: No stablecoins synced, building new list now.');
             await this.sync();
         }
         return this.stablecoins;
