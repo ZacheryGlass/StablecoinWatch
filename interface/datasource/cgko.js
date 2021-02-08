@@ -162,7 +162,7 @@ class CoinGeckoInterface extends DataSourceInterface {
                 //         ),
                 //         ]
                 //     : [new Platform(md.name)];
-                scoin.cgko.desc = urlify(coin.description.en);
+                scoin.cgko.desc = coin.description.en;
                 scoin.cgko.volume = coin.market_data.total_volume.usd;
                 // scoin.img_url = coin.image.small;
                 scoin.cgko.price = coin.market_data.current_price.usd;

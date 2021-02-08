@@ -124,17 +124,25 @@
             /****************************************
                     Description
             *****************************************/
+            /* fix line feed (white space between buttons) */
+            .data-desc     { font-size: 0px; }
+            .data-desc h1 { font-size: 20px; }
+            .data-desc p { font-size: 14px; }
+            /* https://stackoverflow.com/questions/2095886/htmlcss-space-between-input-buttons */
+            
             .desc-bar {
                 background: rgba( 0, 0, 0, 0.5);
                 height: 40px;
                 background: #003c60;
+                overflow-x: visible;
+                overflow-y: hidden;
+                white-space: nowrap;
             }
 
             .bar-btn {
                 height: 100%;
                 font-size: 16px;
                 margin: 0;
-                float: left;
                 background: #007ac1;
                 color: white;
                 border: 1px solid #003c60;
@@ -310,14 +318,11 @@
                     <div class="desc-bar">
                         <% if( coin.msri.desc ) { %>
                             <button id="msri_btn" class="bar-btn" onclick="showDesc('msri')">Messari</button>
-                        <% } %>
-                        <% if( coin.cmc.desc ) { %>
+                        <% } if( coin.cmc.desc ) { %>
                             <button id="cmc_btn" class="bar-btn" onclick="showDesc('cmc')">CoinMarketCap</button>
-                        <% } %>
-                        <% if( coin.cgko.desc ) { %>
+                        <% } if( coin.cgko.desc ) { %>
                             <button id="cgko_btn" class="bar-btn" onclick="showDesc('cgko')">CoinGecko</button>
-                        <% } %>
-                        <% if( coin.scw && coin.scw.desc ) { %>
+                        <% } if( coin.scw && coin.scw.desc ) { %>
                             <button id="scw_btn" class="bar-btn" onclick="showDesc('scw')">Stablecoin Watch</button>
                         <% } %>
                     </div>
