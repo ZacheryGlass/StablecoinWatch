@@ -103,6 +103,8 @@ class StablecoinWatchInterface extends DataSourceInterface {
         coin.platforms.push(
             new Platform('Bitcoin Cash', '9fc89d6b7d5be2eac0b3787c5b8236bca5de641b5bafafc8f450727b63615c11')
         );
+        coin.platforms.push(new Platform('Solana', 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'));
+
         sc.push(coin);
 
         /*-----------------------------------------------
