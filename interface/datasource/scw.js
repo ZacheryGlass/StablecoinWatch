@@ -182,19 +182,7 @@ class StablecoinWatchInterface extends DataSourceInterface {
             ));
         coin.platforms.push(new Platform('Algorand', '2UEQTE5QDNXPI7M3TU44G6SYKLFWLPQO7EBZM7K7MHMQQMFI4QJPLHQFHM', []));
         coin.platforms.push(new Platform('Solana', 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'));
-        sc.push(coin);
-
-        /*-----------------------------------------------
-        Reserve
-        -----------------------------------------------*/
-        coin = new Stablecoin();
-        coin.name = 'Reserve';
-        coin.symbol = 'RSV';
-        coin.img_url = '/default-logo.png';
-        coin.scw.price = 1;
-        coin.scw.desc = `Reserve is a stable cryptocurrency that is economically and legally robust at any scale. Decentralized,
-            100% asset-backed, and funded by top Silicon Valley investors.`;
-        coin.platforms.push(new Platform('Ethereum', '0x1c5857e110cd8411054660f60b5de6a6958cfae2'));
+        coin.platforms.push(new Platform('Stellar', 'GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN'));
         sc.push(coin);
 
         /*-----------------------------------------------
