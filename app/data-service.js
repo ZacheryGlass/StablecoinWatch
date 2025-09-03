@@ -36,11 +36,24 @@ class DataService {
             let totalVolume = 0;
 
             allCoins.forEach((coin) => {
-                if (coin.profile && coin.profile.sector === 'Stablecoins' && !global.EXCLUDE_LIST.includes(coin.symbol)) {
+                if (coin.profile && coin.profile.sector === 'Stablecoins') {
                     let platforms = [];
 
                     try {
-                        if (coin.profile.token_details && coin.profile.token_details.type) {
+                        // Use contract_addresses array if available for detailed platform info
+                        if (coin.profile.contract_addresses && coin.profile.contract_addresses.length > 0) {
+                            const platformMap = new Map();
+                            coin.profile.contract_addresses.forEach((contract) => {
+                                // Convert platform names to friendly format
+                                let platformName = this.getPlatformName(contract.platform);
+                                if (!platformMap.has(platformName)) {
+                                    platformMap.set(platformName, new Platform(platformName));
+                                }
+                            });
+                            platforms = Array.from(platformMap.values());
+                        }
+                        // Fallback to token_details.type if contract_addresses not available
+                        else if (coin.profile.token_details && coin.profile.token_details.type) {
                             const tokenTypes = coin.profile.token_details.type.split(', ');
                             tokenTypes.forEach((tokenType) => {
                                 let platformName = getTokenPlatform(tokenType);
@@ -83,37 +96,17 @@ class DataService {
                         totalVolume += stablecoin.main.volume;
                     }
 
-                    // Set backup data sources for template compatibility
+                    // Add total supply data (using circulating as fallback if y_plus10 not available)
+                    stablecoin.main.total_supply = coin.metrics?.supply?.y_plus10 || coin.metrics?.supply?.circulating || null;
+                    if (stablecoin.main.total_supply) {
+                        stablecoin.main.total_supply_s = this.formatNumber(stablecoin.main.total_supply, false);
+                    }
+
+                    // Set backup data sources for template compatibility (simplified)
                     stablecoin.msri = { ...stablecoin.main };
                     stablecoin.scw = { ...stablecoin.main };
-                    stablecoin.cmc = { ...stablecoin.main }; // Add CMC compatibility  
-                    stablecoin.cgko = { ...stablecoin.main }; // Add CoinGecko compatibility
-                    
-                    // Add formatted string versions for template compatibility
-                    if (stablecoin.msri.circulating_mcap_s) {
-                        stablecoin.msri.circulating_mcap_s = stablecoin.main.circulating_mcap_s;
-                        stablecoin.msri.volume_s = stablecoin.main.volume_s;
-                    }
-                    
-                    if (stablecoin.scw.circulating_supply) {
-                        stablecoin.scw.circulating_supply_s = this.formatNumber(stablecoin.scw.circulating_supply, false);
-                        stablecoin.scw.circulating_mcap_s = stablecoin.main.circulating_mcap_s;
-                    }
-                    
-                    if (stablecoin.cmc.price) {
-                        stablecoin.cmc.circulating_mcap_s = stablecoin.main.circulating_mcap_s;
-                        stablecoin.cmc.volume_s = stablecoin.main.volume_s;
-                        stablecoin.cmc.circulating_supply_s = this.formatNumber(stablecoin.cmc.circulating_supply, false);
-                        stablecoin.cmc.total_supply_s = this.formatNumber(stablecoin.cmc.circulating_supply, false); // Using circulating as total
-                    }
-                    
-                    // Add CoinGecko data compatibility  
-                    if (stablecoin.cgko.price) {
-                        stablecoin.cgko.circulating_mcap_s = stablecoin.main.circulating_mcap_s;
-                        stablecoin.cgko.volume_s = stablecoin.main.volume_s;
-                        stablecoin.cgko.circulating_supply_s = this.formatNumber(stablecoin.cgko.circulating_supply, false);
-                        stablecoin.cgko.total_supply_s = this.formatNumber(stablecoin.cgko.circulating_supply, false);
-                    }
+                    stablecoin.cmc = { ...stablecoin.main };
+                    stablecoin.cgko = { ...stablecoin.main };
 
                     this.stablecoins.push(stablecoin);
                 }
@@ -126,14 +119,8 @@ class DataService {
                 lastUpdated: new Date()
             };
 
-            // Create basic platform_data for template compatibility
-            this.platform_data = [
-                { name: 'Ethereum', mcap_sum: 0, mcap_sum_s: '$0' },
-                { name: 'Tron', mcap_sum: 0, mcap_sum_s: '$0' },
-                { name: 'Binance Chain', mcap_sum: 0, mcap_sum_s: '$0' },
-                { name: 'Solana', mcap_sum: 0, mcap_sum_s: '$0' },
-                { name: 'Algorand', mcap_sum: 0, mcap_sum_s: '$0' }
-            ];
+            // Calculate platform_data dynamically from stablecoins
+            this.platform_data = this.calculatePlatformData();
 
             console.log(`Successfully fetched ${this.stablecoins.length} stablecoins`);
             return this.stablecoins;
@@ -142,6 +129,73 @@ class DataService {
             console.error('Error fetching stablecoin data:', error);
             throw error;
         }
+    }
+
+    /*---------------------------------------------------------
+    Function: calculatePlatformData
+    Description: Calculate aggregated platform data from stablecoins
+    ---------------------------------------------------------*/
+    calculatePlatformData() {
+        const platformMap = new Map();
+
+        this.stablecoins.forEach((stablecoin) => {
+            if (stablecoin.platforms && stablecoin.main.circulating_mcap) {
+                stablecoin.platforms.forEach((platform) => {
+                    if (!platformMap.has(platform.name)) {
+                        platformMap.set(platform.name, {
+                            name: platform.name,
+                            mcap_sum: 0,
+                            coin_count: 0
+                        });
+                    }
+                    
+                    const platformData = platformMap.get(platform.name);
+                    platformData.mcap_sum += stablecoin.main.circulating_mcap;
+                    platformData.coin_count += 1;
+                });
+            }
+        });
+
+        // Convert to array and format
+        const platformArray = Array.from(platformMap.values()).map(platform => ({
+            name: platform.name,
+            mcap_sum: platform.mcap_sum,
+            mcap_sum_s: this.formatNumber(platform.mcap_sum),
+            coin_count: platform.coin_count
+        }));
+
+        // Sort by market cap descending
+        return platformArray.sort((a, b) => b.mcap_sum - a.mcap_sum);
+    }
+
+    /*---------------------------------------------------------
+    Function: getPlatformName
+    Description: Convert Messari platform names to friendly format
+    ---------------------------------------------------------*/
+    getPlatformName(platformId) {
+        const platformMap = {
+            'ethereum': 'Ethereum',
+            'binance-smart-chain': 'Binance Smart Chain',
+            'tron': 'Tron',
+            'solana': 'Solana',
+            'polygon-pos': 'Polygon',
+            'arbitrum-one': 'Arbitrum',
+            'optimistic-ethereum': 'Optimism',
+            'avalanche': 'Avalanche',
+            'xdai': 'Gnosis Chain',
+            'fantom': 'Fantom',
+            'celo': 'Celo',
+            'moonbeam': 'Moonbeam',
+            'cronos': 'Cronos',
+            'near-protocol': 'NEAR Protocol',
+            'harmony-shard-0': 'Harmony',
+            'the-open-network': 'TON',
+            'algorand': 'Algorand',
+            'stellar': 'Stellar',
+            'cardano': 'Cardano'
+        };
+        
+        return platformMap[platformId] || platformId.charAt(0).toUpperCase() + platformId.slice(1).replace(/-/g, ' ');
     }
 
     /*---------------------------------------------------------
