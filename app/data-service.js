@@ -20,6 +20,26 @@ class DataService {
     }
 
     /*---------------------------------------------------------
+    Function: isStablecoin
+    Description: Determine if a coin is a stablecoin using Messari classification
+    ---------------------------------------------------------*/
+    isStablecoin(coin) {
+        // Only use official Messari classification - no fallbacks or patterns
+        
+        // Check sector (v1 API profile.sector)
+        if (coin.profile?.sector === 'Stablecoins') {
+            return true;
+        }
+        
+        // Check sectors array (v2 API misc_data.sectors)
+        if (coin.misc_data?.sectors?.includes('Stablecoins')) {
+            return true;
+        }
+        
+        return false;
+    }
+
+    /*---------------------------------------------------------
     Function: fetchStablecoinData
     Description: Fetch stablecoin data from Messari API
     ---------------------------------------------------------*/
@@ -27,8 +47,9 @@ class DataService {
         try {
             console.log('Fetching stablecoin data from Messari...');
             
-            const limit = global.DEBUG ? 200 : 500;
-            const response = await axios.get(`https://data.messari.io/api/v1/assets?fields=id,slug,symbol,name,metrics,profile&limit=${limit}`);
+            // Use v1 API which has sector classification in profile
+            const limit = global.DEBUG ? 200 : 1000;
+            const response = await axios.get(`https://data.messari.io/api/v1/assets?limit=${limit}`);
             const allCoins = response.data.data;
 
             this.stablecoins = [];
@@ -36,7 +57,7 @@ class DataService {
             let totalVolume = 0;
 
             allCoins.forEach((coin) => {
-                if (coin.profile && coin.profile.sector === 'Stablecoins') {
+                if (this.isStablecoin(coin)) {
                     let platforms = [];
 
                     try {
