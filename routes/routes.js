@@ -17,10 +17,14 @@ const router = express.Router();
 -----------------------------------------------*/
 router.get('/', async (req, res) => {
     const data = global.dataService.getData();
+    // compute ETH totals from platform_data
+    const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
+    const totalETHMCap = eth ? eth.mcap_sum : 0;
+    const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
     res.render('home', {
         data: data,
-        totalETHMCap: 0,
-        totalETHMCap_s: '$0',
+        totalETHMCap,
+        totalETHMCap_s,
         active: 'home',
     });
 }); // home
@@ -30,10 +34,13 @@ router.get('/', async (req, res) => {
 -----------------------------------------------*/
 router.get('/platforms', async (req, res) => {
     const data = global.dataService.getData();
+    const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
+    const totalETHMCap = eth ? eth.mcap_sum : 0;
+    const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
     res.render('chains', {
         data: data,
-        totalETHMCap: 0,
-        totalETHMCap_s: '$0',
+        totalETHMCap,
+        totalETHMCap_s,
         active: 'chains',
     });
 }); // chains
@@ -46,10 +53,13 @@ router.get('/coins/:symbol', async (req, res) => {
     const data = global.dataService.getData();
     const symbol = req.params.symbol;
     const coin = data.stablecoins.find((p) => p.uri === symbol || p.symbol.toLowerCase() === symbol.toLowerCase());
+    const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
+    const totalETHMCap = eth ? eth.mcap_sum : 0;
+    const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
     res.render('coins', {
         data: data,
-        totalETHMCap: 0,
-        totalETHMCap_s: '$0',
+        totalETHMCap,
+        totalETHMCap_s,
         coin: coin,
         active: '',
     });
@@ -63,10 +73,13 @@ router.get('/platforms/:name', async (req, res) => {
     const data = global.dataService.getData();
     const name = req.params.name.replace('_', ' ');
     // For now, platforms functionality is simplified since we don't have blockchain integration
+    const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
+    const totalETHMCap = eth ? eth.mcap_sum : 0;
+    const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
     res.render('platforms', {
         data: data,
-        totalETHMCap: 0,
-        totalETHMCap_s: '$0',
+        totalETHMCap,
+        totalETHMCap_s,
         platform: { name: name, stablecoins: [] },
         active: '',
     });
@@ -77,10 +90,13 @@ router.get('/platforms/:name', async (req, res) => {
 -----------------------------------------------*/
 router.get('/donate', async (req, res) => {
     const data = global.dataService.getData();
+    const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
+    const totalETHMCap = eth ? eth.mcap_sum : 0;
+    const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
     res.render('donate', {
         data: data,
-        totalETHMCap: 0,
-        totalETHMCap_s: '$0',
+        totalETHMCap,
+        totalETHMCap_s,
         active: 'donate',
     });
 }); // donate
