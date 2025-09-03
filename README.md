@@ -1,27 +1,73 @@
-# StablecoinWatch
+# StablecoinWatch v2
 https://www.StablecoinWatch.com
 
-### Description
-StablecoinWatch is a data aggregation site that track the issuance of stablecoins across various blockchain platforms, including stablecoins that are issued on more than one platform. StablecoinWatch uses a variety of data sources including reading data directly from the blockchain itself via 3rd party node providers.
+StablecoinWatch v2 is a lightweight web app that lists and explores stablecoins using Messari’s Stablecoins Metrics API. The v2 backend is a clean rewrite around `@messari/sdk` and Express, focusing on reliability and simplicity.
 
-### The following external sources are used for price and other coin data:
-* CoinMarketCap
-* CoinGecko
-* Messari
+What’s in v2
+- Backend rewritten to use Messari’s official SDK (`@messari/sdk`).
+- Canonical stablecoin list from `GET /metrics/v2/stablecoins`.
+- Batched hydration of asset details via Messari Asset endpoints.
+- Server-rendered UI using EJS templates.
+- Scheduled refresh every 15 minutes.
 
-### The following APIs are used to track issuance on individual blockchains:
-| Blockchain | API | Provider |
-| :--- | :--- | :--- |
-| Algorand	| [Algod V2](https://developer.algorand.org/docs/reference/rest-apis/algod/v2/) | [Purestake]( https://www.purestake.com/) |
-| Bitcoin (Liquid)	| [Blockstream AMP](https://docs.blockstream.com/blockstream-amp/api-specification.html) | [Blockstream](https://blockstream.com/) |
-| Bitcoin (Omni)	| [OmniAPI](https://api.omniexplorer.info/) | [omniexplorer.info]( https://www.omniexplorer.info/) |
-| Bitcoin Cash	| [Bitcoin.com REST API](https://rest.bitcoin.com/) | [Bitcoin.com]( https://www.bitcoin.com/) |
-| Binance Chain	| [Binance Chain API](https://docs.binance.org/api-reference/dex-api/paths.html) | [binance.org](https://www.binance.org/en) |
-| EOS		| [dfuse for EOSIO]( https://docs.dfuse.io/eosio/public-apis/reference/graphql-api/) | [EOS Nation](https://eosnation.io/) |
-| Ethereum	|[web3.js](https://web3js.readthedocs.io/en/v1.3.4/) | [Infura](https://infura.io/) |
-| Qtum		|[qtuminfo API](https://github.com/qtumproject/qtuminfo-api) | [Qtum.info](https://qtum.info/) |
-| Solana		|[Solana web3.js](https://solana-labs.github.io/solana-web3.js/) | [Project Serum](https://projectserum.com/) |
-| Stellar		|[Horizon](https://developers.stellar.org/api) |  [Stellar Development Foundation](https://www.stellar.org/foundation) |
-| Tron		|[TronWeb](https://developers.tron.network/reference) | [TronGrid](https://www.trongrid.io/) |
+Stack
+- Node.js + Express
+- EJS (server-side templates)
+- `@messari/sdk` (Messari API client)
+
+Data Source
+- Messari Stablecoins Metrics API and Asset APIs
+  - Docs: see `docs/messari/stablecoin_api_reference.md`
+
+Environment
+- `MESSARI_API_KEY` (required)
+  - Obtain from Messari. Set it before starting the app.
+
+Quick Start
+- Install dependencies: `npm install`
+- Set env var:
+  - PowerShell: `$env:MESSARI_API_KEY = 'YOUR_KEY'`
+  - CMD: `set MESSARI_API_KEY=YOUR_KEY`
+- Run: `npm start`
+- Default port: `3000` (override with `PORT`)
+
+Project Structure
+- `app/app.js` – Express app bootstrap, cron scheduling, and route wiring
+- `app/data-service.js` – Messari integration and data shaping
+- `routes/routes.js` – Page routes
+- `models/` – Simple view models (`stablecoin`, `platform`)
+- `views/` – EJS views and partials
+- `res/` – Static assets (css/js/images)
+- `docs/messari/` – Stablecoins API reference
+
+How It Works
+- On boot and every 15 minutes:
+  - Fetch stablecoin slugs from Messari `/metrics/v2/stablecoins`.
+  - Batch-hydrate asset details via `client.asset.getAssetDetails({ slugs })`.
+  - Shape each stablecoin for the UI (`coin.main`, `coin.msri`, `coin.scw`).
+  - Compute aggregate totals and platform rollups.
+
+Routes
+- `/` – Home, table of stablecoins (price, market cap, volume)
+- `/coins/:symbol` – Coin details page
+- `/platforms` – Platform summary list
+- `/platforms/:name` – Platform detail page (basic view)
+
+Config & Tuning
+- `PORT` – Web server port (default: 3000)
+- `MESSARI_API_KEY` – Required for all data
+- Update refresh cadence in `app/app.js` via `MINS_BETWEEN_UPDATE`
+
+Notes & Limitations
+- v2 uses Messari as the single source of truth for listing and market metrics.
+- Some per-chain contract links/supply breakdowns may be missing if not available in Messari profiles; the UI will gracefully fall back when data is absent.
+
+Troubleshooting
+- Empty list or startup error: ensure `MESSARI_API_KEY` is set and valid.
+- Rate limits or 4xx responses: check Messari plan and usage.
+- Local network issues: verify outbound HTTPS access.
+
+Contributing
+- PRs welcome. Keep changes focused and consistent with the current style.
 
 
