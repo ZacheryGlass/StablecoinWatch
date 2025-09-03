@@ -1,8 +1,6 @@
 /*---------------------------------------------------------
     GLOBALS SETTINGS
 ---------------------------------------------------------*/
-global.fetch = require('node-fetch');
-global.WebSocket = require('ws');
 global.EXCLUDE_LIST = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC', '1GOLD', 'BGBP'];
 global.APPROVE_LIST = ['DAI', 'AMPL', 'SUSD', 'XAUT', 'USDT'];
 
@@ -10,9 +8,10 @@ global.APPROVE_LIST = ['DAI', 'AMPL', 'SUSD', 'XAUT', 'USDT'];
     IMPORTS
 ---------------------------------------------------------*/
 const express = require('express');
-path = require('path');
+const path = require('path');
+const cron = require('node-cron');
 const routes = require('../routes/routes');
-const { start } = require('./core');
+const DataService = require('./data-service');
 
 /*---------------------------------------------------------
     CONSTANTS
@@ -21,9 +20,29 @@ const MINS_BETWEEN_UPDATE = 15;
 const PORT = process.env.PORT || 3000;
 
 /*---------------------------------------------------------
+    DATA SERVICE SETUP
+---------------------------------------------------------*/
+const dataService = new DataService();
+global.dataService = dataService;
+
+// Initial data fetch
+dataService.fetchStablecoinData().catch(error => {
+    console.error('Initial data fetch failed:', error);
+});
+
+/*---------------------------------------------------------
+    SCHEDULED UPDATES
+---------------------------------------------------------*/
+cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, () => {
+    console.log('Running scheduled data update...');
+    dataService.fetchStablecoinData().catch(error => {
+        console.error('Scheduled data fetch failed:', error);
+    });
+});
+
+/*---------------------------------------------------------
     APP SETUP
 ---------------------------------------------------------*/
-start(MINS_BETWEEN_UPDATE);
 const app = express();
 app.set('view engine', 'ejs');
 app.use(express.static(path.join(__dirname, '../res/css')));
