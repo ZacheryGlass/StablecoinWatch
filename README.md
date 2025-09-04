@@ -21,7 +21,7 @@ Data Source
 
 Environment
 - `MESSARI_API_KEY` (required)
-  - Obtain from Messari. Set it before starting the app.
+  - Place it in a `.env` file (see `.env.example`) or set as an environment variable. The app loads `.env` via `dotenv`.
 
 Quick Start
 - Install dependencies: `npm install`
