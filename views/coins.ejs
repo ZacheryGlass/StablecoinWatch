@@ -240,7 +240,9 @@
                     <canvas id="supply_chart" width="40" height="40"></canvas>
                 </section>
                 <section class="data-hd">
-                    <img class="coin_logo" src="<%= coin.img_url %>" alt="" /><h2><%= coin.name %></h2>
+                    <% let img = coin.img_url; %>
+                    <% if(!img) img = '/default-logo.png'; %>
+                    <img class="coin_logo" src="<%= img %>" alt="" /><h2><%= coin.name %></h2>
                     <h3>(<%= coin.symbol %>)</h3>
                 </section>
 

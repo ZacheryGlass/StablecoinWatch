@@ -42,6 +42,9 @@ class DataService {
         this.transformAssets(assets);
         this.platform_data = this.calculatePlatformData();
         this.metrics.lastUpdated = new Date().toISOString();
+        // add formatted header metrics
+        this.metrics.totalMCap_s = this.formatNumber(this.metrics.totalMCap);
+        this.metrics.totalVolume_s = this.formatNumber(this.metrics.totalVolume);
 
         console.log(`Stablecoins fetched: ${this.stablecoins.length}`);
         return this.stablecoins;
