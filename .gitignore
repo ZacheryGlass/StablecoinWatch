@@ -48,3 +48,6 @@ temp/
 CLAUDE.md
 AGENTS.md
 .claude/
+
+# Ignore ad-hoc GitHub issue/PR body files
+.github/
