@@ -53,6 +53,8 @@ fetch(url, options)
 
 This endpoint returns a list of all available timeseries metrics for stablecoins.
 
+**⚠️ NOTE: This endpoint requires a Messari Enterprise membership and cannot be used with standard API keys.**
+
 **Endpoint:**
 ```
 GET https://api.messari.io/metrics/v2/stablecoins/metrics
@@ -95,6 +97,8 @@ fetch(url, options)
 ### 3. Stablecoin Timeseries Metric
 
 This endpoint returns data points for a chosen timeseries metric set, which can be either core or a breakdown by network. It is typically used for exporting complete data series or for graphical visualizations.
+
+**⚠️ NOTE: This endpoint requires a Messari Enterprise membership and cannot be used with standard API keys.**
 
 **Endpoint:**
 ```

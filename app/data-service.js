@@ -25,61 +25,167 @@ class DataService {
 
     /*---------------------------------------------------------
     Public: fetchStablecoinData
-    Description: Fetch stablecoins from Messari Stablecoins endpoint, hydrate with asset details
+    Description: Fetch stablecoins directly from Messari Stablecoins endpoint
     ---------------------------------------------------------*/
     async fetchStablecoinData() {
-        if (!this.MESSARI_API_KEY) throw new Error('Missing MESSARI_API_KEY');
+        if (!this.MESSARI_API_KEY) {
+            console.warn('Missing MESSARI_API_KEY - cannot fetch stablecoin data');
+            return this.stablecoins;
+        }
 
-        console.log('Fetching Messari stablecoins via @messari/sdk ...');
-        // 1) Get canonical list of stablecoins
-        const slugs = await this.getStablecoinSlugsFromMetrics();
-        if (!Array.isArray(slugs) || slugs.length === 0) throw new Error('No stablecoins returned');
+        try {
+            console.log('Fetching Messari stablecoins via @messari/sdk ...');
+            
+            // Get stablecoin data directly from the stablecoins endpoint
+            const stablecoinsData = await this.getStablecoinDataFromMetrics();
+            if (!Array.isArray(stablecoinsData) || stablecoinsData.length === 0) {
+                console.warn('No stablecoins returned from API');
+                return this.stablecoins;
+            }
 
-        // 2) Hydrate with v2 asset details (profiles + market data)
-        const assets = await this.fetchAssetsBySlugs(slugs);
+            // Transform the stablecoin data
+            this.transformStablecoinData(stablecoinsData);
+            this.platform_data = this.calculatePlatformData();
+            this.metrics.lastUpdated = new Date().toISOString();
+            
+            // Add formatted header metrics
+            this.metrics.totalMCap_s = this.formatNumber(this.metrics.totalMCap);
+            this.metrics.totalVolume_s = this.formatNumber(this.metrics.totalVolume);
 
-        // 3) Transform → Stablecoin[] and aggregate metrics
-        this.transformAssets(assets);
-        this.platform_data = this.calculatePlatformData();
-        this.metrics.lastUpdated = new Date().toISOString();
-        // add formatted header metrics
-        this.metrics.totalMCap_s = this.formatNumber(this.metrics.totalMCap);
-        this.metrics.totalVolume_s = this.formatNumber(this.metrics.totalVolume);
-
-        console.log(`Stablecoins fetched: ${this.stablecoins.length}`);
-        return this.stablecoins;
+            console.log(`✓ Successfully fetched ${this.stablecoins.length} stablecoins`);
+            return this.stablecoins;
+            
+        } catch (error) {
+            console.error('Error fetching stablecoin data:', error.message);
+            console.error('Stack trace:', error.stack);
+            return this.stablecoins; // Return existing data if available
+        }
     }
 
     /*---------------------------------------------------------
-    Internal: getStablecoinSlugsFromMetrics (uses client.request)
+    Internal: getStablecoinDataFromMetrics (uses client.request)
     ---------------------------------------------------------*/
-    async getStablecoinSlugsFromMetrics() {
-        // SDK currently does not expose Stablecoins endpoints; use client.request directly
+    async getStablecoinDataFromMetrics() {
+        console.log('Calling /metrics/v2/stablecoins endpoint...');
         const path = '/metrics/v2/stablecoins';
         const data = await this.client.request({ method: 'GET', path });
-        const list = Array.isArray(data?.data) ? data.data : data; // handle wrapped/unwrapped
-        const slugs = (list || [])
-            .map((item) => item?.slug || item?.id || item?.symbol?.toLowerCase())
-            .filter(Boolean);
-        return Array.from(new Set(slugs));
-    }
-
-    /*---------------------------------------------------------
-    Internal: fetchAssetsBySlugs (batches)
-    ---------------------------------------------------------*/
-    async fetchAssetsBySlugs(slugs) {
-        const results = [];
-        for (let i = 0; i < slugs.length; i += this.BATCH_SIZE) {
-            const batch = slugs.slice(i, i + this.BATCH_SIZE).join(',');
-            const resp = await this.client.asset.getAssetDetails({ slugs: batch });
-            const items = resp?.data || resp || [];
-            results.push(...items);
+        
+        // Handle different response structures
+        const list = Array.isArray(data?.data) ? data.data : data;
+        console.log(`Raw API response contains ${list ? list.length : 0} stablecoins`);
+        
+        if (list && list.length > 0) {
+            console.log('Sample stablecoin data structure:', Object.keys(list[0]));
         }
-        return results;
+        
+        return list || [];
     }
 
     /*---------------------------------------------------------
-    Internal: transform Messari assets → Stablecoin list
+    Internal: transformStablecoinData - Convert API data to app format
+    ---------------------------------------------------------*/
+    transformStablecoinData(stablecoinsData) {
+        this.stablecoins = [];
+        this.metrics.totalMCap = 0;
+        this.metrics.totalVolume = 0;
+
+        console.log(`Transforming ${stablecoinsData.length} stablecoins...`);
+
+        for (const stablecoin of stablecoinsData) {
+            if (!stablecoin) continue;
+
+            const sc = new Stablecoin();
+            sc.name = stablecoin.name || stablecoin.slug || stablecoin.symbol || '';
+            sc.symbol = stablecoin.symbol || '';
+            sc.uri = (stablecoin.slug || stablecoin.symbol || '').toLowerCase();
+
+            // Use available data from the stablecoins endpoint
+            const supply = stablecoin.supply || {};
+            const circulating = typeof supply.circulating === 'number' ? supply.circulating : null;
+            const total = typeof supply.total === 'number' ? supply.total : null;
+            
+            // For now, set price to $1 (typical for stablecoins) and calculate basic metrics
+            const price = 1.0; // Most stablecoins target $1
+            const mcap = circulating ? circulating * price : null;
+
+            sc.main = {
+                price: price,
+                circulating_mcap: mcap,
+                circulating_mcap_s: this.formatNumber(mcap),
+                volume_24h: null, // Not available in stablecoins endpoint
+            };
+
+            // Extract platforms from networkBreakdown if available
+            sc.platforms = this.extractPlatformsFromNetworkBreakdown(stablecoin);
+
+            // Populate compatibility fields used by views
+            sc.msri = {
+                price: price,
+                circulating_mcap_s: this.formatNumber(mcap),
+                total_supply_s: this.formatNumber(total, false),
+                circulating_supply_s: this.formatNumber(circulating, false),
+                volume_s: 'No data',
+                desc: `${stablecoin.name} is a stablecoin tracked by Messari.`,
+            };
+
+            sc.scw = {
+                price: price,
+                circulating_mcap_s: this.formatNumber(mcap),
+                total_supply_s: this.formatNumber(total, false),
+                circulating_supply_s: this.formatNumber(circulating, false),
+                volume_s: 'No data',
+                circulating_supply: circulating,
+            };
+
+            // Ensure other sources exist to avoid template errors
+            if (!sc.cmc) sc.cmc = {};
+            if (!sc.cgko) sc.cgko = {};
+
+            // Add to totals
+            if (typeof mcap === 'number') this.metrics.totalMCap += mcap;
+
+            this.stablecoins.push(sc);
+        }
+
+        // Sort by market cap
+        this.stablecoins.sort((a, b) => (b.main.circulating_mcap || 0) - (a.main.circulating_mcap || 0));
+        console.log(`✓ Transformed ${this.stablecoins.length} stablecoins`);
+    }
+
+    /*---------------------------------------------------------
+    Internal: extractPlatformsFromNetworkBreakdown
+    ---------------------------------------------------------*/
+    extractPlatformsFromNetworkBreakdown(stablecoin) {
+        const platforms = [];
+        
+        try {
+            const networkBreakdown = stablecoin.networkBreakdown || [];
+            if (Array.isArray(networkBreakdown)) {
+                const platformNames = new Set();
+                networkBreakdown.forEach(network => {
+                    if (network.network) {
+                        const readable = this.readablePlatform(network.network.toLowerCase());
+                        platformNames.add(readable);
+                    }
+                });
+                
+                platformNames.forEach(name => {
+                    platforms.push(new Platform(name));
+                });
+            }
+        } catch (error) {
+            console.warn('Error extracting platforms:', error.message);
+        }
+        
+        if (platforms.length === 0) {
+            platforms.push(new Platform('Unknown'));
+        }
+        
+        return platforms;
+    }
+
+    /*---------------------------------------------------------
+    Internal: Legacy transformAssets method (kept for compatibility)
     ---------------------------------------------------------*/
     transformAssets(assets) {
         this.stablecoins = [];
@@ -155,7 +261,7 @@ class DataService {
     }
 
     /*---------------------------------------------------------
-    Internal: extractPlatforms from asset profile
+    Internal: Legacy extractPlatforms method (kept for compatibility)
     ---------------------------------------------------------*/
     extractPlatforms(asset) {
         const out = [];
