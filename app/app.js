@@ -11,7 +11,7 @@ const express = require('express');
 const path = require('path');
 const cron = require('node-cron');
 const routes = require('../routes/routes');
-const DataService = require('./data-service');
+const HybridStablecoinService = require('./hybrid-stablecoin-service');
 
 /*---------------------------------------------------------
     CONSTANTS
@@ -22,7 +22,7 @@ const PORT = process.env.PORT || 3000;
 /*---------------------------------------------------------
     DATA SERVICE SETUP
 ---------------------------------------------------------*/
-const dataService = new DataService();
+const dataService = new HybridStablecoinService();
 global.dataService = dataService;
 
 // Initial data fetch
