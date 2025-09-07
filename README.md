@@ -33,7 +33,7 @@ Quick Start
 
 Project Structure
 - `app/app.js` – Express app bootstrap, cron scheduling, and route wiring
-- `app/data-service.js` – Messari integration and data shaping
+- `app/hybrid-stablecoin-service.js` – Hybrid data service combining CoinMarketCap and Messari APIs
 - `routes/routes.js` – Page routes
 - `models/` – Simple view models (`stablecoin`, `platform`)
 - `views/` – EJS views and partials
