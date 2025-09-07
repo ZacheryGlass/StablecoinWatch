@@ -66,8 +66,8 @@ class ServiceContainer {
         // Initialize an app-level source for request monitoring
         try { healthMonitor.initializeSource('app'); } catch (_) {}
 
-        // Initial data fetch
-        dataService.fetchStablecoinData().catch(err => {
+        // Initial data refresh
+        dataService.refreshData().catch(err => {
             console.error('Initial data fetch failed:', err);
         });
 
@@ -75,7 +75,7 @@ class ServiceContainer {
         const intervalMins = AppConfig.dataUpdate.intervalMinutes;
         const job = cron.schedule(`*/${intervalMins} * * * *`, () => {
             console.log('Running scheduled data update...');
-            dataService.fetchStablecoinData().catch(error => {
+            dataService.refreshData().catch(error => {
                 console.error('Scheduled data fetch failed:', error);
             });
         });
