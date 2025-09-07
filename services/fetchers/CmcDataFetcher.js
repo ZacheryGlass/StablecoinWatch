@@ -93,7 +93,7 @@ class CmcDataFetcher extends IDataFetcher {
             });
 
             console.log(`[CMC] Filtered stablecoins: ${stablecoins.length}`);
-            const sample = stablecoins.slice(0, 5).map(c => ({ sym: c.symbol, platform: c.platform?.name || null }));
+            const sample = stablecoins.slice(0, 5).map(c => ({ sym: c.symbol, platform: c.platform?.name || null, tags: c.tags?.slice(0,5) || [] }));
             console.log(`[CMC] Sample platforms (raw):`, sample);
 
             if (this.healthMonitor) {

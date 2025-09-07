@@ -102,7 +102,7 @@ class HybridTransformer {
         const platforms = [];
         const seen = new Set();
         try {
-            if (Array.isArray(hybrid.networkBreakdown)) {
+            if (Array.isArray(hybrid.networkBreakdown) && hybrid.networkBreakdown.length > 0) {
                 console.log(`[Transformer] Using networkBreakdown for ${hybrid.symbol}:`, hybrid.networkBreakdown.map(n=>n.network||n.name));
                 hybrid.networkBreakdown.forEach(network => {
                     const raw = network.network || network.name;
@@ -121,7 +121,7 @@ class HybridTransformer {
                     seen.add(normalized);
                     platforms.push(new Platform(normalized));
                 }
-            } else if (Array.isArray(hybrid.tags)) {
+            } else if (Array.isArray(hybrid.tags) && hybrid.tags.length > 0) {
                 console.log(`[Transformer] Using tags fallback for ${hybrid.symbol}:`, hybrid.tags);
                 const platformTags = hybrid.tags.filter(tag =>
                     tag.includes('ethereum') || tag.includes('binance') || tag.includes('solana') ||

@@ -97,52 +97,64 @@ class MessariDataFetcher extends IDataFetcher {
 
     transformToStandardFormat(rawData) {
         const ts = Date.now();
-        const out = (rawData || []).map((m) => ({
-            sourceId: this.sourceId,
-            id: m.id,
-            name: m.name,
-            symbol: m.symbol,
-            slug: (m.slug || m.symbol || '').toLowerCase(),
-            marketData: {
-                price: 1.0,
-                marketCap: m.supply?.circulating ? m.supply.circulating * 1.0 : null,
-                volume24h: null,
-                percentChange24h: null,
-                rank: null,
-            },
-            supplyData: {
-                circulating: m.supply?.circulating ?? null,
-                total: m.supply?.total ?? null,
-                max: m.supply?.max ?? null,
-                networkBreakdown: Array.isArray(m.networkBreakdown)
-                    ? m.networkBreakdown.filter(n => !!(n.network || n.name)).map(n => ({
+        const out = (rawData || []).map((m) => {
+            // Try multiple common field names for network breakdown across Messari responses
+            const nbRaw = m.networkBreakdown || m.network_breakdown || m.breakdown || m.networks || m.chains || m.platforms;
+            let nbArray = Array.isArray(nbRaw) ? nbRaw : [];
+            if (!Array.isArray(nbArray) && typeof nbRaw === 'object' && nbRaw) {
+                try { nbArray = Object.values(nbRaw).flat(); } catch (_) { nbArray = []; }
+            }
+            if (!nbArray || nbArray.length === 0) {
+                try { console.log('[Messari] No network breakdown detected. keys=', Object.keys(m)); } catch (_) {}
+            }
+            const standardized = {
+                sourceId: this.sourceId,
+                id: m.id,
+                name: m.name,
+                symbol: m.symbol,
+                slug: (m.slug || m.symbol || '').toLowerCase(),
+                marketData: {
+                    price: 1.0,
+                    marketCap: m.supply?.circulating ? m.supply.circulating * 1.0 : null,
+                    volume24h: null,
+                    percentChange24h: null,
+                    rank: null,
+                },
+                supplyData: {
+                    circulating: m.supply?.circulating ?? null,
+                    total: m.supply?.total ?? null,
+                    max: m.supply?.max ?? null,
+                    networkBreakdown: Array.isArray(nbArray)
+                        ? nbArray.filter(n => !!(n.network || n.name)).map(n => ({
+                            name: n.network || n.name,
+                            network: n.network || n.name || null,
+                            contractAddress: n.contract || n.contract_address || null,
+                            supply: n.supply ?? n.amount ?? null,
+                            percentage: n.share ?? n.percentage ?? null,
+                        }))
+                        : [],
+                },
+                platforms: Array.isArray(nbArray)
+                    ? nbArray.filter((n) => !!(n.network || n.name)).map((n) => ({
                         name: n.network || n.name,
-                        network: n.network || n.name || null,
-                        contractAddress: n.contract || null,
-                        supply: n.supply ?? null,
-                        percentage: n.share ?? null,
+                        network: n.network || n.name,
+                        contractAddress: n.contract || n.contract_address || null,
+                        supply: n.supply ?? n.amount ?? null,
+                        percentage: n.share ?? n.percentage ?? null,
                     }))
                     : [],
-            },
-            platforms: Array.isArray(m.networkBreakdown)
-                ? m.networkBreakdown.filter((n) => !!n.network).map((n) => ({
-                    name: n.network,
-                    network: n.network,
-                    contractAddress: n.contract || null,
-                    supply: n.supply ?? null,
-                    percentage: n.share ?? null,
-                }))
-                : [],
-            metadata: {
-                tags: Array.isArray(m.tags) ? m.tags : ['stablecoin'],
-                description: m.profile?.general?.overview?.project_details || null,
-                website: m.profile?.general?.overview?.official_links?.[0]?.link || null,
-                logoUrl: m.profile?.images?.logo || null,
-                dateAdded: null,
-            },
-            confidence: 0.85,
-            timestamp: ts,
-        }));
+                metadata: {
+                    tags: Array.isArray(m.tags) ? m.tags : ['stablecoin'],
+                    description: m.profile?.general?.overview?.project_details || null,
+                    website: m.profile?.general?.overview?.official_links?.[0]?.link || null,
+                    logoUrl: m.profile?.images?.logo || null,
+                    dateAdded: null,
+                },
+                confidence: 0.85,
+                timestamp: ts,
+            };
+            return standardized;
+        });
         const withPlfm = out.filter(o => (o.supplyData.networkBreakdown && o.supplyData.networkBreakdown.length) || (o.platforms && o.platforms.length)).length;
         console.log(`[Messari] Standardized count=${out.length}, withPlatforms=${withPlfm}`);
         return out;
