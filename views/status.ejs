@@ -30,12 +30,15 @@
     <%- include('partials/header') %>
 
     <main>
+        <% function badgeClass(s) { 
+            const map = { healthy: 'healthy', degraded: 'degraded', critical: 'critical', down: 'down' };
+            return map[s] || 'degraded';
+        } %>
         <section class="status-header">
             <div class="card">
                 <h2>System Status</h2>
                 <% if (health && !health.error) { %>
                     <div>
-                        <% const badgeClass = (s) => ({healthy:'healthy', degraded:'degraded', critical:'critical', down:'down'})[s] || 'degraded'; %>
                         <span class="badge <%= badgeClass(health.status) %>"><%= health.status.toUpperCase() %></span>
                     </div>
                     <p class="note">Overall score: <strong><%= health.overallScore %></strong> • Healthy sources: <strong><%= health.metrics.healthySourceCount %></strong>/<%= health.metrics.sourceCount %> • Uptime: <%= health.uptime %></p>
@@ -116,4 +119,3 @@
 </div>
 </body>
 </html>
-
