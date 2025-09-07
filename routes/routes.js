@@ -37,6 +37,37 @@ router.get('/', async (req, res) => {
 }); // home
 
 /*-----------------------------------------------
+    Status Page (HTML)
+-----------------------------------------------*/
+router.get('/status', async (req, res) => {
+    const data = global.dataService.getData();
+    const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
+    const totalETHMCap = eth ? eth.mcap_sum : 0;
+    const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
+
+    let health = null;
+    try {
+        health = global.healthMonitor ? await global.healthMonitor.getSystemHealth() : null;
+    } catch (e) {
+        health = { error: e?.message || 'Unable to retrieve health' };
+    }
+
+    res.render('status', {
+        data,
+        totalETHMCap,
+        totalETHMCap_s,
+        health,
+        active: 'status',
+        formatter: {
+            formatNumber: require('../app/util').formatNumber,
+            formatPrice: require('../app/util').formatPrice,
+            formatPercentage: require('../app/util').formatPercentage,
+            formatSupply: require('../app/util').formatSupply
+        }
+    });
+}); // status
+
+/*-----------------------------------------------
     Health (JSON)
 -----------------------------------------------*/
 router.get('/api/health', async (req, res) => {
