@@ -102,7 +102,7 @@
                                     </li>
                                     <li><%= p.mcap_sum_s %></li>
                                     <% let pct = ( p.mcap_sum / data.metrics.totalMCap ) * 100; %>
-                                    <li><%=(pct).toFixed(2)%>%</li>
+                                    <li><%= formatter.formatPercentage(pct, 2) %></li>
                                 </ul>
                             </article>
                         <% } %><!-- for -->
@@ -136,13 +136,13 @@
                         <% let top_5_total = 0; %>
                         <% for (let i = 0; i < data.platform_data.length; i++) { %>
                             <% if( i < 5 ) { %>
-                                <% let pct = Number((( data.platform_data[i].mcap_sum / data.metrics.totalMCap ) * 100).toFixed(2)) %>
+                                <% let pct = Number(formatter.formatNumber((( data.platform_data[i].mcap_sum / data.metrics.totalMCap ) * 100), 2)) %>
                                 <% top_5_total += pct %>
                                 <%= pct %>,
                             <% } else { break; } %>
                         <% } %>
                         <% if (data.platform_data.length > 5 ) { %>
-                            <%= (100-top_5_total).toFixed(2) %>,
+                            <%= formatter.formatNumber((100-top_5_total), 2) %>,
                         <% } %>
 
                     ],

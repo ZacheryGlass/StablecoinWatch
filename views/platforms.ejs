@@ -123,11 +123,7 @@
 
                                 <!-- price -->
                                 <% if (coin.main.price) { %>
-                                    <% if (coin.main.price < 10) { %>
-                                        <li>$<%= coin.main.price.toFixed(3) %></li>
-                                    <% } else { %>
-                                        <li>$<%= coin.main.price.toFixed(2) %></li>
-                                    <% } %>        
+                                    <li><%= formatter.formatPrice(coin.main.price) %></li>      
                                 <% } else { %>
                                     <li>No data</li>
                                 <% } %>
@@ -141,7 +137,7 @@
 
                                 <!-- % of total coin's market cap on this platform -->
                                 <% if (coin_plfm.circulating_supply && coin.scw.circulating_supply) { %>
-                                    <li><%= ((coin_plfm.circulating_supply / coin.scw.circulating_supply)*100).toFixed(2) %>%</li>
+                                    <li><%= formatter.formatPercentage((coin_plfm.circulating_supply / coin.scw.circulating_supply)*100, 2) %></li>
                                 <% } else { %>
                                         <li>No data</li>
                                 <% } %>

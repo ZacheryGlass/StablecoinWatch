@@ -52,6 +52,65 @@ exports.toDollarString = (v) => {
 
 /*---------------------------------------------------------
 Function:
+	formatNumber
+Description:
+	Format numbers with consistent comma separators and decimals
+---------------------------------------------------------*/
+exports.formatNumber = (value, decimals = 0) => {
+    if (value === null || value === undefined || typeof value !== 'number' || isNaN(value)) {
+        return 'No data';
+    }
+    
+    return new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+    }).format(value);
+}; // formatNumber()
+
+/*---------------------------------------------------------
+Function:
+	formatPrice
+Description:
+	Format stablecoin prices with 3 decimal places for consistency
+---------------------------------------------------------*/
+exports.formatPrice = (value) => {
+    if (value === null || value === undefined || typeof value !== 'number' || isNaN(value)) {
+        return 'No data';
+    }
+    
+    return `$${exports.formatNumber(value, 3)}`;
+}; // formatPrice()
+
+/*---------------------------------------------------------
+Function:
+	formatPercentage
+Description:
+	Format percentages with consistent decimal places
+---------------------------------------------------------*/
+exports.formatPercentage = (value, decimals = 2) => {
+    if (value === null || value === undefined || typeof value !== 'number' || isNaN(value)) {
+        return 'No data';
+    }
+    
+    return `${exports.formatNumber(value, decimals)}%`;
+}; // formatPercentage()
+
+/*---------------------------------------------------------
+Function:
+	formatSupply
+Description:
+	Format token supply numbers with comma separators, no decimals
+---------------------------------------------------------*/
+exports.formatSupply = (value) => {
+    if (value === null || value === undefined || typeof value !== 'number' || isNaN(value)) {
+        return 'No data';
+    }
+    
+    return exports.formatNumber(value, 0);
+}; // formatSupply()
+
+/*---------------------------------------------------------
+Function:
     sortObjByNumProperty
 
 Description:

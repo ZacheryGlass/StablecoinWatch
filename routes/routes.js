@@ -2,6 +2,7 @@
     IMPORTS
 ---------------------------------------------------------*/
 const express = require('express');
+const util = require('../app/util');
 
 /*---------------------------------------------------------
     constants
@@ -26,6 +27,12 @@ router.get('/', async (req, res) => {
         totalETHMCap,
         totalETHMCap_s,
         active: 'home',
+        formatter: {
+            formatNumber: util.formatNumber,
+            formatPrice: util.formatPrice,
+            formatPercentage: util.formatPercentage,
+            formatSupply: util.formatSupply
+        }
     });
 }); // home
 
@@ -42,6 +49,12 @@ router.get('/platforms', async (req, res) => {
         totalETHMCap,
         totalETHMCap_s,
         active: 'chains',
+        formatter: {
+            formatNumber: util.formatNumber,
+            formatPrice: util.formatPrice,
+            formatPercentage: util.formatPercentage,
+            formatSupply: util.formatSupply
+        }
     });
 }); // chains
 
@@ -62,6 +75,12 @@ router.get('/coins/:symbol', async (req, res) => {
         totalETHMCap_s,
         coin: coin,
         active: '',
+        formatter: {
+            formatNumber: util.formatNumber,
+            formatPrice: util.formatPrice,
+            formatPercentage: util.formatPercentage,
+            formatSupply: util.formatSupply
+        }
     });
 }); // coins
 
@@ -103,6 +122,12 @@ router.get('/platforms/:name', async (req, res) => {
         totalETHMCap_s,
         platform: { name: platformName, stablecoins: [] },
         active: '',
+        formatter: {
+            formatNumber: util.formatNumber,
+            formatPrice: util.formatPrice,
+            formatPercentage: util.formatPercentage,
+            formatSupply: util.formatSupply
+        }
     });
 }); // platforms
 
@@ -119,6 +144,12 @@ router.get('/donate', async (req, res) => {
         totalETHMCap,
         totalETHMCap_s,
         active: 'donate',
+        formatter: {
+            formatNumber: util.formatNumber,
+            formatPrice: util.formatPrice,
+            formatPercentage: util.formatPercentage,
+            formatSupply: util.formatSupply
+        }
     });
 }); // donate
 

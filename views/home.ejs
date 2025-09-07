@@ -178,11 +178,7 @@
 
                                 <!-- price -->
                                 <% if (coin.main.price) { %>
-                                    <% if (coin.main.price < 10) { %>
-                                        <li>$<%= coin.main.price.toFixed(3) %></li>
-                                    <% } else { %>
-                                        <li>$<%= coin.main.price.toFixed(2) %></li>
-                                    <% } %>        
+                                    <li><%= formatter.formatPrice(coin.main.price) %></li>      
                                 <% } else { %>
                                     <li>No data</li>
                                 <% } %>
@@ -199,7 +195,7 @@
                                 <!-- market cap dominance -->
                                 <% if (coin.main.circulating_mcap && data.metrics.totalMCap) { %>
                                     <li class='mcap_dom'>
-                                        <%= ((coin.main.circulating_mcap/data.metrics.totalMCap)*100).toFixed(2) %>%
+                                        <%= formatter.formatPercentage((coin.main.circulating_mcap/data.metrics.totalMCap)*100, 2) %>
                                     </li>
                                 <% } else { %>
                                     <li class='mcap_dom'>
@@ -223,15 +219,15 @@
                                                 <li class="p_grid">
                                                     <% if (j == 2 && coin.platforms.length > 3) { %>
                                                         <a href="/coins/<%= coin.uri %>"><div class="a">Other:</div></a>
-                                                        <a href="/coins/<%= coin.uri %>"><div class="b"><%= (100-sum).toFixed(1)%>%</div></a>
+                                                        <a href="/coins/<%= coin.uri %>"><div class="b"><%= formatter.formatPercentage(100-sum, 1) %></div></a>
                                                     <% } else { %>
                                                         <div class="a"> <%= platform.name %>: </div>
                                                         <div class="b">
                                                             <% if (platform.circulating_supply && coin.main.circulating_supply) { %>
                                                                 <% let pct =  Math.min(100, ((platform.circulating_supply / coin.scw.circulating_supply) * 100))%>
                                                                 <% sum += pct; %>
-                                                                <%=pct.toFixed(1) %>%
-                                                            <% } else { %>  ?% <% } %>
+                                                                <%= formatter.formatPercentage(pct, 1) %>
+                                                            <% } else { %>  No data <% } %>
                                                         </div>
                                                     <% } %>
                                                 </li>

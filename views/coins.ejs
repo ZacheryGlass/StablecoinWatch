@@ -381,7 +381,7 @@
                     data: [
                         <% for (let i = 0; i < coin.platforms.length; i++) { %>
                             <% if( typeof(coin.platforms[i].circulating_supply) == 'number') { %>
-                                <%= ((coin.platforms[i].circulating_supply/coin.scw.circulating_supply)*100).toFixed(2) %>,
+                                <%= formatter.formatNumber(((coin.platforms[i].circulating_supply/coin.scw.circulating_supply)*100), 2) %>,
                             <% } else { %>
                                 undefined,
                             <% } %>
