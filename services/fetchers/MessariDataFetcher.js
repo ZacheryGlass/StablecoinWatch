@@ -1,4 +1,5 @@
 const { MessariClient } = require('@messari/sdk');
+const axios = require('axios');
 const IDataFetcher = require('../../interfaces/IDataFetcher');
 const ApiConfig = require('../../config/ApiConfig');
 
@@ -65,8 +66,7 @@ class MessariDataFetcher extends IDataFetcher {
 
         try {
             const path = this.config?.endpoints?.stablecoinMetrics || '/metrics/v2/stablecoins';
-            const data = await this.client.request({ method: 'GET', path });
-            const list = Array.isArray(data?.data) ? data.data : data;
+            const list = await this._fetchStablecoinMetrics(path);
 
             if (this.healthMonitor) {
                 await this.healthMonitor.recordSuccess(sourceId, {
@@ -91,6 +91,31 @@ class MessariDataFetcher extends IDataFetcher {
             }
             throw error;
         }
+    }
+
+    /**
+     * Wrapper for Messari stablecoins metrics endpoint.
+     * Tries the SDK request first, then falls back to Axios using ApiConfig.
+     * Always returns an array (possibly empty).
+     * @private
+     */
+    async _fetchStablecoinMetrics(path) {
+        if (this.client && typeof this.client.request === "function") {
+            try {
+                const sdkData = await this.client.request({ method: "GET", path });
+                return Array.isArray(sdkData?.data) ? sdkData.data : (Array.isArray(sdkData) ? sdkData : []);
+            } catch (_) {
+                // fallback to axios
+            }
+        }
+        const baseUrl = this.config?.baseUrl || 'https://api.messari.io';
+        const url = `${baseUrl}${path}`;
+        const headers = { ...(this.config?.request?.headers || {}), 'x-messari-api-key': this.config?.apiKey };
+        const timeout = this.config?.request?.timeout;
+        const resp = await axios.get(url, { headers, timeout });
+        const data = resp?.data;
+        const list = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
+        return list || [];
     }
 
     transformToStandardFormat(rawData) {
