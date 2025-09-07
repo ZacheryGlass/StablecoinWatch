@@ -137,6 +137,13 @@ class CmcDataFetcher extends IDataFetcher {
                     : coin.circulating_supply ?? null,
                 total: coin.total_supply ?? null,
                 max: coin.max_supply ?? null,
+                networkBreakdown: coin.platform ? [{
+                    name: coin.platform.name || 'Unknown',
+                    network: coin.platform.slug || coin.platform.symbol || null,
+                    contractAddress: coin.platform.token_address || null,
+                    supply: null,
+                    percentage: null,
+                }] : [],
             },
             platforms: coin.platform ? [{
                 name: coin.platform.name || 'Unknown',
@@ -176,4 +183,3 @@ class CmcDataFetcher extends IDataFetcher {
 }
 
 module.exports = CmcDataFetcher;
-

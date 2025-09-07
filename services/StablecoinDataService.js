@@ -1,6 +1,5 @@
 const IStablecoinDataService = require('../interfaces/IStablecoinDataService');
 const DataFetcherRegistry = require('./DataFetcherRegistry');
-const ApiConfig = require('../config/ApiConfig');
 const AppConfig = require('../config/AppConfig');
 const HybridStablecoinService = require('../app/hybrid-stablecoin-service');
 

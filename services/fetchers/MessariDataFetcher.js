@@ -112,6 +112,15 @@ class MessariDataFetcher extends IDataFetcher {
                 circulating: m.supply?.circulating ?? null,
                 total: m.supply?.total ?? null,
                 max: m.supply?.max ?? null,
+                networkBreakdown: Array.isArray(m.networkBreakdown)
+                    ? m.networkBreakdown.filter(n => !!(n.network || n.name)).map(n => ({
+                        name: n.network || n.name,
+                        network: n.network || n.name || null,
+                        contractAddress: n.contract || null,
+                        supply: n.supply ?? null,
+                        percentage: n.share ?? null,
+                    }))
+                    : [],
             },
             platforms: Array.isArray(m.networkBreakdown)
                 ? m.networkBreakdown.filter((n) => !!n.network).map((n) => ({
@@ -153,4 +162,3 @@ class MessariDataFetcher extends IDataFetcher {
 }
 
 module.exports = MessariDataFetcher;
-

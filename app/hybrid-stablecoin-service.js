@@ -1,11 +1,9 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const axios = require('axios');
 const Stablecoin = require('../models/stablecoin');
 const Platform = require('../models/platform');
 const AppConfig = require('../config/AppConfig');
-const ApiConfig = require('../config/ApiConfig');
 const DataFetcherRegistry = require('../services/DataFetcherRegistry');
 
 /*---------------------------------------------------------
@@ -19,12 +17,6 @@ class HybridStablecoinService {
         this.metrics = { totalMCap: 0, totalVolume: 0, lastUpdated: null };
         this.healthMonitor = healthMonitor;
 
-        // Centralized API configuration (read-only)
-        this.api = {
-            cmc: ApiConfig.getApiConfig('cmc') || {},
-            messari: ApiConfig.getApiConfig('messari') || {}
-        };
-
         // Initialize fetcher registry (pluggable sources)
         this.fetcherRegistry = DataFetcherRegistry.createDefault(this.healthMonitor);
 
@@ -36,8 +28,7 @@ class HybridStablecoinService {
         // Initialize health monitoring sources
         if (this.healthMonitor) {
             try {
-                this.healthMonitor.initializeSource('cmc');
-                this.healthMonitor.initializeSource('messari');
+                this.healthMonitor.initializeSource('app');
             } catch (_) { /* ignore */ }
         }
     }
@@ -95,25 +86,7 @@ class HybridStablecoinService {
 
     // fetching is delegated to pluggable fetchers via the registry
 
-    /*---------------------------------------------------------
-    Internal: Error categorization helpers for health monitor
-    ---------------------------------------------------------*/
-    categorizeError(error) {
-        if (!error) return 'unknown';
-        const status = error?.response?.status;
-        if (status === 401 || status === 403) return 'auth';
-        if (status === 404) return 'not_found';
-        if (status === 429) return 'rate_limit';
-        if (status >= 500) return 'server';
-        if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) return 'timeout';
-        if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') return 'network';
-        return 'unknown';
-    }
-
-    isRetryable(error) {
-        const type = this.categorizeError(error);
-        return ['timeout', 'network', 'server', 'rate_limit'].includes(type);
-    }
+    // Error categorization helpers are handled within individual fetchers
 
     /*---------------------------------------------------------
     Internal: mergeStablecoinData
