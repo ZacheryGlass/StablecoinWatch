@@ -1,12 +1,12 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-const { MessariClient } = require('@messari/sdk');
 const axios = require('axios');
 const Stablecoin = require('../models/stablecoin');
 const Platform = require('../models/platform');
 const AppConfig = require('../config/AppConfig');
 const ApiConfig = require('../config/ApiConfig');
+const DataFetcherRegistry = require('../services/DataFetcherRegistry');
 
 /*---------------------------------------------------------
     HYBRID STABLECOIN SERVICE CLASS
@@ -19,25 +19,14 @@ class HybridStablecoinService {
         this.metrics = { totalMCap: 0, totalVolume: 0, lastUpdated: null };
         this.healthMonitor = healthMonitor;
 
-        // Centralized API configuration
+        // Centralized API configuration (read-only)
         this.api = {
             cmc: ApiConfig.getApiConfig('cmc') || {},
             messari: ApiConfig.getApiConfig('messari') || {}
         };
-        this.MESSARI_API_KEY = this.api.messari?.apiKey || '';
-        this.CMC_API_KEY = this.api.cmc?.apiKey || '';
 
-        if (!this.CMC_API_KEY && this.api.cmc?.enabled) {
-            console.warn('CMC_API_KEY not set. Will only fetch Messari data.');
-        }
-        if (!this.MESSARI_API_KEY && this.api.messari?.enabled) {
-            console.warn('MESSARI_API_KEY not set. Will only fetch CMC data.');
-        }
-
-        // Initialize Messari client
-        if (this.MESSARI_API_KEY) {
-            this.messariClient = new MessariClient({ apiKey: this.MESSARI_API_KEY });
-        }
+        // Initialize fetcher registry (pluggable sources)
+        this.fetcherRegistry = DataFetcherRegistry.createDefault(this.healthMonitor);
 
         // Matching/processing configuration from AppConfig
         this.MATCH_THRESHOLD = AppConfig.dataProcessing.matchThreshold;
@@ -61,11 +50,12 @@ class HybridStablecoinService {
         console.log('🚀 Starting hybrid stablecoin data fetch...');
         
         try {
-            // Fetch data from both APIs in parallel
-            const [cmcData, messariData] = await Promise.allSettled([
-                this.fetchCmcStablecoins(),
-                this.fetchMessariStablecoins()
-            ]);
+            // Fetch data from registered fetchers in parallel
+            const cmcFetcher = this.fetcherRegistry.get('cmc');
+            const messariFetcher = this.fetcherRegistry.get('messari');
+            const cmcPromise = cmcFetcher && cmcFetcher.isConfigured() ? cmcFetcher.fetchStablecoins() : Promise.resolve([]);
+            const messariPromise = messariFetcher && messariFetcher.isConfigured() ? messariFetcher.fetchStablecoins() : Promise.resolve([]);
+            const [cmcData, messariData] = await Promise.allSettled([cmcPromise, messariPromise]);
 
             // Process results
             const cmcStablecoins = cmcData.status === 'fulfilled' ? cmcData.value : [];
@@ -75,10 +65,10 @@ class HybridStablecoinService {
             console.log(`✓ Messari: ${messariStablecoins.length} stablecoins`);
 
             if (cmcData.status === 'rejected') {
-                console.error('CMC API failed:', cmcData.reason.message);
+                console.error('CMC API failed:', cmcData.reason?.message || cmcData.reason);
             }
             if (messariData.status === 'rejected') {
-                console.error('Messari API failed:', messariData.reason.message);
+                console.error('Messari API failed:', messariData.reason?.message || messariData.reason);
             }
 
             // Merge the datasets
@@ -103,145 +93,7 @@ class HybridStablecoinService {
         }
     }
 
-    /*---------------------------------------------------------
-    Internal: fetchCmcStablecoins
-    Description: Fetch stablecoins from CoinMarketCap API
-    ---------------------------------------------------------*/
-    async fetchCmcStablecoins() {
-        const startTime = Date.now();
-        const sourceId = 'cmc';
-
-        if (!this.CMC_API_KEY) {
-            console.log('⏭️  Skipping CMC fetch (no API key)');
-            return [];
-        }
-
-        console.log('📊 Fetching stablecoins from CoinMarketCap...');
-
-        // Circuit breaker gating
-        if (this.healthMonitor) {
-            try {
-                const h = await this.healthMonitor.getSourceHealth(sourceId);
-                const cb = h && h.circuitBreaker;
-                if (cb && cb.state === 'open' && cb.nextRetryTime && Date.now() < cb.nextRetryTime) {
-                    console.warn(`⛔ CMC circuit open; skipping call until ${new Date(cb.nextRetryTime).toISOString()}`);
-                    return [];
-                }
-            } catch (_) { /* unknown source is fine */ }
-        }
-        try {
-            const baseUrl = this.api.cmc?.baseUrl || 'https://pro-api.coinmarketcap.com';
-            const url = `${baseUrl}/v1/cryptocurrency/listings/latest`;
-            const headers = {
-                'Accepts': 'application/json',
-                'X-CMC_PRO_API_KEY': this.CMC_API_KEY,
-            };
-            
-            const parameters = {
-                start: '1',
-                limit: '5000',
-                aux: 'tags'
-            };
-
-            const timeout = this.api.cmc?.request?.timeout || AppConfig.api.defaultTimeout;
-            const response = await axios.get(url, { headers, params: parameters, timeout });
-            const data = response.data;
-
-            if (!data.data) {
-                throw new Error('No data received from CoinMarketCap API');
-            }
-
-            // Filter for stablecoins by tag and price range (exclude obvious non-stablecoins)
-            const stablecoins = data.data.filter(crypto => {
-                const hasStablecoinTag = crypto.tags && crypto.tags.includes('stablecoin');
-                const price = crypto.quote?.USD?.price;
-                const isReasonablePrice = !price || (price >= this.PRICE_RANGE.min && price <= this.PRICE_RANGE.max);
-                return hasStablecoinTag && isReasonablePrice;
-            });
-
-            console.log(`✓ CMC returned ${stablecoins.length} tagged stablecoins`);
-
-            if (this.healthMonitor) {
-                await this.healthMonitor.recordSuccess(sourceId, {
-                    operation: 'fetchStablecoins',
-                    duration: Date.now() - startTime,
-                    recordCount: stablecoins.length,
-                    timestamp: Date.now()
-                });
-            }
-            return stablecoins;
-        } catch (error) {
-            if (this.healthMonitor) {
-                await this.healthMonitor.recordFailure(sourceId, {
-                    operation: 'fetchStablecoins',
-                    errorType: this.categorizeError(error),
-                    message: error?.message || 'CMC fetch error',
-                    statusCode: error?.response?.status,
-                    retryable: this.isRetryable(error),
-                    timestamp: Date.now()
-                });
-            }
-            throw error;
-        }
-    }
-
-    /*---------------------------------------------------------
-    Internal: fetchMessariStablecoins  
-    Description: Fetch stablecoins from Messari API
-    ---------------------------------------------------------*/
-    async fetchMessariStablecoins() {
-        const startTime = Date.now();
-        const sourceId = 'messari';
-
-        if (!this.MESSARI_API_KEY) {
-            console.log('⏭️  Skipping Messari fetch (no API key)');
-            return [];
-        }
-
-        console.log('📈 Fetching stablecoins from Messari...');
-
-        // Circuit breaker gating
-        if (this.healthMonitor) {
-            try {
-                const h = await this.healthMonitor.getSourceHealth(sourceId);
-                const cb = h && h.circuitBreaker;
-                if (cb && cb.state === 'open' && cb.nextRetryTime && Date.now() < cb.nextRetryTime) {
-                    console.warn(`⛔ Messari circuit open; skipping call until ${new Date(cb.nextRetryTime).toISOString()}`);
-                    return [];
-                }
-            } catch (_) { /* unknown source is fine */ }
-        }
-        try {
-            const path = '/metrics/v2/stablecoins';
-            const data = await this.messariClient.request({ method: 'GET', path });
-            
-            const list = Array.isArray(data?.data) ? data.data : data;
-            console.log(`✓ Messari returned ${list ? list.length : 0} stablecoins`);
-
-            if (this.healthMonitor) {
-                await this.healthMonitor.recordSuccess(sourceId, {
-                    operation: 'fetchStablecoins',
-                    duration: Date.now() - startTime,
-                    recordCount: Array.isArray(list) ? list.length : 0,
-                    timestamp: Date.now()
-                });
-            }
-            
-            return list || [];
-        } catch (error) {
-            if (this.healthMonitor) {
-                await this.healthMonitor.recordFailure(sourceId, {
-                    operation: 'fetchStablecoins',
-                    errorType: this.categorizeError(error),
-                    message: error?.message || 'Messari fetch error',
-                    statusCode: error?.response?.status,
-                    retryable: this.isRetryable(error),
-                    timestamp: Date.now()
-                });
-            }
-            throw error;
-        }
-    }
+    // fetching is delegated to pluggable fetchers via the registry
 
     /*---------------------------------------------------------
     Internal: Error categorization helpers for health monitor

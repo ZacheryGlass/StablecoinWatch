@@ -20,7 +20,7 @@ const express = require('express');
 const path = require('path');
 const cron = require('node-cron');
 const createRoutes = require('../routes/routes');
-const HybridStablecoinService = require('./hybrid-stablecoin-service');
+const ServiceFactory = require('../services/ServiceFactory');
 const HealthMonitor = require('../services/HealthMonitor');
 const AppConfig = require('../config/AppConfig');
 const ApiConfig = require('../config/ApiConfig');
@@ -116,7 +116,7 @@ class ServiceContainer {
 // Instantiate container and register services
 const container = new ServiceContainer();
 const healthMonitor = new HealthMonitor();
-const dataService = new HybridStablecoinService(healthMonitor);
+const dataService = ServiceFactory.createDataService(healthMonitor);
 container.register('healthMonitor', healthMonitor)
          .register('dataService', dataService);
 
