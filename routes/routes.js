@@ -7,6 +7,8 @@ const util = require('../app/util');
 /*---------------------------------------------------------
     constants
 ---------------------------------------------------------*/
+// Factory to create router with injected services
+module.exports = (services) => {
 const router = express.Router();
 
 /*---------------------------------------------------------
@@ -17,7 +19,8 @@ const router = express.Router();
     Home (Coins List)
 -----------------------------------------------*/
 router.get('/', async (req, res) => {
-    const data = global.dataService.getData();
+    const svc = services || req.services || {};
+    const data = svc.dataService.getData();
     // compute ETH totals from platform_data
     const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
     const totalETHMCap = eth ? eth.mcap_sum : 0;
@@ -40,14 +43,15 @@ router.get('/', async (req, res) => {
     Status Page (HTML)
 -----------------------------------------------*/
 router.get('/status', async (req, res) => {
-    const data = global.dataService.getData();
+    const svc = services || req.services || {};
+    const data = svc.dataService.getData();
     const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
     const totalETHMCap = eth ? eth.mcap_sum : 0;
     const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
 
     let health = null;
     try {
-        health = global.healthMonitor ? await global.healthMonitor.getSystemHealth() : null;
+        health = svc.healthMonitor ? await svc.healthMonitor.getSystemHealth() : null;
     } catch (e) {
         health = { error: e?.message || 'Unable to retrieve health' };
     }
@@ -72,10 +76,11 @@ router.get('/status', async (req, res) => {
 -----------------------------------------------*/
 router.get('/api/health', async (req, res) => {
     try {
-        if (!global.healthMonitor) {
+        const svc = services || req.services || {};
+        if (!svc.healthMonitor) {
             return res.status(503).json({ error: 'Health monitor not initialized' });
         }
-        const health = await global.healthMonitor.getSystemHealth();
+        const health = await svc.healthMonitor.getSystemHealth();
         res.json(health);
     } catch (err) {
         res.status(500).json({ error: err?.message || 'Failed to get health' });
@@ -86,7 +91,8 @@ router.get('/api/health', async (req, res) => {
     Platforms List
 -----------------------------------------------*/
 router.get('/platforms', async (req, res) => {
-    const data = global.dataService.getData();
+    const svc = services || req.services || {};
+    const data = svc.dataService.getData();
     const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
     const totalETHMCap = eth ? eth.mcap_sum : 0;
     const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
@@ -109,7 +115,8 @@ router.get('/platforms', async (req, res) => {
 -----------------------------------------------*/
 router.get('/coins/:symbol', async (req, res) => {
     console.debug(`Request for coin page: ${req.params.symbol}`);
-    const data = global.dataService.getData();
+    const svc = services || req.services || {};
+    const data = svc.dataService.getData();
     const symbol = req.params.symbol;
     const coin = data.stablecoins.find((p) => p.uri === symbol || p.symbol.toLowerCase() === symbol.toLowerCase());
     const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
@@ -135,7 +142,8 @@ router.get('/coins/:symbol', async (req, res) => {
 -----------------------------------------------*/
 router.get('/platforms/:name', async (req, res) => {
     console.debug(`Request for platform page: ${req.params.name}`);
-    const data = global.dataService.getData();
+    const svc = services || req.services || {};
+    const data = svc.dataService.getData();
 
     // Normalize route param (accept hyphens and underscores)
     const paramSlug = String(req.params.name || '').toLowerCase();
@@ -181,7 +189,8 @@ router.get('/platforms/:name', async (req, res) => {
     Donate
 -----------------------------------------------*/
 router.get('/donate', async (req, res) => {
-    const data = global.dataService.getData();
+    const svc = services || req.services || {};
+    const data = svc.dataService.getData();
     const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
     const totalETHMCap = eth ? eth.mcap_sum : 0;
     const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
@@ -202,4 +211,5 @@ router.get('/donate', async (req, res) => {
 /*---------------------------------------------------------
     EXPORTS
 ---------------------------------------------------------*/
-module.exports = router;
+return router;
+};

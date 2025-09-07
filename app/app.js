@@ -10,7 +10,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const cron = require('node-cron');
-const routes = require('../routes/routes');
+const createRoutes = require('../routes/routes');
 const HybridStablecoinService = require('./hybrid-stablecoin-service');
 const HealthMonitor = require('../services/HealthMonitor');
 
@@ -21,17 +21,93 @@ const MINS_BETWEEN_UPDATE = 15;
 const PORT = process.env.PORT || 3000;
 
 /*---------------------------------------------------------
-    DATA SERVICE SETUP
+    SERVICE CONTAINER & DEPENDENCY INJECTION
 ---------------------------------------------------------*/
-// Initialize health monitoring and data service
+class ServiceContainer {
+    constructor() {
+        this.services = {};
+        this.started = false;
+        this._timers = [];
+        this._jobs = [];
+    }
+
+    register(name, instance) {
+        this.services[name] = instance;
+        return this;
+    }
+
+    get(name) {
+        return this.services[name];
+    }
+
+    attachToApp(app) {
+        // Expose services to routes/handlers
+        app.locals.services = this.services;
+        app.use((req, _res, next) => { req.services = this.services; next(); });
+    }
+
+    async start() {
+        if (this.started) return;
+        this.started = true;
+
+        const healthMonitor = this.get('healthMonitor');
+        const dataService = this.get('dataService');
+
+        // Initialize an app-level source for request monitoring
+        try { healthMonitor.initializeSource('app'); } catch (_) {}
+
+        // Initial data fetch
+        dataService.fetchStablecoinData().catch(err => {
+            console.error('Initial data fetch failed:', err);
+        });
+
+        // Scheduled updates
+        const job = cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, () => {
+            console.log('Running scheduled data update...');
+            dataService.fetchStablecoinData().catch(error => {
+                console.error('Scheduled data fetch failed:', error);
+            });
+        });
+        this._jobs.push(job);
+
+        // Periodic health summary logging and alert surfacing
+        const healthLogTimer = setInterval(async () => {
+            try {
+                const h = await healthMonitor.getSystemHealth();
+                console.log(`Health: status=${h.status} score=${h.overallScore} healthy=${h.metrics.healthySourceCount}/${h.metrics.sourceCount}`);
+                if (h.activeAlerts && h.activeAlerts.length) {
+                    const alerts = h.activeAlerts.filter(a => a.active).map(a => `${a.level.toUpperCase()}: ${a.title}`).join('; ');
+                    if (alerts) console.warn('Health alerts:', alerts);
+                }
+            } catch (e) {
+                console.warn('Failed to get system health for logging:', e.message);
+            }
+        }, 5 * 60 * 1000);
+        this._timers.push(healthLogTimer);
+    }
+
+    async stop() {
+        if (!this.started) return;
+        this.started = false;
+        // Stop scheduled jobs
+        for (const j of this._jobs) {
+            try { j.stop(); } catch (_) {}
+        }
+        this._jobs = [];
+        // Clear timers
+        for (const t of this._timers) {
+            try { clearInterval(t); } catch (_) {}
+        }
+        this._timers = [];
+    }
+}
+
+// Instantiate container and register services
+const container = new ServiceContainer();
 const healthMonitor = new HealthMonitor();
-global.healthMonitor = healthMonitor;
-
 const dataService = new HybridStablecoinService(healthMonitor);
-global.dataService = dataService;
-
-// Initialize an app-level source for request monitoring
-try { healthMonitor.initializeSource('app'); } catch (e) { /* ignore */ }
+container.register('healthMonitor', healthMonitor)
+         .register('dataService', dataService);
 
 // Health monitoring middleware for Express routes
 // Records basic request duration and success/failure classification
@@ -39,10 +115,11 @@ function healthMiddleware(req, res, next) {
     const start = Date.now();
     res.on('finish', async () => {
         try {
+            const hm = req.services?.healthMonitor || container.get('healthMonitor');
             const duration = Date.now() - start;
             const isError = res.statusCode >= 500;
             if (isError) {
-                await healthMonitor.recordFailure('app', {
+                await hm.recordFailure('app', {
                     operation: 'http_request',
                     errorType: 'server',
                     message: `${req.method} ${req.originalUrl} -> ${res.statusCode}`,
@@ -51,7 +128,7 @@ function healthMiddleware(req, res, next) {
                     timestamp: Date.now()
                 });
             } else {
-                await healthMonitor.recordSuccess('app', {
+                await hm.recordSuccess('app', {
                     operation: 'http_request',
                     duration,
                     recordCount: 0,
@@ -65,21 +142,6 @@ function healthMiddleware(req, res, next) {
     next();
 }
 
-// Initial data fetch
-dataService.fetchStablecoinData().catch(error => {
-    console.error('Initial data fetch failed:', error);
-});
-
-/*---------------------------------------------------------
-    SCHEDULED UPDATES
----------------------------------------------------------*/
-cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, () => {
-    console.log('Running scheduled data update...');
-    dataService.fetchStablecoinData().catch(error => {
-        console.error('Scheduled data fetch failed:', error);
-    });
-});
-
 /*---------------------------------------------------------
     APP SETUP
 ---------------------------------------------------------*/
@@ -89,20 +151,14 @@ app.use(express.static(path.join(__dirname, '../res/css')));
 app.use(express.static(path.join(__dirname, '../res/img')));
 app.use(express.static(path.join(__dirname, '../res/js')));
 app.use(healthMiddleware);
-app.use('/', routes);
+// Attach services to req/app for DI
+container.attachToApp(app);
+// Wire routes with DI
+app.use('/', createRoutes(container.services));
 app.use(express.json());
 app.listen(PORT, () => console.info(`Listening on port ${PORT}`));
 
-// Periodic health summary logging and alert surfacing
-setInterval(async () => {
-    try {
-        const h = await healthMonitor.getSystemHealth();
-        console.log(`Health: status=${h.status} score=${h.overallScore} healthy=${h.metrics.healthySourceCount}/${h.metrics.sourceCount}`);
-        if (h.activeAlerts && h.activeAlerts.length) {
-            const alerts = h.activeAlerts.filter(a => a.active).map(a => `${a.level.toUpperCase()}: ${a.title}`).join('; ');
-            if (alerts) console.warn('Health alerts:', alerts);
-        }
-    } catch (e) {
-        console.warn('Failed to get system health for logging:', e.message);
-    }
-}, 5 * 60 * 1000);
+// Start services and handle graceful shutdown
+container.start();
+process.on('SIGINT', async () => { await container.stop(); process.exit(0); });
+process.on('SIGTERM', async () => { await container.stop(); process.exit(0); });
