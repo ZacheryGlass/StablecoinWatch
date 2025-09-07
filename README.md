@@ -1,4 +1,4 @@
-# StablecoinWatch v2
+ï»¿# StablecoinWatch v2
 https://www.StablecoinWatch.com
 
 StablecoinWatch v2 is a Node.js web application that aggregates stablecoin data from CoinMarketCap and Messari. It merges market and supply/platform data and includes health monitoring with circuit-breaker protections.
@@ -97,7 +97,7 @@ Environment-specific overrides: create `.env.<NODE_ENV>` (for example, `.env.pro
 ```
 app/
 +-- app.js                           # Express server & service container (DI), lifecycle
-+-- hybrid-stablecoin-service.js     # Hybrid service (CMC + Messari)
+// hybrid-stablecoin-service.js     (removed; replaced by services/HybridTransformer.js)
 +-- util.js                          # Formatting & utility functions
 ```
 
@@ -184,27 +184,27 @@ docs/
 ## Configuration & Tuning
 
 ### Core Settings (Active)
-- `PORT` — Web server port (default: 3000)
+- `PORT` â€” Web server port (default: 3000)
 - `UPDATE_INTERVAL_MINUTES` - Data refresh cadence (default: 15)
 
 ### API Keys (Active)
-- `CMC_API_KEY` — CoinMarketCap API key (required)
-- `MESSARI_API_KEY` — Messari API key (required)
+- `CMC_API_KEY` â€” CoinMarketCap API key (required)
+- `MESSARI_API_KEY` â€” Messari API key (required)
 
 ### Health Monitoring (Active)
-- `HEALTH_MONITORING` — Enable health tracking (default: true)
-- `HEALTH_CHECK_INTERVAL_MS` — Health check interval (default: 60000)
-- `ERROR_RATE_THRESHOLD` — Error rate threshold (default: 0.2)
-- `RESPONSE_TIME_THRESHOLD_MS` — Response time threshold (default: 10000)
-- `DEGRADED_MODE_THRESHOLD` — Degraded mode threshold (default: 0.7)
-- `MIN_HEALTHY_SOURCES` — Minimum healthy sources (default: 1)
-- `HEALTH_RETENTION_DAYS` — Health data retention (default: 7)
+- `HEALTH_MONITORING` â€” Enable health tracking (default: true)
+- `HEALTH_CHECK_INTERVAL_MS` â€” Health check interval (default: 60000)
+- `ERROR_RATE_THRESHOLD` â€” Error rate threshold (default: 0.2)
+- `RESPONSE_TIME_THRESHOLD_MS` â€” Response time threshold (default: 10000)
+- `DEGRADED_MODE_THRESHOLD` â€” Degraded mode threshold (default: 0.7)
+- `MIN_HEALTHY_SOURCES` â€” Minimum healthy sources (default: 1)
+- `HEALTH_RETENTION_DAYS` â€” Health data retention (default: 7)
 
 ### Circuit Breaker (Active)
-- `CIRCUIT_BREAKER` — Enable circuit breaker (default: true)
-- `CIRCUIT_BREAKER_FAILURES` — Failures before open (default: 5)
-- `CIRCUIT_BREAKER_TIMEOUT_MS` — Open timeout (default: 60000)
-- `CIRCUIT_BREAKER_RESET_MS` — Reset timeout (default: 300000)
+- `CIRCUIT_BREAKER` â€” Enable circuit breaker (default: true)
+- `CIRCUIT_BREAKER_FAILURES` â€” Failures before open (default: 5)
+- `CIRCUIT_BREAKER_TIMEOUT_MS` â€” Open timeout (default: 60000)
+- `CIRCUIT_BREAKER_RESET_MS` â€” Reset timeout (default: 300000)
 
 ## Current Capabilities & Limitations
 

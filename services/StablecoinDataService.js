@@ -1,7 +1,7 @@
 const IStablecoinDataService = require('../interfaces/IStablecoinDataService');
 const DataFetcherRegistry = require('./DataFetcherRegistry');
 const AppConfig = require('../config/AppConfig');
-const HybridStablecoinService = require('../app/hybrid-stablecoin-service');
+const HybridTransformer = require('./HybridTransformer');
 
 class StablecoinDataService extends IStablecoinDataService {
     constructor(healthMonitor = null, fetcherRegistry = null) {
@@ -16,8 +16,8 @@ class StablecoinDataService extends IStablecoinDataService {
         this._viewModel = { stablecoins: [], metrics: {}, platform_data: [] };
         this._degraded = { active: false, reasons: [] };
 
-        // Reuse Hybrid service purely as a transformer for view models
-        this._hybridTransformer = new HybridStablecoinService(this.healthMonitor);
+        // Use dedicated transformer for view model shape
+        this._hybridTransformer = new HybridTransformer();
     }
 
     // Interface methods
