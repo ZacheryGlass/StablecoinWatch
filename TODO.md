@@ -27,11 +27,11 @@ This document outlines tasks to resolve the architectural debt identified in the
 
 **Description**: Replace direct `process.env` usage with centralized configuration
 
-- [ ] Migrate `app/app.js` to use `AppConfig` instead of `process.env`
-- [ ] Update `hybrid-stablecoin-service.js` to use `ApiConfig`
-- [ ] Add configuration validation during startup
-- [ ] Implement environment-specific configuration loading
-- [ ] Add configuration error handling and warnings
+- [x] Migrate `app/app.js` to use `AppConfig` instead of `process.env`
+- [x] Update `hybrid-stablecoin-service.js` to use `ApiConfig`
+- [x] Add configuration validation during startup
+- [x] Implement environment-specific configuration loading
+- [x] Add configuration error handling and warnings
 
 **Files Affected**: `app/app.js`, `app/hybrid-stablecoin-service.js`
 

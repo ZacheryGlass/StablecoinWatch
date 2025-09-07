@@ -5,6 +5,8 @@ const { MessariClient } = require('@messari/sdk');
 const axios = require('axios');
 const Stablecoin = require('../models/stablecoin');
 const Platform = require('../models/platform');
+const AppConfig = require('../config/AppConfig');
+const ApiConfig = require('../config/ApiConfig');
 
 /*---------------------------------------------------------
     HYBRID STABLECOIN SERVICE CLASS
@@ -17,14 +19,18 @@ class HybridStablecoinService {
         this.metrics = { totalMCap: 0, totalVolume: 0, lastUpdated: null };
         this.healthMonitor = healthMonitor;
 
-        // API Configuration
-        this.MESSARI_API_KEY = process.env.MESSARI_API_KEY || '';
-        this.CMC_API_KEY = process.env.CMC_API_KEY || '';
-        
-        if (!this.CMC_API_KEY) {
+        // Centralized API configuration
+        this.api = {
+            cmc: ApiConfig.getApiConfig('cmc') || {},
+            messari: ApiConfig.getApiConfig('messari') || {}
+        };
+        this.MESSARI_API_KEY = this.api.messari?.apiKey || '';
+        this.CMC_API_KEY = this.api.cmc?.apiKey || '';
+
+        if (!this.CMC_API_KEY && this.api.cmc?.enabled) {
             console.warn('CMC_API_KEY not set. Will only fetch Messari data.');
         }
-        if (!this.MESSARI_API_KEY) {
+        if (!this.MESSARI_API_KEY && this.api.messari?.enabled) {
             console.warn('MESSARI_API_KEY not set. Will only fetch CMC data.');
         }
 
@@ -33,9 +39,10 @@ class HybridStablecoinService {
             this.messariClient = new MessariClient({ apiKey: this.MESSARI_API_KEY });
         }
 
-        // Matching configuration
-        this.MATCH_THRESHOLD = 0.8; // Similarity threshold for name matching
-        this.BATCH_SIZE = 50;
+        // Matching/processing configuration from AppConfig
+        this.MATCH_THRESHOLD = AppConfig.dataProcessing.matchThreshold;
+        this.BATCH_SIZE = AppConfig.dataProcessing.batchSize;
+        this.PRICE_RANGE = AppConfig.dataProcessing.priceRange;
 
         // Initialize health monitoring sources
         if (this.healthMonitor) {
@@ -123,7 +130,8 @@ class HybridStablecoinService {
             } catch (_) { /* unknown source is fine */ }
         }
         try {
-            const url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest';
+            const baseUrl = this.api.cmc?.baseUrl || 'https://pro-api.coinmarketcap.com';
+            const url = `${baseUrl}/v1/cryptocurrency/listings/latest`;
             const headers = {
                 'Accepts': 'application/json',
                 'X-CMC_PRO_API_KEY': this.CMC_API_KEY,
@@ -135,7 +143,8 @@ class HybridStablecoinService {
                 aux: 'tags'
             };
 
-            const response = await axios.get(url, { headers, params: parameters });
+            const timeout = this.api.cmc?.request?.timeout || AppConfig.api.defaultTimeout;
+            const response = await axios.get(url, { headers, params: parameters, timeout });
             const data = response.data;
 
             if (!data.data) {
@@ -146,8 +155,7 @@ class HybridStablecoinService {
             const stablecoins = data.data.filter(crypto => {
                 const hasStablecoinTag = crypto.tags && crypto.tags.includes('stablecoin');
                 const price = crypto.quote?.USD?.price;
-                const isReasonablePrice = !price || (price >= 0.50 && price <= 2.00); // Filter out obvious non-stablecoins
-                
+                const isReasonablePrice = !price || (price >= this.PRICE_RANGE.min && price <= this.PRICE_RANGE.max);
                 return hasStablecoinTag && isReasonablePrice;
             });
 

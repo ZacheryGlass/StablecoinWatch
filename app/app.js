@@ -5,20 +5,30 @@
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
-// Load environment variables from .env
+// Load environment variables from .env and env-specific file
 require('dotenv').config();
+const fs = require('fs');
+const envName = process.env.NODE_ENV || 'development';
+try {
+    const envPath = require('path').resolve(__dirname, '..', `.env.${envName}`);
+    if (fs.existsSync(envPath)) {
+        require('dotenv').config({ path: envPath, override: true });
+        console.info(`Loaded environment overrides from .env.${envName}`);
+    }
+} catch (_) { /* ignore */ }
 const express = require('express');
 const path = require('path');
 const cron = require('node-cron');
 const createRoutes = require('../routes/routes');
 const HybridStablecoinService = require('./hybrid-stablecoin-service');
 const HealthMonitor = require('../services/HealthMonitor');
+const AppConfig = require('../config/AppConfig');
+const ApiConfig = require('../config/ApiConfig');
 
 /*---------------------------------------------------------
     CONSTANTS
 ---------------------------------------------------------*/
-const MINS_BETWEEN_UPDATE = 15;
-const PORT = process.env.PORT || 3000;
+const PORT = AppConfig.server.port;
 
 /*---------------------------------------------------------
     SERVICE CONTAINER & DEPENDENCY INJECTION
@@ -62,7 +72,8 @@ class ServiceContainer {
         });
 
         // Scheduled updates
-        const job = cron.schedule(`*/${MINS_BETWEEN_UPDATE} * * * *`, () => {
+        const intervalMins = AppConfig.dataUpdate.intervalMinutes;
+        const job = cron.schedule(`*/${intervalMins} * * * *`, () => {
             console.log('Running scheduled data update...');
             dataService.fetchStablecoinData().catch(error => {
                 console.error('Scheduled data fetch failed:', error);
@@ -159,6 +170,22 @@ app.use(express.json());
 app.listen(PORT, () => console.info(`Listening on port ${PORT}`));
 
 // Start services and handle graceful shutdown
+// Validate configuration before full start
+try {
+    const validation = ApiConfig.validate();
+    if (!validation.valid) {
+        console.error('API configuration errors:', validation.errors);
+    }
+    if (validation.warnings?.length) {
+        console.warn('API configuration warnings:', validation.warnings);
+    }
+    if (AppConfig.warnings?.length) {
+        console.warn('App configuration warnings:', AppConfig.warnings);
+    }
+} catch (e) {
+    console.error('Configuration validation failed:', e.message);
+}
+
 container.start();
 process.on('SIGINT', async () => { await container.stop(); process.exit(0); });
 process.on('SIGTERM', async () => { await container.stop(); process.exit(0); });
