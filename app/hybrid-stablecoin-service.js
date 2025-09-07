@@ -536,7 +536,11 @@ class HybridStablecoinService {
             }
         }
         return Array.from(map.values())
-            .map((x) => ({ ...x, mcap_sum_s: this.formatNumber(x.mcap_sum) }))
+            .map((x) => ({
+                ...x,
+                uri: this.slugify(x.name),
+                mcap_sum_s: this.formatNumber(x.mcap_sum),
+            }))
             .sort((a, b) => b.mcap_sum - a.mcap_sum);
     }
 
@@ -572,6 +576,15 @@ class HybridStablecoinService {
         if (num >= 1e6) return prefix + (num / 1e6).toFixed(1) + 'M';
         if (num >= 1e3) return prefix + (num / 1e3).toFixed(1) + 'K';
         return prefix + num.toFixed(includeDollarSign ? 2 : 0);
+    }
+
+    // Create a URL-safe slug from a platform name
+    slugify(text) {
+        if (!text) return '';
+        return String(text)
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
     }
 
     /*---------------------------------------------------------

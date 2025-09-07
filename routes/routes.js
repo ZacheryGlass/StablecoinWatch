@@ -71,7 +71,28 @@ router.get('/coins/:symbol', async (req, res) => {
 router.get('/platforms/:name', async (req, res) => {
     console.debug(`Request for platform page: ${req.params.name}`);
     const data = global.dataService.getData();
-    const name = req.params.name.replace('_', ' ');
+
+    // Normalize route param (accept hyphens and underscores)
+    const paramSlug = String(req.params.name || '').toLowerCase();
+
+    // Try to resolve via platform_data.uri first
+    let platformEntry = Array.isArray(data.platform_data)
+        ? data.platform_data.find((p) => String(p.uri || '').toLowerCase() === paramSlug)
+        : null;
+
+    // Fallback: attempt to match by slugified name (back-compat)
+    if (!platformEntry && Array.isArray(data.platform_data)) {
+        platformEntry = data.platform_data.find((p) => {
+            const slug = String(p.name || '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+            return slug === paramSlug;
+        });
+    }
+
+    const platformName = platformEntry ? platformEntry.name : String(req.params.name || '').replace(/[-_]+/g, ' ');
+
     // For now, platforms functionality is simplified since we don't have blockchain integration
     const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
     const totalETHMCap = eth ? eth.mcap_sum : 0;
@@ -80,7 +101,7 @@ router.get('/platforms/:name', async (req, res) => {
         data: data,
         totalETHMCap,
         totalETHMCap_s,
-        platform: { name: name, stablecoins: [] },
+        platform: { name: platformName, stablecoins: [] },
         active: '',
     });
 }); // platforms
