@@ -59,13 +59,10 @@ class StablecoinDataService extends IStablecoinDataService {
         const activeFetchers = this.fetcherRegistry.getActive();
         const sourcePriority = new Map(activeFetchers.map(f => [f.getSourceId(), f.getCapabilities()?.priority || 0]));
 
-        console.log(`[Service] Active fetchers: ${activeFetchers.map(f=>f.getSourceId()).join(', ')}`);
         const settled = await Promise.allSettled(activeFetchers.map(async (f) => {
             try {
                 const raw = await f.fetchStablecoins();
                 const std = f.transformToStandardFormat(raw);
-                const withPlatforms = std.filter(x => (x.supplyData?.networkBreakdown && x.supplyData.networkBreakdown.length) || (x.platforms && x.platforms.length)).length;
-                console.log(`[Service] ${f.getSourceId()} standardized: ${std.length} (withPlatforms=${withPlatforms})`);
                 sourceResults.push({ sourceId: f.getSourceId(), success: true, recordCount: std.length, duration: 0 });
                 return { id: f.getSourceId(), list: std };
             } catch (e) {
@@ -102,7 +99,6 @@ class StablecoinDataService extends IStablecoinDataService {
 
         // 3) Merge per symbol using priority and consensus
         const aggregated = [];
-        let symWithAnyPlatforms = 0;
         for (const [key, entries] of bySymbol) {
             const pickBy = (picker) => {
                 // Return value from highest-priority source that satisfies picker
@@ -166,7 +162,7 @@ class StablecoinDataService extends IStablecoinDataService {
                 }
             }
 
-            if (breakdown.length > 0) symWithAnyPlatforms++;
+            // track if breakdown has entries (used for internal metrics if needed)
 
             // Metadata merge
             const allTags = new Set();
@@ -241,7 +237,7 @@ class StablecoinDataService extends IStablecoinDataService {
             const hybridLike = this._toHybridLike(agg, bySourceForSymbol.get(key));
             aggregated.push({ aggregated: agg, hybridLike });
         }
-        console.log(`[Service] Aggregated coins: ${aggregated.length}, with any platform entries: ${symWithAnyPlatforms}`);
+        
 
         // 4) If no data fetched, surface degraded fallback (keep previous data)
         if (aggregated.length === 0) {
@@ -260,8 +256,6 @@ class StablecoinDataService extends IStablecoinDataService {
         this._hybridTransformer.transformHybridData(hybridInput);
         const viewStablecoins = this._hybridTransformer.getStablecoins();
         const platformData = this._hybridTransformer.calculatePlatformData();
-        const sampleView = viewStablecoins.slice(0, 10).map(c => ({ sym: c.symbol, platforms: c.platforms.map(p=>p.name) }));
-        console.log(`[Service] View sample platforms:`, sampleView);
 
         // 6) Store results and metrics
         this._aggregated = aggregated.map(x => x.aggregated)

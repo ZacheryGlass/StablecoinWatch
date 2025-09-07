@@ -103,7 +103,6 @@ class HybridTransformer {
         const seen = new Set();
         try {
             if (Array.isArray(hybrid.networkBreakdown) && hybrid.networkBreakdown.length > 0) {
-                console.log(`[Transformer] Using networkBreakdown for ${hybrid.symbol}:`, hybrid.networkBreakdown.map(n=>n.network||n.name));
                 hybrid.networkBreakdown.forEach(network => {
                     const raw = network.network || network.name;
                     if (raw) {
@@ -115,14 +114,12 @@ class HybridTransformer {
                     }
                 });
             } else if (hybrid._cmc?.platform?.name) {
-                console.log(`[Transformer] Using CMC platform fallback for ${hybrid.symbol}:`, hybrid._cmc.platform.name);
                 const normalized = this.normalizePlatformName(hybrid._cmc.platform.name);
                 if (!seen.has(normalized)) {
                     seen.add(normalized);
                     platforms.push(new Platform(normalized));
                 }
             } else if (Array.isArray(hybrid.tags) && hybrid.tags.length > 0) {
-                console.log(`[Transformer] Using tags fallback for ${hybrid.symbol}:`, hybrid.tags);
                 const platformTags = hybrid.tags.filter(tag =>
                     tag.includes('ethereum') || tag.includes('binance') || tag.includes('solana') ||
                     tag.includes('tron') || tag.includes('polygon') || tag.includes('avalanche')
@@ -138,7 +135,6 @@ class HybridTransformer {
         } catch (_) { /* ignore */ }
 
         if (platforms.length === 0) {
-            console.log(`[Transformer] No platform data found for ${hybrid.symbol}; defaulting to Unknown`);
             platforms.push(new Platform('Unknown'));
         }
         return platforms;

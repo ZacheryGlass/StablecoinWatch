@@ -76,7 +76,6 @@ class CmcDataFetcher extends IDataFetcher {
             };
 
             const timeout = this.config?.request?.timeout || AppConfig.api.defaultTimeout;
-            console.log(`[CMC] Requesting listings from ${url} ...`);
             const response = await axios.get(url, { headers, params: parameters, timeout });
             const data = response.data;
 
@@ -92,9 +91,7 @@ class CmcDataFetcher extends IDataFetcher {
                 return hasStablecoinTag && isReasonablePrice;
             });
 
-            console.log(`[CMC] Filtered stablecoins: ${stablecoins.length}`);
-            const sample = stablecoins.slice(0, 5).map(c => ({ sym: c.symbol, platform: c.platform?.name || null, tags: c.tags?.slice(0,5) || [] }));
-            console.log(`[CMC] Sample platforms (raw):`, sample);
+            // No tracing logs in production
 
             if (this.healthMonitor) {
                 await this.healthMonitor.recordSuccess(sourceId, {
@@ -167,8 +164,6 @@ class CmcDataFetcher extends IDataFetcher {
             confidence: 0.9,
             timestamp: ts,
         }));
-        const withPlfm = out.filter(o => (o.supplyData.networkBreakdown && o.supplyData.networkBreakdown.length) || (o.platforms && o.platforms.length)).length;
-        console.log(`[CMC] Standardized count=${out.length}, withPlatforms=${withPlfm}`);
         return out;
     }
 

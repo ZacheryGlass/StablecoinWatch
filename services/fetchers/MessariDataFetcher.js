@@ -65,10 +65,8 @@ class MessariDataFetcher extends IDataFetcher {
 
         try {
             const path = this.config?.endpoints?.stablecoinMetrics || '/metrics/v2/stablecoins';
-            console.log(`[Messari] Requesting ${path} ...`);
             const data = await this.client.request({ method: 'GET', path });
             const list = Array.isArray(data?.data) ? data.data : data;
-            console.log(`[Messari] Returned ${Array.isArray(list) ? list.length : 0} items`);
 
             if (this.healthMonitor) {
                 await this.healthMonitor.recordSuccess(sourceId, {
@@ -104,9 +102,7 @@ class MessariDataFetcher extends IDataFetcher {
             if (!Array.isArray(nbArray) && typeof nbRaw === 'object' && nbRaw) {
                 try { nbArray = Object.values(nbRaw).flat(); } catch (_) { nbArray = []; }
             }
-            if (!nbArray || nbArray.length === 0) {
-                try { console.log('[Messari] No network breakdown detected. keys=', Object.keys(m)); } catch (_) {}
-            }
+            // No tracing logs in production
             const standardized = {
                 sourceId: this.sourceId,
                 id: m.id,
@@ -155,8 +151,6 @@ class MessariDataFetcher extends IDataFetcher {
             };
             return standardized;
         });
-        const withPlfm = out.filter(o => (o.supplyData.networkBreakdown && o.supplyData.networkBreakdown.length) || (o.platforms && o.platforms.length)).length;
-        console.log(`[Messari] Standardized count=${out.length}, withPlatforms=${withPlfm}`);
         return out;
     }
 
