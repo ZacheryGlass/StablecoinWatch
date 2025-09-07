@@ -15,6 +15,7 @@ class StablecoinDataService extends IStablecoinDataService {
         this._metrics = { totalMarketCap: 0, totalVolume: 0, lastUpdated: null };
         this._lastRefresh = 0;
         this._viewModel = { stablecoins: [], metrics: {}, platform_data: [] };
+        this._degraded = { active: false, reasons: [] };
 
         // Reuse Hybrid service purely as a transformer for view models
         this._hybridTransformer = new HybridStablecoinService(this.healthMonitor);
@@ -37,13 +38,16 @@ class StablecoinDataService extends IStablecoinDataService {
         const freshness = await this.getDataFreshness();
         const warnings = [];
         if (freshness.isStale) warnings.push('Data is stale');
+        if (this._degraded.active) {
+            warnings.push(...this._degraded.reasons);
+        }
         return {
-            healthy: system ? system.status === 'healthy' : true,
+            healthy: system ? system.status === 'healthy' : !this._degraded.active,
             dataFreshness: freshness.age,
             sources: system ? system.sources : [],
             metrics: system ? system.metrics : {},
             warnings,
-            status: system ? system.status : 'unknown'
+            status: system ? system.status : (this._degraded.active ? 'degraded' : 'unknown')
         };
     }
 
@@ -68,6 +72,14 @@ class StablecoinDataService extends IStablecoinDataService {
                 return { id: f.getSourceId(), list: [] };
             }
         }));
+
+        // Check degraded mode
+        if (this.healthMonitor && typeof this.healthMonitor.checkDegradedMode === 'function') {
+            try {
+                const d = await this.healthMonitor.checkDegradedMode();
+                this._degraded = { active: !!d.recommended, reasons: d.reasons || [] };
+            } catch (_) { this._degraded = { active: false, reasons: [] }; }
+        }
 
         // 2) Build map keyed by symbol for merging
         const bySymbol = new Map();
@@ -215,13 +227,25 @@ class StablecoinDataService extends IStablecoinDataService {
             aggregated.push({ aggregated: agg, hybridLike });
         }
 
-        // 4) Build view models using the hybrid transformer for compatibility
+        // 4) If no data fetched, surface degraded fallback (keep previous data)
+        if (aggregated.length === 0) {
+            return {
+                success: false,
+                stablecoinsUpdated: 0,
+                duration: Date.now() - start,
+                sourceResults,
+                errors: errors.length ? errors : ['No data from any source'],
+                timestamp: Date.now()
+            };
+        }
+
+        // 5) Build view models using the hybrid transformer for compatibility
         const hybridInput = aggregated.map(x => x.hybridLike);
         this._hybridTransformer.transformHybridData(hybridInput);
         const viewStablecoins = this._hybridTransformer.getStablecoins();
         const platformData = this._hybridTransformer.calculatePlatformData();
 
-        // 5) Store results and metrics
+        // 6) Store results and metrics
         this._aggregated = aggregated.map(x => x.aggregated)
             .sort((a, b) => (b.marketData.marketCap || 0) - (a.marketData.marketCap || 0));
         this._platformData = platformData;
@@ -372,4 +396,3 @@ class StablecoinDataService extends IStablecoinDataService {
 }
 
 module.exports = StablecoinDataService;
-
