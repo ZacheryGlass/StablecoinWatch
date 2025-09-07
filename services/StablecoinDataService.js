@@ -132,18 +132,28 @@ class StablecoinDataService extends IStablecoinDataService {
             const supplyTotal = pickBy(d => d.supplyData?.total);
             const supplyMax = pickBy(d => d.supplyData?.max);
 
-            // Network breakdown merge (union by network+contract)
+            // Network breakdown merge (union by network+contract), include top-level platforms as fallback
             const breakdown = [];
             const seenNet = new Set();
             for (const { data } of entries) {
-                const arr = data?.supplyData?.networkBreakdown || [];
+                const fromSupply = Array.isArray(data?.supplyData?.networkBreakdown) ? data.supplyData.networkBreakdown : [];
+                const fromPlatforms = Array.isArray(data?.platforms)
+                    ? data.platforms.map(p => ({
+                        name: p.name,
+                        network: p.network || p.name,
+                        contractAddress: p.contractAddress || null,
+                        supply: p.supply ?? null,
+                        percentage: p.percentage ?? null,
+                    }))
+                    : [];
+                const arr = [...fromSupply, ...fromPlatforms];
                 for (const n of arr) {
-                    const k = `${n.network || n.name || ''}:${n.contractAddress || ''}`.toLowerCase();
+                    const k = `${(n.network || n.name || '').toString().toLowerCase()}:${(n.contractAddress || '').toString().toLowerCase()}`;
                     if (!seenNet.has(k)) {
                         seenNet.add(k);
                         breakdown.push({
                             platform: n.name || n.network || 'Unknown',
-                            network: n.network || null,
+                            network: n.network || n.name || null,
                             supply: n.supply ?? null,
                             percentage: n.percentage ?? null,
                             contractAddress: n.contractAddress || null,
