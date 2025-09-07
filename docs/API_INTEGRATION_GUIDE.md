@@ -1,4 +1,6 @@
 # API Integration Guide
+> Status: Future implementation (pending Tasks 3.1/3.2). Use as a blueprint; current runtime uses a Hybrid service with CMC+Messari. Prerequisite: complete service layer + fetcher integration. ApiConfig is integrated; IDataFetcher implementations are not yet active.
+
 
 This guide explains how to integrate new data sources into StablecoinWatch's pluggable architecture.
 

@@ -1,8 +1,8 @@
-ï»¿# Configuration Guide
+# Configuration Guide
 
 This guide documents only the configuration settings that are active in the current StablecoinWatch app. Anything not listed here is not wired into runtime behavior yet.
 
-Status legend: Active only.
+Status: Active only (reflects current runtime).
 
 ## Quick Start
 
@@ -46,34 +46,34 @@ CIRCUIT_BREAKER_TIMEOUT_MS=60000
 CIRCUIT_BREAKER_RESET_MS=300000
 ```
 
-Note: The data update cadence is currently hard-coded to 15 minutes in `app/app.js` and not configurable via env yet.
+Note: Data update cadence is controlled by `UPDATE_INTERVAL_MINUTES` (default: 15). You can also provide environment-specific overrides via `.env.<NODE_ENV>`.
 
 ## Active Settings
 
 ### Server
-- `PORT` (default: 3000) â€” Web server port used by Express.
-- `NODE_ENV` (default: development) â€” Environment label; used by configuration to adjust logging of warnings.
+- `PORT` (default: 3000) — Web server port used by Express.
+- `NODE_ENV` (default: development) — Environment label; used by configuration to adjust logging of warnings.
 
 ### API Keys (Required)
-- `CMC_API_KEY` â€” CoinMarketCap API key. Enables CMC data fetching.
-- `MESSARI_API_KEY` â€” Messari API key. Enables Messari data fetching.
+- `CMC_API_KEY` — CoinMarketCap API key. Enables CMC data fetching.
+- `MESSARI_API_KEY` — Messari API key. Enables Messari data fetching.
 
 ### Health Monitoring
 These values are consumed by the HealthMonitor service.
-- `HEALTH_MONITORING` (default: true) â€” Enable health monitoring.
-- `HEALTH_CHECK_INTERVAL_MS` (default: 60000) â€” Interval for health checks and cleanup.
-- `ERROR_RATE_THRESHOLD` (default: 0.2) â€” Error rate threshold for alerts/degraded state.
-- `RESPONSE_TIME_THRESHOLD_MS` (default: 10000) â€” Response time alert threshold.
-- `DEGRADED_MODE_THRESHOLD` (default: 0.7) â€” Health score threshold for degraded mode.
-- `MIN_HEALTHY_SOURCES` (default: 1) â€” Minimum healthy data sources to consider system operational.
-- `HEALTH_RETENTION_DAYS` (default: 7) â€” How long to retain health data in memory windows.
+- `HEALTH_MONITORING` (default: true) — Enable health monitoring.
+- `HEALTH_CHECK_INTERVAL_MS` (default: 60000) — Interval for health checks and cleanup.
+- `ERROR_RATE_THRESHOLD` (default: 0.2) — Error rate threshold for alerts/degraded state.
+- `RESPONSE_TIME_THRESHOLD_MS` (default: 10000) — Response time alert threshold.
+- `DEGRADED_MODE_THRESHOLD` (default: 0.7) — Health score threshold for degraded mode.
+- `MIN_HEALTHY_SOURCES` (default: 1) — Minimum healthy data sources to consider system operational.
+- `HEALTH_RETENTION_DAYS` (default: 7) — How long to retain health data in memory windows.
 
 ### Circuit Breaker
 Applied to external API calls via the HealthMonitor.
-- `CIRCUIT_BREAKER` (default: true) â€” Enable circuit breaker behavior.
-- `CIRCUIT_BREAKER_FAILURES` (default: 5) â€” Consecutive failures before opening the circuit.
-- `CIRCUIT_BREAKER_TIMEOUT_MS` (default: 60000) â€” Open state timeout before half-open.
-- `CIRCUIT_BREAKER_RESET_MS` (default: 300000) â€” Reset timeout used when transitioning states.
+- `CIRCUIT_BREAKER` (default: true) — Enable circuit breaker behavior.
+- `CIRCUIT_BREAKER_FAILURES` (default: 5) — Consecutive failures before opening the circuit.
+- `CIRCUIT_BREAKER_TIMEOUT_MS` (default: 60000) — Open state timeout before half-open.
+- `CIRCUIT_BREAKER_RESET_MS` (default: 300000) — Reset timeout used when transitioning states.
 
 ## Troubleshooting
 
@@ -84,9 +84,18 @@ Applied to external API calls via the HealthMonitor.
   - Tune `ERROR_RATE_THRESHOLD` or `RESPONSE_TIME_THRESHOLD_MS`.
   - Ensure `MIN_HEALTHY_SOURCES` fits your enabled keys (one or both).
 - App not starting on expected port:
-  - Set `PORT` explicitly and ensure itâ€™s not in use by another process.
+  - Set `PORT` explicitly and ensure it’s not in use by another process.
 
 ## Notes
 
 - Only the settings listed above are currently used by the running application.
 - Future options (data source lists, caching, advanced rate limits, etc.) will be documented when they become active.
+
+
+### Data Processing (Active)
+- MATCH_THRESHOLD (default: 0.8)
+- MIN_STABLECOIN_PRICE (default: 0.5)
+- MAX_STABLECOIN_PRICE (default: 2.0)
+
+### API Defaults (Active)
+- API_DEFAULT_TIMEOUT_MS - Default timeout for API calls

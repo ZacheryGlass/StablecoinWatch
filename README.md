@@ -1,9 +1,9 @@
-﻿# StablecoinWatch v2
+# StablecoinWatch v2
 https://www.StablecoinWatch.com
 
 StablecoinWatch v2 is a Node.js web application that aggregates stablecoin data from CoinMarketCap and Messari. It merges market and supply/platform data and includes health monitoring with circuit-breaker protections.
 
-## 🚀 What's New in v2
+## What's New in v2
 
 ### Multi-API Data Aggregation
 - **Hybrid**: CoinMarketCap (market data) + Messari (supply/platform data)
@@ -17,22 +17,24 @@ StablecoinWatch v2 is a Node.js web application that aggregates stablecoin data 
 - **Degraded Mode**: Health scoring and gating via circuit breaker
 
 
-### Configuration
-- Simple environment-based configuration for server, API keys, health monitoring, and circuit breaker settings
+### Architecture & Config
+- Service container with dependency injection (no globals)
+- Centralized configuration via `AppConfig` and `ApiConfig`
+- Environment-specific overrides with `.env.<NODE_ENV>`
 
-## 🏗️ Architecture
+##? Architecture
 
 ### Current Stack
 - **Runtime**: Node.js + Express + EJS templating
 - **Data Sources**: CoinMarketCap API + Messari SDK (`@messari/sdk`)
-- **Architecture**: Monolithic Express app with health monitoring
-- **Reliability**: Health monitoring and circuit breakers
+- **Architecture**: Express app with a service container (DI) and health monitoring
+- **Config**: `AppConfig` (app/runtime) + `ApiConfig` (API-specific)
 
 ### Data Sources
 - **CoinMarketCap API** - Primary for market data (price, volume, market cap, rankings)
 - **Messari API** - Primary for supply data and cross-chain platform breakdown  
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Node.js (v16 or higher)
@@ -50,6 +52,13 @@ MESSARI_API_KEY=your_messari_key_here
 # Server
 PORT=3000
 NODE_ENV=production
+# Data refresh (minutes)
+UPDATE_INTERVAL_MINUTES=15
+
+# Data processing
+MATCH_THRESHOLD=0.8
+MIN_STABLECOIN_PRICE=0.5
+MAX_STABLECOIN_PRICE=2.0
 
 # Health Monitoring (active)
 HEALTH_MONITORING=true
@@ -80,59 +89,61 @@ node app/app.js
 
 The application will be available at `http://localhost:3000` (or your configured PORT).
 
-## 📁 Project Structure
+Environment-specific overrides: create `.env.<NODE_ENV>` (for example, `.env.production`) to override values from the base `.env`.
+
+## Project Structure
 
 ### Application Layer
 ```
 app/
-├── app.js                           # Express server & service initialization
-├── hybrid-stablecoin-service.js     # Legacy hybrid service (being refactored)
-└── util.js                          # Formatting & utility functions
++-- app.js                           # Express server & service container (DI), lifecycle
++-- hybrid-stablecoin-service.js     # Hybrid service (CMC + Messari)
++-- util.js                          # Formatting & utility functions
 ```
 
 ### Monitoring & Config
 ```
 interfaces/
-├── IDataFetcher.js                  # Pluggable data source interface
-├── IStablecoinDataService.js        # Main service contract
-└── IHealthMonitor.js                # Health monitoring interface
++-- IDataFetcher.js                  # Pluggable data source interface
++-- IStablecoinDataService.js        # Main service contract
++-- IHealthMonitor.js                # Health monitoring interface
 
 config/
-├── AppConfig.js                     # Application configuration (active)
-└── ApiConfig.js                     # API-specific configurations (present, not integrated)
++-- AppConfig.js                     # Application configuration (active)
++-- ApiConfig.js                     # API-specific configurations (integrated)
 
 services/
-└── HealthMonitor.js                 # Health monitoring implementation
++-- HealthMonitor.js                 # Health monitoring implementation
 ```
 
 ### Web Interface
 ```
 routes/
-└── routes.js                        # Express route definitions
++-- routes.js                        # Express route definitions
 
 views/                               # EJS templates
-├── home.ejs                         # Main stablecoin table
-├── coins.ejs                        # Individual coin details
-├── platforms.ejs                    # Platform overview
-└── partials/                        # Reusable template components
++-- home.ejs                         # Main stablecoin table
++-- coins.ejs                        # Individual coin details
++-- platforms.ejs                    # Platform overview
++-- partials/                        # Reusable template components
 
 res/                                 # Static assets
-├── css/                             # Stylesheets
-├── js/                              # Client-side JavaScript
-└── images/                          # Icons and graphics
++-- css/                             # Stylesheets
++-- js/                              # Client-side JavaScript
++-- images/                          # Icons and graphics
 ```
 
 ### Data & Documentation
 ```
 models/
-├── stablecoin.js                    # Stablecoin data model
-└── platform.js                     # Platform/blockchain model
++-- stablecoin.js                    # Stablecoin data model
++-- platform.js                     # Platform/blockchain model
 
 docs/
-└── messari/                         # API reference documentation
++-- messari/                         # API reference documentation
 ```
 
-## ⚙️ How It Works
+## How It Works
 
 ### Data Flow Architecture
 
@@ -141,7 +152,7 @@ docs/
    - **Messari**: Fetches supply data and cross-chain platform breakdown via `/metrics/v2/stablecoins`
    - **Health Monitoring**: Tracks API performance, error rates, and response times
 
-2. **Intelligent Data Merging** (every 15 minutes):
+2. **Intelligent Data Merging** (interval via `UPDATE_INTERVAL_MINUTES`):
    - Exact symbol matching between data sources
    - Name similarity matching for unmatched coins
    - Priority-based data selection (CMC for market data, Messari for supply data)
@@ -158,7 +169,7 @@ docs/
    - Degraded mode fallback when APIs become unhealthy
    - Real-time health monitoring and alerting
 
-## 🌐 API Routes & Pages
+## API Routes & Pages
 
 ### Public Pages
 - **`/`** - Home page with comprehensive stablecoin table (price, market cap, volume, platforms)
@@ -170,32 +181,32 @@ docs/
 - **`/api/health`** - JSON health status (system + sources)
 - **`/status`** - System health status page (HTML)
 
-## ⚙️ Configuration & Tuning
+## Configuration & Tuning
 
 ### Core Settings (Active)
-- `PORT` — Web server port (default: 3000)
-- Note: Data refresh is currently fixed to every 15 minutes in code.
+- `PORT` � Web server port (default: 3000)
+- `UPDATE_INTERVAL_MINUTES` - Data refresh cadence (default: 15)
 
 ### API Keys (Active)
-- `CMC_API_KEY` — CoinMarketCap API key (required)
-- `MESSARI_API_KEY` — Messari API key (required)
+- `CMC_API_KEY` � CoinMarketCap API key (required)
+- `MESSARI_API_KEY` � Messari API key (required)
 
 ### Health Monitoring (Active)
-- `HEALTH_MONITORING` — Enable health tracking (default: true)
-- `HEALTH_CHECK_INTERVAL_MS` — Health check interval (default: 60000)
-- `ERROR_RATE_THRESHOLD` — Error rate threshold (default: 0.2)
-- `RESPONSE_TIME_THRESHOLD_MS` — Response time threshold (default: 10000)
-- `DEGRADED_MODE_THRESHOLD` — Degraded mode threshold (default: 0.7)
-- `MIN_HEALTHY_SOURCES` — Minimum healthy sources (default: 1)
-- `HEALTH_RETENTION_DAYS` — Health data retention (default: 7)
+- `HEALTH_MONITORING` � Enable health tracking (default: true)
+- `HEALTH_CHECK_INTERVAL_MS` � Health check interval (default: 60000)
+- `ERROR_RATE_THRESHOLD` � Error rate threshold (default: 0.2)
+- `RESPONSE_TIME_THRESHOLD_MS` � Response time threshold (default: 10000)
+- `DEGRADED_MODE_THRESHOLD` � Degraded mode threshold (default: 0.7)
+- `MIN_HEALTHY_SOURCES` � Minimum healthy sources (default: 1)
+- `HEALTH_RETENTION_DAYS` � Health data retention (default: 7)
 
 ### Circuit Breaker (Active)
-- `CIRCUIT_BREAKER` — Enable circuit breaker (default: true)
-- `CIRCUIT_BREAKER_FAILURES` — Failures before open (default: 5)
-- `CIRCUIT_BREAKER_TIMEOUT_MS` — Open timeout (default: 60000)
-- `CIRCUIT_BREAKER_RESET_MS` — Reset timeout (default: 300000)
+- `CIRCUIT_BREAKER` � Enable circuit breaker (default: true)
+- `CIRCUIT_BREAKER_FAILURES` � Failures before open (default: 5)
+- `CIRCUIT_BREAKER_TIMEOUT_MS` � Open timeout (default: 60000)
+- `CIRCUIT_BREAKER_RESET_MS` � Reset timeout (default: 300000)
 
-## 📋 Current Capabilities & Limitations
+## Current Capabilities & Limitations
 
 ### What's Working
 - **Multi-API Integration**: CoinMarketCap + Messari hybrid data aggregation
@@ -209,7 +220,7 @@ docs/
 - Health monitoring dashboard UI not yet implemented
 - Test suite not configured (`npm test` returns error)
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -229,7 +240,7 @@ docs/
 **Data inconsistencies:**
 - Check health monitoring for API failures
 
-## 🤝 Contributing
+## Contributing
 
 Contributions welcome!
 
@@ -238,4 +249,9 @@ Contributions welcome!
 - Add tests for new functionality (when test framework is established)
 - Update documentation for changes
 - Keep changes focused and atomic
+
+
+
+
+
 
