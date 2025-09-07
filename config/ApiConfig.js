@@ -78,7 +78,7 @@ class ApiConfig {
                 
                 endpoints: {
                     stablecoins: '/v2/assets',
-                    stablecoinMetrics: '/metrics/v2/stablecoins',
+                    stablecoinMetrics: '/v2/assets',
                     asset: '/v1/assets/{id}',
                     metrics: '/v1/assets/{id}/metrics'
                 },

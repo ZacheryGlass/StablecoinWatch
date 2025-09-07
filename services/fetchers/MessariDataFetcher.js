@@ -9,8 +9,19 @@ class MessariDataFetcher extends IDataFetcher {
         this.healthMonitor = healthMonitor;
         this.config = ApiConfig.getApiConfig('messari') || {};
         this.sourceId = 'messari';
+        this.client = null;
         if (this.isConfigured()) {
-            this.client = new MessariClient({ apiKey: this.config.apiKey, baseUrl: this.config?.baseUrl, timeoutMs: this.config?.request?.timeout, defaultHeaders: (this.config?.request?.headers || {}) });
+            try {
+                this.client = new MessariClient({ 
+                    apiKey: this.config.apiKey, 
+                    baseUrl: this.config?.baseUrl, 
+                    timeoutMs: this.config?.request?.timeout, 
+                    defaultHeaders: (this.config?.request?.headers || {}) 
+                });
+            } catch (clientError) {
+                console.warn(`Failed to initialize Messari SDK client: ${clientError?.message || 'Unknown error'}`);
+                this.client = null;
+            }
         }
     }
 
@@ -18,7 +29,26 @@ class MessariDataFetcher extends IDataFetcher {
     getSourceName() { return this.config?.name || 'Messari'; }
 
     isConfigured() {
-        return !!(this.config?.enabled && this.config?.apiKey);
+        if (!this.config?.enabled || !this.config?.apiKey) {
+            return false;
+        }
+        
+        // Basic API key format validation
+        const apiKey = this.config.apiKey;
+        const keyLength = apiKey.length;
+        
+        // Messari API keys are typically 40-60 characters long with hyphens
+        if (keyLength < 20 || keyLength > 100) {
+            console.warn(`Messari API key format warning: Key length (${keyLength}) seems unusual for Messari API keys`);
+        }
+        
+        // Check for placeholder or example keys that shouldn't be used
+        if (apiKey.includes('your-api-key') || apiKey.includes('PLACEHOLDER') || apiKey === 'test' || apiKey === 'demo') {
+            console.error(`Messari API key appears to be a placeholder: "${apiKey.substring(0, 20)}..."`);
+            return false;
+        }
+        
+        return true;
     }
 
     getCapabilities() {
@@ -104,18 +134,57 @@ class MessariDataFetcher extends IDataFetcher {
             try {
                 const sdkData = await this.client.request({ method: "GET", path });
                 return Array.isArray(sdkData?.data) ? sdkData.data : (Array.isArray(sdkData) ? sdkData : []);
-            } catch (_) {
-                // fallback to axios
+            } catch (sdkError) {
+                // Extract more details from SDK error for better diagnostics
+                const errorDetails = {
+                    message: sdkError?.message || 'Unknown SDK error',
+                    status: sdkError?.response?.status || sdkError?.status,
+                    statusText: sdkError?.response?.statusText || sdkError?.statusText,
+                    code: sdkError?.code,
+                    type: sdkError?.name || sdkError?.constructor?.name
+                };
+                
+                if (errorDetails.status === 401 || errorDetails.status === 403) {
+                    console.warn(`Messari SDK authentication failed (${errorDetails.status}), falling back to direct HTTP`);
+                } else if (errorDetails.status === 429) {
+                    console.warn(`Messari SDK rate limit exceeded (${errorDetails.status}), falling back to direct HTTP`);
+                } else {
+                    console.warn(`Messari SDK request failed (${errorDetails.status || errorDetails.type}): ${errorDetails.message}, falling back to direct HTTP`);
+                }
             }
         }
         const baseUrl = this.config?.baseUrl || 'https://api.messari.io';
         const url = `${baseUrl}${path}`;
         const headers = { ...(this.config?.request?.headers || {}), 'x-messari-api-key': this.config?.apiKey };
         const timeout = this.config?.request?.timeout;
-        const resp = await axios.get(url, { headers, timeout });
-        const data = resp?.data;
-        const list = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
-        return list || [];
+        
+        try {
+            const resp = await axios.get(url, { headers, timeout });
+            const data = resp?.data;
+            const list = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
+            return list || [];
+        } catch (axiosError) {
+            const status = axiosError?.response?.status;
+            const statusText = axiosError?.response?.statusText;
+            const responseData = axiosError?.response?.data;
+            
+            if (status === 401 || status === 403) {
+                console.error(`Messari API authentication failed (${status}): Invalid API key or insufficient permissions`);
+                console.error(`API key format check: ${this.config?.apiKey ? 'Key present (length: ' + this.config.apiKey.length + ')' : 'No API key'}`);
+            } else if (status === 429) {
+                console.error(`Messari API rate limit exceeded (${status}): Too many requests`);
+            } else if (status >= 500) {
+                console.error(`Messari API server error (${status}): ${statusText || 'Server unavailable'}`);
+            } else {
+                console.error(`Messari API request failed (${status || 'Network Error'}): ${axiosError?.message || 'Unknown error'}`);
+                console.error(`Request URL: ${url}`);
+                if (responseData) {
+                    console.error(`Response: ${JSON.stringify(responseData).substring(0, 200)}`);
+                }
+            }
+            
+            throw axiosError;
+        }
     }
 
     transformToStandardFormat(rawData) {
