@@ -144,22 +144,22 @@ Description:
 	Return the platform from the token type as input
 ---------------------------------------------------------*/
 exports.getTokenPlatform = (token) => {
-    if (typeof token !== 'string') return 'Unknown';
+    if (typeof token !== 'string') return 'unknown';
 
     if (token.toUpperCase().startsWith('ERC')) {
-        return 'Ethereum';
+        return 'ethereum';
     } else if (token.toUpperCase().startsWith('TRC')) {
-        return 'Tron';
+        return 'tron';
     } else if (token.toUpperCase().startsWith('BEP')) {
-        return 'Binance Chain';
+        return 'binance-smart-chain';
     } else if (token.toLowerCase() == 'omni') {
-        return 'Bitcoin';
+        return 'bitcoin';
     } else if (token.toLowerCase() == 'slp') {
-        return 'Bitcoin Cash';
+        return 'bitcoin-cash';
     } else if (token.toLowerCase() == 'native') {
-        return 'Native';
+        return 'native';
     } else {
-        return 'Unknown';
+        return 'unknown';
     }
 }; // getTokenPlatform()
 

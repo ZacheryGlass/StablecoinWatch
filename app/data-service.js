@@ -164,8 +164,7 @@ class DataService {
                 const platformNames = new Set();
                 networkBreakdown.forEach(network => {
                     if (network.network) {
-                        const readable = this.readablePlatform(network.network.toLowerCase());
-                        platformNames.add(readable);
+                        platformNames.add(network.network);
                     }
                 });
                 
@@ -267,7 +266,7 @@ class DataService {
         const out = [];
         const add = (name) => {
             if (!name) return;
-            const clean = this.readablePlatform(String(name).toLowerCase());
+            const clean = String(name);
             if (!out.find((p) => p.name === clean)) out.push(new Platform(clean));
         };
 
@@ -311,30 +310,6 @@ class DataService {
     /*---------------------------------------------------------
     Utils
     ---------------------------------------------------------*/
-    readablePlatform(id) {
-        const m = {
-            'ethereum': 'Ethereum',
-            'binance-smart-chain': 'Binance Smart Chain',
-            'tron': 'Tron',
-            'solana': 'Solana',
-            'polygon-pos': 'Polygon',
-            'arbitrum-one': 'Arbitrum',
-            'optimistic-ethereum': 'Optimism',
-            'avalanche': 'Avalanche',
-            'xdai': 'Gnosis Chain',
-            'fantom': 'Fantom',
-            'celo': 'Celo',
-            'moonbeam': 'Moonbeam',
-            'cronos': 'Cronos',
-            'near-protocol': 'NEAR Protocol',
-            'harmony-shard-0': 'Harmony',
-            'the-open-network': 'TON',
-            'algorand': 'Algorand',
-            'stellar': 'Stellar',
-            'cardano': 'Cardano',
-        };
-        return m[id] || id.charAt(0).toUpperCase() + id.slice(1).replace(/-/g, ' ');
-    }
 
     formatNumber(num, includeDollarSign = true) {
         if (typeof num !== 'number' || !isFinite(num)) return 'No data';

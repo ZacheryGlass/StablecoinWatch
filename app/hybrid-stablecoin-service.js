@@ -465,8 +465,7 @@ class HybridStablecoinService {
                 const platformNames = new Set();
                 hybrid.networkBreakdown.forEach(network => {
                     if (network.network) {
-                        const readable = this.readablePlatform(network.network.toLowerCase());
-                        platformNames.add(readable);
+                        platformNames.add(network.network);
                     }
                 });
                 
@@ -478,8 +477,7 @@ class HybridStablecoinService {
             else if (hybrid._cmc?.platform) {
                 const cmcPlatform = hybrid._cmc.platform;
                 if (cmcPlatform.name) {
-                    const readable = this.readablePlatform(cmcPlatform.name.toLowerCase());
-                    platforms.push(new Platform(readable));
+                    platforms.push(new Platform(cmcPlatform.name));
                 }
             }
             // Try to infer platform from tags
@@ -490,12 +488,12 @@ class HybridStablecoinService {
                 );
                 
                 platformTags.forEach(tag => {
-                    if (tag.includes('ethereum')) platforms.push(new Platform('Ethereum'));
-                    if (tag.includes('binance')) platforms.push(new Platform('Binance Smart Chain'));
-                    if (tag.includes('solana')) platforms.push(new Platform('Solana'));
-                    if (tag.includes('tron')) platforms.push(new Platform('Tron'));
-                    if (tag.includes('polygon')) platforms.push(new Platform('Polygon'));
-                    if (tag.includes('avalanche')) platforms.push(new Platform('Avalanche'));
+                    if (tag.includes('ethereum')) platforms.push(new Platform(tag));
+                    if (tag.includes('binance')) platforms.push(new Platform(tag));
+                    if (tag.includes('solana')) platforms.push(new Platform(tag));
+                    if (tag.includes('tron')) platforms.push(new Platform(tag));
+                    if (tag.includes('polygon')) platforms.push(new Platform(tag));
+                    if (tag.includes('avalanche')) platforms.push(new Platform(tag));
                 });
             }
         } catch (error) {
@@ -544,30 +542,6 @@ class HybridStablecoinService {
             .sort((a, b) => b.mcap_sum - a.mcap_sum);
     }
 
-    readablePlatform(id) {
-        const m = {
-            'ethereum': 'Ethereum',
-            'binance-smart-chain': 'Binance Smart Chain',
-            'tron': 'Tron',
-            'solana': 'Solana',
-            'polygon-pos': 'Polygon',
-            'arbitrum-one': 'Arbitrum',
-            'optimistic-ethereum': 'Optimism',
-            'avalanche': 'Avalanche',
-            'xdai': 'Gnosis Chain',
-            'fantom': 'Fantom',
-            'celo': 'Celo',
-            'moonbeam': 'Moonbeam',
-            'cronos': 'Cronos',
-            'near-protocol': 'NEAR Protocol',
-            'harmony-shard-0': 'Harmony',
-            'the-open-network': 'TON',
-            'algorand': 'Algorand',
-            'stellar': 'Stellar',
-            'cardano': 'Cardano',
-        };
-        return m[id] || id.charAt(0).toUpperCase() + id.slice(1).replace(/-/g, ' ');
-    }
 
     formatNumber(num, includeDollarSign = true) {
         if (typeof num !== 'number' || !isFinite(num)) return 'No data';
