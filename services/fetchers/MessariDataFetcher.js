@@ -9,7 +9,7 @@ class MessariDataFetcher extends IDataFetcher {
         this.config = ApiConfig.getApiConfig('messari') || {};
         this.sourceId = 'messari';
         if (this.isConfigured()) {
-            this.client = new MessariClient({ apiKey: this.config.apiKey });
+            this.client = new MessariClient({ apiKey: this.config.apiKey, baseUrl: this.config?.baseUrl, timeoutMs: this.config?.request?.timeout, defaultHeaders: (this.config?.request?.headers || {}) });
         }
     }
 
