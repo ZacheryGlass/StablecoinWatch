@@ -36,6 +36,14 @@ class HybridStablecoinService {
         // Matching configuration
         this.MATCH_THRESHOLD = 0.8; // Similarity threshold for name matching
         this.BATCH_SIZE = 50;
+
+        // Initialize health monitoring sources
+        if (this.healthMonitor) {
+            try {
+                this.healthMonitor.initializeSource('cmc');
+                this.healthMonitor.initializeSource('messari');
+            } catch (_) { /* ignore */ }
+        }
     }
 
     /*---------------------------------------------------------
@@ -102,6 +110,18 @@ class HybridStablecoinService {
         }
 
         console.log('📊 Fetching stablecoins from CoinMarketCap...');
+
+        // Circuit breaker gating
+        if (this.healthMonitor) {
+            try {
+                const h = await this.healthMonitor.getSourceHealth(sourceId);
+                const cb = h && h.circuitBreaker;
+                if (cb && cb.state === 'open' && cb.nextRetryTime && Date.now() < cb.nextRetryTime) {
+                    console.warn(`⛔ CMC circuit open; skipping call until ${new Date(cb.nextRetryTime).toISOString()}`);
+                    return [];
+                }
+            } catch (_) { /* unknown source is fine */ }
+        }
         try {
             const url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest';
             const headers = {
@@ -171,6 +191,18 @@ class HybridStablecoinService {
         }
 
         console.log('📈 Fetching stablecoins from Messari...');
+
+        // Circuit breaker gating
+        if (this.healthMonitor) {
+            try {
+                const h = await this.healthMonitor.getSourceHealth(sourceId);
+                const cb = h && h.circuitBreaker;
+                if (cb && cb.state === 'open' && cb.nextRetryTime && Date.now() < cb.nextRetryTime) {
+                    console.warn(`⛔ Messari circuit open; skipping call until ${new Date(cb.nextRetryTime).toISOString()}`);
+                    return [];
+                }
+            } catch (_) { /* unknown source is fine */ }
+        }
         try {
             const path = '/metrics/v2/stablecoins';
             const data = await this.messariClient.request({ method: 'GET', path });
