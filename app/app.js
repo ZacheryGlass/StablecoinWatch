@@ -12,6 +12,7 @@ const path = require('path');
 const cron = require('node-cron');
 const routes = require('../routes/routes');
 const HybridStablecoinService = require('./hybrid-stablecoin-service');
+const HealthMonitor = require('../services/HealthMonitor');
 
 /*---------------------------------------------------------
     CONSTANTS
@@ -22,7 +23,11 @@ const PORT = process.env.PORT || 3000;
 /*---------------------------------------------------------
     DATA SERVICE SETUP
 ---------------------------------------------------------*/
-const dataService = new HybridStablecoinService();
+// Initialize health monitoring and data service
+const healthMonitor = new HealthMonitor();
+global.healthMonitor = healthMonitor;
+
+const dataService = new HybridStablecoinService(healthMonitor);
 global.dataService = dataService;
 
 // Initial data fetch

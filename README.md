@@ -167,9 +167,9 @@ docs/
 - **`/platforms`** - Platform summary showing all supported blockchains
 - **`/platforms/:name`** - Individual platform details with coin listings
 
-### Health & Monitoring (Future)
+### Health & Monitoring
+- **`/api/health`** - JSON health status (system + sources)
 - **`/health`** - System health dashboard (planned)
-- **`/api/health`** - Health status API endpoint (planned)
 - **`/metrics`** - Performance metrics (planned)
 
 ## ⚙️ Configuration & Tuning

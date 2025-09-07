@@ -37,6 +37,21 @@ router.get('/', async (req, res) => {
 }); // home
 
 /*-----------------------------------------------
+    Health (JSON)
+-----------------------------------------------*/
+router.get('/api/health', async (req, res) => {
+    try {
+        if (!global.healthMonitor) {
+            return res.status(503).json({ error: 'Health monitor not initialized' });
+        }
+        const health = await global.healthMonitor.getSystemHealth();
+        res.json(health);
+    } catch (err) {
+        res.status(500).json({ error: err?.message || 'Failed to get health' });
+    }
+}); // api/health
+
+/*-----------------------------------------------
     Platforms List
 -----------------------------------------------*/
 router.get('/platforms', async (req, res) => {

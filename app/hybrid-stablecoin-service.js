@@ -11,10 +11,11 @@ const Platform = require('../models/platform');
     Combines CoinMarketCap and Messari data for comprehensive stablecoin coverage
 ---------------------------------------------------------*/
 class HybridStablecoinService {
-    constructor() {
+    constructor(healthMonitor = null) {
         this.stablecoins = [];
         this.platform_data = [];
         this.metrics = { totalMCap: 0, totalVolume: 0, lastUpdated: null };
+        this.healthMonitor = healthMonitor;
 
         // API Configuration
         this.MESSARI_API_KEY = process.env.MESSARI_API_KEY || '';
@@ -92,43 +93,68 @@ class HybridStablecoinService {
     Description: Fetch stablecoins from CoinMarketCap API
     ---------------------------------------------------------*/
     async fetchCmcStablecoins() {
+        const startTime = Date.now();
+        const sourceId = 'cmc';
+
         if (!this.CMC_API_KEY) {
             console.log('⏭️  Skipping CMC fetch (no API key)');
             return [];
         }
 
         console.log('📊 Fetching stablecoins from CoinMarketCap...');
-        
-        const url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest';
-        const headers = {
-            'Accepts': 'application/json',
-            'X-CMC_PRO_API_KEY': this.CMC_API_KEY,
-        };
-        
-        const parameters = {
-            start: '1',
-            limit: '5000',
-            aux: 'tags'
-        };
-
-        const response = await axios.get(url, { headers, params: parameters });
-        const data = response.data;
-
-        if (!data.data) {
-            throw new Error('No data received from CoinMarketCap API');
-        }
-
-        // Filter for stablecoins by tag and price range (exclude obvious non-stablecoins)
-        const stablecoins = data.data.filter(crypto => {
-            const hasStablecoinTag = crypto.tags && crypto.tags.includes('stablecoin');
-            const price = crypto.quote?.USD?.price;
-            const isReasonablePrice = !price || (price >= 0.50 && price <= 2.00); // Filter out obvious non-stablecoins
+        try {
+            const url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest';
+            const headers = {
+                'Accepts': 'application/json',
+                'X-CMC_PRO_API_KEY': this.CMC_API_KEY,
+            };
             
-            return hasStablecoinTag && isReasonablePrice;
-        });
+            const parameters = {
+                start: '1',
+                limit: '5000',
+                aux: 'tags'
+            };
 
-        console.log(`✓ CMC returned ${stablecoins.length} tagged stablecoins`);
-        return stablecoins;
+            const response = await axios.get(url, { headers, params: parameters });
+            const data = response.data;
+
+            if (!data.data) {
+                throw new Error('No data received from CoinMarketCap API');
+            }
+
+            // Filter for stablecoins by tag and price range (exclude obvious non-stablecoins)
+            const stablecoins = data.data.filter(crypto => {
+                const hasStablecoinTag = crypto.tags && crypto.tags.includes('stablecoin');
+                const price = crypto.quote?.USD?.price;
+                const isReasonablePrice = !price || (price >= 0.50 && price <= 2.00); // Filter out obvious non-stablecoins
+                
+                return hasStablecoinTag && isReasonablePrice;
+            });
+
+            console.log(`✓ CMC returned ${stablecoins.length} tagged stablecoins`);
+
+            if (this.healthMonitor) {
+                await this.healthMonitor.recordSuccess(sourceId, {
+                    operation: 'fetchStablecoins',
+                    duration: Date.now() - startTime,
+                    recordCount: stablecoins.length,
+                    timestamp: Date.now()
+                });
+            }
+            return stablecoins;
+        } catch (error) {
+            if (this.healthMonitor) {
+                await this.healthMonitor.recordFailure(sourceId, {
+                    operation: 'fetchStablecoins',
+                    errorType: this.categorizeError(error),
+                    message: error?.message || 'CMC fetch error',
+                    statusCode: error?.response?.status,
+                    retryable: this.isRetryable(error),
+                    timestamp: Date.now()
+                });
+            }
+            throw error;
+        }
     }
 
     /*---------------------------------------------------------
@@ -136,20 +162,65 @@ class HybridStablecoinService {
     Description: Fetch stablecoins from Messari API
     ---------------------------------------------------------*/
     async fetchMessariStablecoins() {
+        const startTime = Date.now();
+        const sourceId = 'messari';
+
         if (!this.MESSARI_API_KEY) {
             console.log('⏭️  Skipping Messari fetch (no API key)');
             return [];
         }
 
         console.log('📈 Fetching stablecoins from Messari...');
-        
-        const path = '/metrics/v2/stablecoins';
-        const data = await this.messariClient.request({ method: 'GET', path });
-        
-        const list = Array.isArray(data?.data) ? data.data : data;
-        console.log(`✓ Messari returned ${list ? list.length : 0} stablecoins`);
-        
-        return list || [];
+        try {
+            const path = '/metrics/v2/stablecoins';
+            const data = await this.messariClient.request({ method: 'GET', path });
+            
+            const list = Array.isArray(data?.data) ? data.data : data;
+            console.log(`✓ Messari returned ${list ? list.length : 0} stablecoins`);
+
+            if (this.healthMonitor) {
+                await this.healthMonitor.recordSuccess(sourceId, {
+                    operation: 'fetchStablecoins',
+                    duration: Date.now() - startTime,
+                    recordCount: Array.isArray(list) ? list.length : 0,
+                    timestamp: Date.now()
+                });
+            }
+            
+            return list || [];
+        } catch (error) {
+            if (this.healthMonitor) {
+                await this.healthMonitor.recordFailure(sourceId, {
+                    operation: 'fetchStablecoins',
+                    errorType: this.categorizeError(error),
+                    message: error?.message || 'Messari fetch error',
+                    statusCode: error?.response?.status,
+                    retryable: this.isRetryable(error),
+                    timestamp: Date.now()
+                });
+            }
+            throw error;
+        }
+    }
+
+    /*---------------------------------------------------------
+    Internal: Error categorization helpers for health monitor
+    ---------------------------------------------------------*/
+    categorizeError(error) {
+        if (!error) return 'unknown';
+        const status = error?.response?.status;
+        if (status === 401 || status === 403) return 'auth';
+        if (status === 404) return 'not_found';
+        if (status === 429) return 'rate_limit';
+        if (status >= 500) return 'server';
+        if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) return 'timeout';
+        if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') return 'network';
+        return 'unknown';
+    }
+
+    isRetryable(error) {
+        const type = this.categorizeError(error);
+        return ['timeout', 'network', 'server', 'rate_limit'].includes(type);
     }
 
     /*---------------------------------------------------------
