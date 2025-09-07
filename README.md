@@ -1,39 +1,36 @@
-# StablecoinWatch v2
+﻿# StablecoinWatch v2
 https://www.StablecoinWatch.com
 
-StablecoinWatch v2 is a robust, scalable web application that aggregates stablecoin data from multiple sources to provide comprehensive market coverage. Built with a modern, service-oriented architecture, it combines the best data from CoinMarketCap, Messari, and other APIs with intelligent data merging, health monitoring, and reliability features.
+StablecoinWatch v2 is a Node.js web application that aggregates stablecoin data from CoinMarketCap and Messari. It merges market and supply/platform data and includes health monitoring with circuit-breaker protections.
 
 ## 🚀 What's New in v2
 
 ### Multi-API Data Aggregation
-- **Hybrid Architecture**: Combines CoinMarketCap (market data) + Messari (supply/platform data)
-- **Intelligent Merging**: Priority-based data merging with confidence scoring
+- **Hybrid**: CoinMarketCap (market data) + Messari (supply/platform data)
+- **Source-aware Merging**: Uses CMC for market metrics and Messari for supply/platform details
 - **Platform Normalization**: Converts raw ecosystem IDs to readable blockchain names
-- **Extensible Design**: Ready to add CoinGecko, DeFiLlama, and other data sources
 
-### Enterprise-Grade Reliability
-- **Health Monitoring**: Real-time monitoring of all data sources with alerts
-- **Circuit Breaker Pattern**: Prevents cascade failures from unhealthy APIs
-- **Automatic Recovery**: Smart retry logic with exponential backoff
-- **Degraded Mode**: Graceful fallback when services become unavailable
 
-### Advanced Configuration
-- **200+ Configuration Options**: Comprehensive environment-based configuration
-- **Per-API Settings**: Individual rate limiting, timeouts, and retry policies
-- **Development Features**: Mock APIs, debug logging, and health dashboards
+### Reliability
+- **Health Monitoring**: Real-time monitoring of data sources with alerts
+- **Circuit Breaker**: Prevents cascade failures from unhealthy APIs
+- **Degraded Mode**: Health scoring and gating via circuit breaker
+
+
+### Configuration
+- Simple environment-based configuration for server, API keys, health monitoring, and circuit breaker settings
 
 ## 🏗️ Architecture
 
 ### Current Stack
 - **Runtime**: Node.js + Express + EJS templating
 - **Data Sources**: CoinMarketCap API + Messari SDK (`@messari/sdk`)
-- **Architecture**: Service-oriented with dependency injection (migrating)
-- **Reliability**: Health monitoring, circuit breakers, memory management
+- **Architecture**: Monolithic Express app with health monitoring
+- **Reliability**: Health monitoring and circuit breakers
 
 ### Data Sources
 - **CoinMarketCap API** - Primary for market data (price, volume, market cap, rankings)
 - **Messari API** - Primary for supply data and cross-chain platform breakdown  
-- **Ready to Add**: CoinGecko, DeFiLlama (pre-configured, just add API keys)
 
 ## 🚀 Quick Start
 
@@ -42,7 +39,6 @@ StablecoinWatch v2 is a robust, scalable web application that aggregates stablec
 - API keys for data sources:
   - **CoinMarketCap API Key** (required) - Primary market data
   - **Messari API Key** (required) - Supply and platform data
-  - **CoinGecko API Key** (optional) - Additional market data
 
 ### Environment Setup
 Create a `.env` file (copy from `.env.example`):
@@ -51,19 +47,24 @@ Create a `.env` file (copy from `.env.example`):
 CMC_API_KEY=your_coinmarketcap_key_here
 MESSARI_API_KEY=your_messari_key_here
 
-# Optional API Keys
-COINGECKO_API_KEY=your_coingecko_key_here
-
-# Server Configuration
+# Server
 PORT=3000
-UPDATE_INTERVAL_MINUTES=15
+NODE_ENV=production
 
-# Data Sources (comma-separated)
-ENABLED_SOURCES=cmc,messari
-
-# Health Monitoring
+# Health Monitoring (active)
 HEALTH_MONITORING=true
+HEALTH_CHECK_INTERVAL_MS=60000
+ERROR_RATE_THRESHOLD=0.2
+RESPONSE_TIME_THRESHOLD_MS=10000
+DEGRADED_MODE_THRESHOLD=0.7
+MIN_HEALTHY_SOURCES=1
+HEALTH_RETENTION_DAYS=7
+
+# Circuit Breaker (active)
 CIRCUIT_BREAKER=true
+CIRCUIT_BREAKER_FAILURES=5
+CIRCUIT_BREAKER_TIMEOUT_MS=60000
+CIRCUIT_BREAKER_RESET_MS=300000
 ```
 
 ### Installation & Launch
@@ -89,7 +90,7 @@ app/
 └── util.js                          # Formatting & utility functions
 ```
 
-### New Architecture (Phase 1 Complete)
+### Monitoring & Config
 ```
 interfaces/
 ├── IDataFetcher.js                  # Pluggable data source interface
@@ -97,8 +98,8 @@ interfaces/
 └── IHealthMonitor.js                # Health monitoring interface
 
 config/
-├── AppConfig.js                     # Application configuration
-└── ApiConfig.js                     # API-specific configurations
+├── AppConfig.js                     # Application configuration (active)
+└── ApiConfig.js                     # API-specific configurations (present, not integrated)
 
 services/
 └── HealthMonitor.js                 # Health monitoring implementation
@@ -145,7 +146,6 @@ docs/
    - Name similarity matching for unmatched coins
    - Priority-based data selection (CMC for market data, Messari for supply data)
    - Platform name normalization (converts ecosystem IDs to readable names)
-   - Confidence scoring based on source consensus
 
 3. **Data Processing Pipeline**:
    - Shape stablecoin data for UI consumption (`coin.main`, `coin.msri`, `coin.scw`)
@@ -155,7 +155,6 @@ docs/
 
 4. **Health & Reliability**:
    - Circuit breaker pattern prevents cascade failures
-   - Automatic retry with exponential backoff
    - Degraded mode fallback when APIs become unhealthy
    - Real-time health monitoring and alerting
 
@@ -169,35 +168,32 @@ docs/
 
 ### Health & Monitoring
 - **`/api/health`** - JSON health status (system + sources)
-- **`/health`** - System health dashboard (planned)
-- **`/metrics`** - Performance metrics (planned)
+- **`/status`** - System health status page (HTML)
 
 ## ⚙️ Configuration & Tuning
 
-### Core Settings
-- **`PORT`** - Web server port (default: 3000)
-- **`UPDATE_INTERVAL_MINUTES`** - Data refresh interval (default: 15)
-- **`ENABLED_SOURCES`** - Active data sources: "cmc,messari,coingecko"
+### Core Settings (Active)
+- `PORT` — Web server port (default: 3000)
+- Note: Data refresh is currently fixed to every 15 minutes in code.
 
-### API Configuration
-- **`CMC_API_KEY`** - CoinMarketCap API key (required)
-- **`MESSARI_API_KEY`** - Messari API key (required)  
-- **`COINGECKO_API_KEY`** - CoinGecko API key (optional)
-- **`CMC_RATE_LIMIT`** - Requests per minute for CMC (default: 333)
-- **`MESSARI_RATE_LIMIT`** - Requests per minute for Messari (default: 20)
+### API Keys (Active)
+- `CMC_API_KEY` — CoinMarketCap API key (required)
+- `MESSARI_API_KEY` — Messari API key (required)
 
-### Health Monitoring
-- **`HEALTH_MONITORING`** - Enable health tracking (default: true)
-- **`CIRCUIT_BREAKER`** - Enable circuit breaker (default: true)
-- **`ERROR_THRESHOLD`** - Error rate for circuit breaker (default: 0.5)
-- **`DEGRADED_MODE_THRESHOLD`** - Health score for degraded mode (default: 30)
+### Health Monitoring (Active)
+- `HEALTH_MONITORING` — Enable health tracking (default: true)
+- `HEALTH_CHECK_INTERVAL_MS` — Health check interval (default: 60000)
+- `ERROR_RATE_THRESHOLD` — Error rate threshold (default: 0.2)
+- `RESPONSE_TIME_THRESHOLD_MS` — Response time threshold (default: 10000)
+- `DEGRADED_MODE_THRESHOLD` — Degraded mode threshold (default: 0.7)
+- `MIN_HEALTHY_SOURCES` — Minimum healthy sources (default: 1)
+- `HEALTH_RETENTION_DAYS` — Health data retention (default: 7)
 
-### Development
-- **`NODE_ENV`** - Environment (development/production)
-- **`DEBUG_LOGGING`** - Verbose logging (default: false)
-- **`MOCK_APIS`** - Use mock data for testing (default: false)
-
-See `.env.example` for all 200+ configuration options.
+### Circuit Breaker (Active)
+- `CIRCUIT_BREAKER` — Enable circuit breaker (default: true)
+- `CIRCUIT_BREAKER_FAILURES` — Failures before open (default: 5)
+- `CIRCUIT_BREAKER_TIMEOUT_MS` — Open timeout (default: 60000)
+- `CIRCUIT_BREAKER_RESET_MS` — Reset timeout (default: 300000)
 
 ## 📋 Current Capabilities & Limitations
 
@@ -206,8 +202,6 @@ See `.env.example` for all 200+ configuration options.
 - **Platform Normalization**: Readable blockchain names (Ethereum, Tron, etc.)
 - **Health Monitoring**: Real-time API performance tracking
 - **Circuit Breakers**: Automatic failure prevention
-- **Comprehensive Configuration**: 200+ environment options
-- **Extensible Architecture**: Ready for CoinGecko, DeFiLlama integration
 
 ### Known Limitations
 - Supply amount features temporarily disabled (see issue #31)
@@ -226,38 +220,22 @@ See `.env.example` for all 200+ configuration options.
 
 **Rate limit errors (429 responses):**
 - Check your API plan limits on CoinMarketCap/Messari dashboards
-- Adjust rate limits in configuration: `CMC_RATE_LIMIT`, `MESSARI_RATE_LIMIT`
 - Consider upgrading API plans for higher limits
 
 **Performance issues:**
 - Monitor health metrics for slow APIs
 - Enable circuit breakers: `CIRCUIT_BREAKER=true`
-- Adjust update interval: `UPDATE_INTERVAL_MINUTES=30`
 
 **Data inconsistencies:**
 - Check health monitoring for API failures
-- Verify enabled sources: `ENABLED_SOURCES=cmc,messari`
-- Review confidence scoring for data quality issues
 
 ## 🤝 Contributing
 
-Contributions welcome! The project is undergoing architectural improvements to support multiple APIs.
-
-### Current Focus Areas
-- **Phase 2**: Service layer refactoring (breaking up monolithic service)
-- **Phase 3**: Dependency injection and route migration  
-- **Phase 4**: Performance optimization and caching
+Contributions welcome!
 
 ### Development Guidelines
 - Follow existing code patterns and conventions
 - Add tests for new functionality (when test framework is established)
-- Update documentation for architectural changes
+- Update documentation for changes
 - Keep changes focused and atomic
-- Consider multi-API compatibility for new features
-
-### Architecture Migration
-The codebase is transitioning from a monolithic service to a pluggable, service-oriented architecture. New contributions should align with the interface-based design in the `interfaces/` and `services/` directories.
-
-See `CLAUDE.md` for detailed architecture documentation and development commands.
-
 
