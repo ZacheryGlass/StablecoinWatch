@@ -65,8 +65,10 @@ class MessariDataFetcher extends IDataFetcher {
 
         try {
             const path = this.config?.endpoints?.stablecoinMetrics || '/metrics/v2/stablecoins';
+            console.log(`[Messari] Requesting ${path} ...`);
             const data = await this.client.request({ method: 'GET', path });
             const list = Array.isArray(data?.data) ? data.data : data;
+            console.log(`[Messari] Returned ${Array.isArray(list) ? list.length : 0} items`);
 
             if (this.healthMonitor) {
                 await this.healthMonitor.recordSuccess(sourceId, {
@@ -95,7 +97,7 @@ class MessariDataFetcher extends IDataFetcher {
 
     transformToStandardFormat(rawData) {
         const ts = Date.now();
-        return (rawData || []).map((m) => ({
+        const out = (rawData || []).map((m) => ({
             sourceId: this.sourceId,
             id: m.id,
             name: m.name,
@@ -141,6 +143,9 @@ class MessariDataFetcher extends IDataFetcher {
             confidence: 0.85,
             timestamp: ts,
         }));
+        const withPlfm = out.filter(o => (o.supplyData.networkBreakdown && o.supplyData.networkBreakdown.length) || (o.platforms && o.platforms.length)).length;
+        console.log(`[Messari] Standardized count=${out.length}, withPlatforms=${withPlfm}`);
+        return out;
     }
 
     _categorizeError(error) {

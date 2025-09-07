@@ -21,6 +21,10 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     const svc = services || req.services || {};
     const data = svc.dataService.getData();
+    try {
+        const sample = (data.stablecoins || []).slice(0, 10).map(c => ({ sym: c.symbol, platforms: (c.platforms||[]).map(p=>p.name) }));
+        console.log(`[Route:/] Rendering home with ${data.stablecoins?.length||0} coins. Sample platforms:`, sample);
+    } catch (_) {}
     // compute ETH totals from platform_data
     const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
     const totalETHMCap = eth ? eth.mcap_sum : 0;
