@@ -48,8 +48,10 @@
 
             .supply-grid {
                 display: grid;
-                grid-template-areas:
-                    'name amount explore';
+                /* TODO: Re-enable for issue #31 when API provides reliable per-platform supply data */
+                /* grid-template-areas: 'name amount explore'; */
+                grid-template-areas: 'name explore';
+                grid-template-columns: 1fr auto;
                 margin: auto;
                 padding: 10px;
 
@@ -208,9 +210,10 @@
                         <div class="supply-item name supply-head">
                             Platform
                         </div>
-                        <div class="supply-item supply-amount supply-head">
+                        <!-- TODO: Re-enable for issue #31 when API provides reliable per-platform supply data -->
+                        <!-- <div class="supply-item supply-amount supply-head">
                             Amount (<%= coin.symbol %>)
-                        </div>
+                        </div> -->
                         <div class="supply-item supply-head">
                             Explore Contract
                         </div>
@@ -220,24 +223,32 @@
                                     <%= coin.platforms[i].name %>
                                 </a>
                             </div>
-                            <div class="supply-item supply-amount">
-                                <!-- formats number with commas -->
+                            <!-- TODO: Re-enable for issue #31 when API provides reliable per-platform supply data -->
+                            <!-- <div class="supply-item supply-amount">
                                 <% if( typeof(coin.platforms[i].circulating_supply) == 'number') { %>
                                     <%= coin.platforms[i].circulating_supply.toFixed().toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") %> 
                                 <% } else { %>
                                     ?
                                 <% } %>
-                            </div>
+                            </div> -->
                             <div class="supply-item supply-explorer">
-                                <a href="<%= coin.platforms[i].contract_url %>">
-                                    <img src="/link.png" alt="link">
-                                </a>
+                                <% if (coin.platforms[i].contract_url) { %>
+                                    <a href="<%= coin.platforms[i].contract_url %>">
+                                        <img src="/link.png" alt="link">
+                                    </a>
+                                <% } else { %>
+                                    <span>-</span>
+                                <% } %>
                             </div>
                         <% } %>
                     </article>
                 </section>
                 <section class="supply-chrt">
-                    <canvas id="supply_chart" width="40" height="40"></canvas>
+                    <!-- TODO: Re-enable for issue #31 when API provides reliable per-platform supply data -->
+                    <!-- <canvas id="supply_chart" width="40" height="40"></canvas> -->
+                    <p style="text-align: center; padding: 20px; font-style: italic;">
+                        Platform distribution data is not available at this time.
+                    </p>
                 </section>
                 <section class="data-hd">
                     <% let img = coin.img_url; %>
@@ -366,6 +377,8 @@
         </div>
     </body>
     <script type="text/javascript">
+        // TODO: Re-enable for issue #31 when API provides reliable per-platform supply data
+        /*
         let ctx = document.getElementById('supply_chart').getContext('2d');
         let supply_chart = new Chart(ctx, {
             type: 'pie',
@@ -413,6 +426,7 @@
                 }
             }
         });
+        */
 
         function showDesc(descSource) {
             let i;

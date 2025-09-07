@@ -453,31 +453,100 @@ class HybridStablecoinService {
     }
 
     /*---------------------------------------------------------
+    Internal: normalizePlatformName
+    Description: Convert ecosystem IDs to human-readable platform names
+    ---------------------------------------------------------*/
+    normalizePlatformName(rawName) {
+        if (!rawName || typeof rawName !== 'string') return 'Unknown';
+        
+        const name = rawName.toLowerCase().trim();
+        
+        // Direct mappings for common ecosystem IDs
+        const platformMap = {
+            'ethereum-pow-ecosystem': 'Ethereum',
+            'ethereum': 'Ethereum',
+            'eth': 'Ethereum',
+            'tron20-ecosystem': 'Tron',
+            'tron': 'Tron',
+            'trx': 'Tron',
+            'binance-smart-chain': 'BSC',
+            'bsc': 'BSC',
+            'bnb': 'BSC',
+            'polygon': 'Polygon',
+            'matic': 'Polygon',
+            'solana': 'Solana',
+            'sol': 'Solana',
+            'avalanche': 'Avalanche',
+            'avax': 'Avalanche',
+            'arbitrum': 'Arbitrum',
+            'optimism': 'Optimism',
+            'base': 'Base',
+            'bitcoin': 'Bitcoin',
+            'btc': 'Bitcoin',
+            'omni': 'Bitcoin (Omni)',
+            'stellar': 'Stellar',
+            'xlm': 'Stellar',
+            'algorand': 'Algorand',
+            'algo': 'Algorand',
+            'cardano': 'Cardano',
+            'ada': 'Cardano',
+            'near': 'NEAR',
+            'flow': 'Flow',
+            'hedera': 'Hedera',
+            'sui': 'Sui',
+            'aptos': 'Aptos'
+        };
+        
+        // Check direct mapping first
+        if (platformMap[name]) {
+            return platformMap[name];
+        }
+        
+        // Pattern matching for complex ecosystem names
+        if (name.includes('ethereum')) return 'Ethereum';
+        if (name.includes('tron')) return 'Tron';
+        if (name.includes('binance') || name.includes('bsc')) return 'BSC';
+        if (name.includes('polygon') || name.includes('matic')) return 'Polygon';
+        if (name.includes('solana')) return 'Solana';
+        if (name.includes('avalanche') || name.includes('avax')) return 'Avalanche';
+        if (name.includes('arbitrum')) return 'Arbitrum';
+        if (name.includes('optimism')) return 'Optimism';
+        if (name.includes('bitcoin') || name.includes('btc')) return 'Bitcoin';
+        
+        // Capitalize first letter for unknown platforms
+        return rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
+    }
+
+    /*---------------------------------------------------------
     Internal: extractPlatformsFromHybrid
     Description: Extract platform information from hybrid data
     ---------------------------------------------------------*/
     extractPlatformsFromHybrid(hybrid) {
         const platforms = [];
+        const seenPlatforms = new Set();
         
         try {
             // Use Messari network breakdown if available (preferred)
             if (hybrid.networkBreakdown && Array.isArray(hybrid.networkBreakdown)) {
-                const platformNames = new Set();
                 hybrid.networkBreakdown.forEach(network => {
                     if (network.network) {
-                        platformNames.add(network.network);
+                        const normalizedName = this.normalizePlatformName(network.network);
+                        if (!seenPlatforms.has(normalizedName)) {
+                            seenPlatforms.add(normalizedName);
+                            platforms.push(new Platform(normalizedName));
+                        }
                     }
-                });
-                
-                platformNames.forEach(name => {
-                    platforms.push(new Platform(name));
                 });
             }
             // Fallback to CMC platform data if available
             else if (hybrid._cmc?.platform) {
                 const cmcPlatform = hybrid._cmc.platform;
                 if (cmcPlatform.name) {
-                    platforms.push(new Platform(cmcPlatform.name));
+                    const normalizedName = this.normalizePlatformName(cmcPlatform.name);
+                    if (!seenPlatforms.has(normalizedName)) {
+                        seenPlatforms.add(normalizedName);
+                        platforms.push(new Platform(normalizedName));
+                    }
                 }
             }
             // Try to infer platform from tags
@@ -488,12 +557,11 @@ class HybridStablecoinService {
                 );
                 
                 platformTags.forEach(tag => {
-                    if (tag.includes('ethereum')) platforms.push(new Platform(tag));
-                    if (tag.includes('binance')) platforms.push(new Platform(tag));
-                    if (tag.includes('solana')) platforms.push(new Platform(tag));
-                    if (tag.includes('tron')) platforms.push(new Platform(tag));
-                    if (tag.includes('polygon')) platforms.push(new Platform(tag));
-                    if (tag.includes('avalanche')) platforms.push(new Platform(tag));
+                    const normalizedName = this.normalizePlatformName(tag);
+                    if (!seenPlatforms.has(normalizedName)) {
+                        seenPlatforms.add(normalizedName);
+                        platforms.push(new Platform(normalizedName));
+                    }
                 });
             }
         } catch (error) {
