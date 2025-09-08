@@ -1,5 +1,5 @@
 # API Integration Guide
-> Status: Future implementation (pending Tasks 3.1/3.2). Use as a blueprint; current runtime uses a Hybrid service with CMC+Messari. Prerequisite: complete service layer + fetcher integration. ApiConfig is integrated; IDataFetcher implementations are not yet active.
+> Status: Active implementation. The pluggable architecture is operational with CMC, Messari, CoinGecko, and DeFiLlama integrations. ApiConfig and IDataFetcher implementations are actively used in production.
 
 
 This guide explains how to integrate new data sources into StablecoinWatch's pluggable architecture.
@@ -10,10 +10,10 @@ StablecoinWatch uses a service-oriented architecture with pluggable data sources
 
 ## Current Data Sources
 
-- **CoinMarketCap API** - Market data (price, volume, market cap, rankings)
-- **Messari API** - Supply data and cross-chain platform breakdown
-- **CoinGecko API** - Ready to implement (configuration exists)
-- **DeFiLlama API** - Ready to implement (configuration exists)
+- **CoinMarketCap API** - Market data (price, volume, market cap, rankings) - Active
+- **Messari API** - Supply data and cross-chain platform breakdown - Active
+- **CoinGecko API** - Additional market data and coin metadata - Active
+- **DeFiLlama API** - Protocol TVL and cross-chain analytics - Active
 
 ## Architecture
 
@@ -227,8 +227,8 @@ COINGECKO_API_KEY=your_coingecko_api_key_here
 COINGECKO_RATE_LIMIT=50
 COINGECKO_ENABLED=true
 
-# Update enabled sources
-ENABLED_SOURCES=cmc,messari,coingecko
+# Update enabled sources  
+ENABLED_SOURCES=cmc,messari,coingecko,defillama
 ```
 
 ## Data Merging Strategy

@@ -12,6 +12,9 @@ Status: Active only (reflects current runtime).
 # .env
 CMC_API_KEY=your_coinmarketcap_api_key
 MESSARI_API_KEY=your_messari_api_key
+# Optional: enable additional data sources
+# COINGECKO_API_KEY=your_coingecko_api_key
+# ENABLED_SOURCES=cmc,messari,defillama
 # Optional: change server port
 # PORT=3000
 # Optional: set environment
@@ -25,6 +28,12 @@ MESSARI_API_KEY=your_messari_api_key
 # Required API Keys
 CMC_API_KEY=your_coinmarketcap_api_key
 MESSARI_API_KEY=your_messari_api_key
+
+# Optional API Keys
+# COINGECKO_API_KEY=your_coingecko_api_key
+
+# Data Sources
+ENABLED_SOURCES=cmc,messari,defillama
 
 # Server
 PORT=3000
@@ -51,45 +60,54 @@ Note: Data update cadence is controlled by `UPDATE_INTERVAL_MINUTES` (default: 1
 ## Active Settings
 
 ### Server
-- `PORT` (default: 3000) — Web server port used by Express.
-- `NODE_ENV` (default: development) — Environment label; used by configuration to adjust logging of warnings.
+- `PORT` (default: 3000) ï¿½ Web server port used by Express.
+- `NODE_ENV` (default: development) ï¿½ Environment label; used by configuration to adjust logging of warnings.
 
 ### API Keys (Required)
-- `CMC_API_KEY` — CoinMarketCap API key. Enables CMC data fetching.
-- `MESSARI_API_KEY` — Messari API key. Enables Messari data fetching.
+- `CMC_API_KEY` ï¿½ CoinMarketCap API key. Enables CMC data fetching.
+- `MESSARI_API_KEY` ï¿½ Messari API key. Enables Messari data fetching.
+
+### API Keys (Optional)
+- `COINGECKO_API_KEY` ï¿½ CoinGecko API key. Enables enhanced CoinGecko data fetching with higher rate limits.
+
+### Data Sources
+- `ENABLED_SOURCES` (default: cmc,messari) ï¿½ Comma-separated list of enabled data sources. Available options: cmc, messari, coingecko, defillama.
 
 ### Health Monitoring
 These values are consumed by the HealthMonitor service.
-- `HEALTH_MONITORING` (default: true) — Enable health monitoring.
-- `HEALTH_CHECK_INTERVAL_MS` (default: 60000) — Interval for health checks and cleanup.
-- `ERROR_RATE_THRESHOLD` (default: 0.2) — Error rate threshold for alerts/degraded state.
-- `RESPONSE_TIME_THRESHOLD_MS` (default: 10000) — Response time alert threshold.
-- `DEGRADED_MODE_THRESHOLD` (default: 0.7) — Health score threshold for degraded mode.
-- `MIN_HEALTHY_SOURCES` (default: 1) — Minimum healthy data sources to consider system operational.
-- `HEALTH_RETENTION_DAYS` (default: 7) — How long to retain health data in memory windows.
+- `HEALTH_MONITORING` (default: true) ï¿½ Enable health monitoring.
+- `HEALTH_CHECK_INTERVAL_MS` (default: 60000) ï¿½ Interval for health checks and cleanup.
+- `ERROR_RATE_THRESHOLD` (default: 0.2) ï¿½ Error rate threshold for alerts/degraded state.
+- `RESPONSE_TIME_THRESHOLD_MS` (default: 10000) ï¿½ Response time alert threshold.
+- `DEGRADED_MODE_THRESHOLD` (default: 0.7) ï¿½ Health score threshold for degraded mode.
+- `MIN_HEALTHY_SOURCES` (default: 1) ï¿½ Minimum healthy data sources to consider system operational.
+- `HEALTH_RETENTION_DAYS` (default: 7) ï¿½ How long to retain health data in memory windows.
 
 ### Circuit Breaker
 Applied to external API calls via the HealthMonitor.
-- `CIRCUIT_BREAKER` (default: true) — Enable circuit breaker behavior.
-- `CIRCUIT_BREAKER_FAILURES` (default: 5) — Consecutive failures before opening the circuit.
-- `CIRCUIT_BREAKER_TIMEOUT_MS` (default: 60000) — Open state timeout before half-open.
-- `CIRCUIT_BREAKER_RESET_MS` (default: 300000) — Reset timeout used when transitioning states.
+- `CIRCUIT_BREAKER` (default: true) ï¿½ Enable circuit breaker behavior.
+- `CIRCUIT_BREAKER_FAILURES` (default: 5) ï¿½ Consecutive failures before opening the circuit.
+- `CIRCUIT_BREAKER_TIMEOUT_MS` (default: 60000) ï¿½ Open state timeout before half-open.
+- `CIRCUIT_BREAKER_RESET_MS` (default: 300000) ï¿½ Reset timeout used when transitioning states.
 
 ## Troubleshooting
 
 - Missing data from one source:
-  - Ensure the corresponding API key (`CMC_API_KEY` or `MESSARI_API_KEY`) is set and valid.
+  - Ensure the corresponding API key is set and valid for enabled sources.
+  - Check `ENABLED_SOURCES` configuration to verify the source is enabled.
   - Check for circuit breaker open state by observing logs; increase timeouts only if necessary.
+  - For DeFiLlama, no API key is required but ensure network access to their endpoints.
 - Health monitoring seems too sensitive:
   - Tune `ERROR_RATE_THRESHOLD` or `RESPONSE_TIME_THRESHOLD_MS`.
   - Ensure `MIN_HEALTHY_SOURCES` fits your enabled keys (one or both).
 - App not starting on expected port:
-  - Set `PORT` explicitly and ensure it’s not in use by another process.
+  - Set `PORT` explicitly and ensure itï¿½s not in use by another process.
 
 ## Notes
 
 - Only the settings listed above are currently used by the running application.
-- Future options (data source lists, caching, advanced rate limits, etc.) will be documented when they become active.
+- Multi-source configuration is active via `ENABLED_SOURCES`.
+- DeFiLlama integration is operational and requires no API key.
 
 
 ### Data Processing (Active)

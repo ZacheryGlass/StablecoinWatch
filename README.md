@@ -1,13 +1,13 @@
 ﻿# StablecoinWatch v2
 https://www.StablecoinWatch.com
 
-StablecoinWatch v2 is a Node.js web application that aggregates stablecoin data from CoinMarketCap and Messari. It merges market and supply/platform data and includes health monitoring with circuit-breaker protections.
+StablecoinWatch v2 is a Node.js web application that aggregates stablecoin data from multiple sources: CoinMarketCap, Messari, CoinGecko, and DeFiLlama. It merges market and supply/platform data from these APIs and includes health monitoring with circuit-breaker protections.
 
 ## What's New in v2
 
 ### Multi-API Data Aggregation
-- **Hybrid**: CoinMarketCap (market data) + Messari (supply/platform data)
-- **Source-aware Merging**: Uses CMC for market metrics and Messari for supply/platform details
+- **Multi-Source**: CoinMarketCap (market data), Messari (supply/platform data), CoinGecko (market data), DeFiLlama (TVL/protocol data)
+- **Source-aware Merging**: Intelligently merges data with priority-based selection and fallback mechanisms
 - **Platform Normalization**: Converts raw ecosystem IDs to readable blockchain names
 
 
@@ -26,13 +26,15 @@ StablecoinWatch v2 is a Node.js web application that aggregates stablecoin data 
 
 ### Current Stack
 - **Runtime**: Node.js + Express + EJS templating
-- **Data Sources**: CoinMarketCap API + Messari SDK (`@messari/sdk`)
+- **Data Sources**: CoinMarketCap API, Messari SDK (`@messari/sdk`), CoinGecko API, DeFiLlama API
 - **Architecture**: Express app with a service container (DI) and health monitoring
 - **Config**: `AppConfig` (app/runtime) + `ApiConfig` (API-specific)
 
 ### Data Sources
 - **CoinMarketCap API** - Primary for market data (price, volume, market cap, rankings)
-- **Messari API** - Primary for supply data and cross-chain platform breakdown  
+- **Messari API** - Primary for supply data and cross-chain platform breakdown
+- **CoinGecko API** - Secondary market data source with additional coin metadata
+- **DeFiLlama API** - Protocol TVL data and cross-chain analytics  
 
 ## Quick Start
 
@@ -41,6 +43,8 @@ StablecoinWatch v2 is a Node.js web application that aggregates stablecoin data 
 - API keys for data sources:
   - **CoinMarketCap API Key** (required) - Primary market data
   - **Messari API Key** (required) - Supply and platform data
+  - **CoinGecko API Key** (optional) - Additional market data
+  - **DeFiLlama API** (no key required) - Protocol and TVL data
 
 ### Environment Setup
 Create a `.env` file (copy from `.env.example`):
@@ -48,6 +52,12 @@ Create a `.env` file (copy from `.env.example`):
 # Required API Keys
 CMC_API_KEY=your_coinmarketcap_key_here
 MESSARI_API_KEY=your_messari_key_here
+
+# Optional API Keys
+# COINGECKO_API_KEY=your_coingecko_key_here
+
+# Data Sources Configuration
+ENABLED_SOURCES=cmc,messari,defillama
 
 # Server
 PORT=3000
@@ -149,7 +159,9 @@ docs/
 
 1. **Multi-Source Data Fetching**:
    - **CoinMarketCap**: Fetches market data filtered by stablecoin tags and price range ($0.50-$2.00)
-   - **Messari**: Fetches supply data and cross-chain platform breakdown via `/metrics/v2/stablecoins`
+   - **Messari**: Fetches supply data and cross-chain platform breakdown via stablecoin metrics endpoint
+   - **CoinGecko**: Provides additional market data and coin metadata
+   - **DeFiLlama**: Supplies protocol TVL and cross-chain analytics
    - **Health Monitoring**: Tracks API performance, error rates, and response times
 
 2. **Intelligent Data Merging** (interval via `UPDATE_INTERVAL_MINUTES`):
@@ -209,10 +221,11 @@ docs/
 ## Current Capabilities & Limitations
 
 ### What's Working
-- **Multi-API Integration**: CoinMarketCap + Messari hybrid data aggregation
+- **Multi-API Integration**: 4-source data aggregation (CMC, Messari, CoinGecko, DeFiLlama)
 - **Platform Normalization**: Readable blockchain names (Ethereum, Tron, etc.)
 - **Health Monitoring**: Real-time API performance tracking
 - **Circuit Breakers**: Automatic failure prevention
+- **Enhanced Error Handling**: Improved fallback mechanisms and retry logic
 
 ### Known Limitations
 - Supply amount features temporarily disabled (see issue #31)
@@ -225,7 +238,8 @@ docs/
 ### Common Issues
 
 **Empty stablecoin list or startup errors:**
-- Verify both `CMC_API_KEY` and `MESSARI_API_KEY` are set and valid
+- Verify required API keys (`CMC_API_KEY` and `MESSARI_API_KEY`) are set and valid
+- Check `ENABLED_SOURCES` configuration includes your desired data sources
 - Check API key permissions and rate limits
 - Ensure outbound HTTPS access is available
 
