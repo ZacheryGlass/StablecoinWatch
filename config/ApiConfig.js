@@ -168,7 +168,7 @@ class ApiConfig {
             // DeFiLlama Configuration (for future use)
             defillama: {
                 name: 'DeFiLlama',
-                enabled: process.env.DEFILLAMA_ENABLED === 'true',
+                enabled: true, // No API key required, controlled by ENABLED_SOURCES
                 baseUrl: process.env.DEFILLAMA_BASE_URL || 'https://api.llama.fi',
                 apiKey: null, // DeFiLlama doesn't require API key
                 
