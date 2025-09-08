@@ -66,6 +66,11 @@ class ApiConfig {
                     },
                     batchSize: parseInt(process.env.CMC_BATCH_SIZE) || 5000,
                     maxResults: parseInt(process.env.CMC_MAX_RESULTS) || 5000
+                },
+
+                mockData: {
+                    enabled: process.env.CMC_MOCK_DATA === 'true',
+                    filePath: process.env.CMC_MOCK_FILE || 'cmc_raw_output.json'
                 }
             },
 
@@ -113,6 +118,11 @@ class ApiConfig {
                     useStablecoinEndpoint: process.env.MESSARI_USE_STABLECOIN_ENDPOINT !== 'false',
                     includeInactive: process.env.MESSARI_INCLUDE_INACTIVE === 'true',
                     batchSize: parseInt(process.env.MESSARI_BATCH_SIZE) || 100
+                },
+
+                mockData: {
+                    enabled: process.env.MESSARI_MOCK_DATA === 'true',
+                    filePath: process.env.MESSARI_MOCK_FILE || 'messari_raw_output.json'
                 }
             },
 
@@ -162,6 +172,11 @@ class ApiConfig {
                     currency: 'usd',
                     includeSparkline: false,
                     priceChangePercentage: '24h'
+                },
+
+                mockData: {
+                    enabled: process.env.COINGECKO_MOCK_DATA === 'true',
+                    filePath: process.env.COINGECKO_MOCK_FILE || 'coingecko_raw_output.json'
                 }
             },
 
@@ -207,7 +222,29 @@ class ApiConfig {
                 
                 processing: {
                     includeBridges: process.env.DEFILLAMA_INCLUDE_BRIDGES === 'true',
-                    minMarketCap: parseInt(process.env.DEFILLAMA_MIN_MCAP) || 1000000
+                    minMarketCap: parseInt(process.env.DEFILLAMA_MIN_MCAP) || 1000000,
+                    stablecoinFilter: {
+                        priceRange: {
+                            min: parseFloat(process.env.DEFILLAMA_PRICE_MIN) || 0.50,
+                            max: parseFloat(process.env.DEFILLAMA_PRICE_MAX) || 2.00
+                        },
+                        allowedPegTypes: (process.env.DEFILLAMA_ALLOWED_PEG_TYPES || 'peggedUSD').split(','),
+                        minCirculatingSupply: parseInt(process.env.DEFILLAMA_MIN_SUPPLY) || 1000000,
+                        excludePatterns: [
+                            // Common non-stablecoin patterns
+                            /wrapped/i, /liquid/i, /staked/i, /yield/i, /reward/i,
+                            /^w[A-Z]+$/, // Wrapped tokens like wETH, wBTC
+                            /pool/i, /vault/i, /interest/i, /synthetic/i
+                        ],
+                        excludeSymbols: (process.env.DEFILLAMA_EXCLUDE_SYMBOLS || '').split(',').filter(s => s.trim()),
+                        requireStablecoinKeywords: true, // Require 'usd', 'dollar', or common stable patterns
+                        maxExpectedCount: parseInt(process.env.DEFILLAMA_MAX_COINS) || 200 // Circuit breaker
+                    }
+                },
+
+                mockData: {
+                    enabled: process.env.DEFILLAMA_MOCK_DATA === 'true',
+                    filePath: process.env.DEFILLAMA_MOCK_FILE || 'defillama_raw_output.json'
                 }
             }
         };

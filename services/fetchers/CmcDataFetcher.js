@@ -1,4 +1,6 @@
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 const IDataFetcher = require('../../interfaces/IDataFetcher');
 const ApiConfig = require('../../config/ApiConfig');
 const AppConfig = require('../../config/AppConfig');
@@ -62,22 +64,29 @@ class CmcDataFetcher extends IDataFetcher {
         }
 
         try {
-            const baseUrl = this.config?.baseUrl || 'https://pro-api.coinmarketcap.com';
-            const url = `${baseUrl}${this.config?.endpoints?.listings || '/v1/cryptocurrency/listings/latest'}`;
-            const headers = {
-                ...(this.config?.request?.headers || {}),
-                'X-CMC_PRO_API_KEY': this.config?.apiKey,
-            };
+            let data;
 
-            const parameters = {
-                start: '1',
-                limit: String(this.config?.processing?.maxResults || 5000),
-                aux: 'tags'
-            };
+            // Check if mock data mode is enabled
+            if (this.config?.mockData?.enabled) {
+                data = await this._loadMockData();
+            } else {
+                const baseUrl = this.config?.baseUrl || 'https://pro-api.coinmarketcap.com';
+                const url = `${baseUrl}${this.config?.endpoints?.listings || '/v1/cryptocurrency/listings/latest'}`;
+                const headers = {
+                    ...(this.config?.request?.headers || {}),
+                    'X-CMC_PRO_API_KEY': this.config?.apiKey,
+                };
 
-            const timeout = this.config?.request?.timeout || AppConfig.api.defaultTimeout;
-            const response = await axios.get(url, { headers, params: parameters, timeout });
-            const data = response.data;
+                const parameters = {
+                    start: '1',
+                    limit: String(this.config?.processing?.maxResults || 5000),
+                    aux: 'tags'
+                };
+
+                const timeout = this.config?.request?.timeout || AppConfig.api.defaultTimeout;
+                const response = await axios.get(url, { headers, params: parameters, timeout });
+                data = response.data;
+            }
 
             if (!data?.data) {
                 throw new Error('No data received from CoinMarketCap API');
@@ -182,6 +191,34 @@ class CmcDataFetcher extends IDataFetcher {
     _isRetryable(error) {
         const type = this._categorizeError(error);
         return ['timeout', 'network', 'server', 'rate_limit'].includes(type);
+    }
+
+    /**
+     * Load mock data from file for development/testing
+     * @private
+     * @returns {Object} Mock API response data
+     */
+    async _loadMockData() {
+        const mockFilePath = this.config?.mockData?.filePath || 'cmc_raw_output.json';
+        const fullPath = path.resolve(mockFilePath);
+        
+        try {
+            if (!fs.existsSync(fullPath)) {
+                throw new Error(`Mock data file not found: ${fullPath}`);
+            }
+            
+            const rawData = fs.readFileSync(fullPath, 'utf8');
+            const mockData = JSON.parse(rawData);
+            
+            // Add timestamp to simulate fresh data
+            if (mockData.status) {
+                mockData.status.timestamp = new Date().toISOString();
+            }
+            
+            return mockData;
+        } catch (error) {
+            throw new Error(`Failed to load CMC mock data from ${fullPath}: ${error.message}`);
+        }
     }
 }
 

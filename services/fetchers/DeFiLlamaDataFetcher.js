@@ -1,4 +1,6 @@
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 const IDataFetcher = require('../../interfaces/IDataFetcher');
 const ApiConfig = require('../../config/ApiConfig');
 const AppConfig = require('../../config/AppConfig');
@@ -49,29 +51,36 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
         }
 
         try {
-            // DeFiLlama uses a different base URL for stablecoins
-            const baseUrl = 'https://stablecoins.llama.fi';
-            const url = `${baseUrl}${this.config?.endpoints?.stablecoins || '/stablecoins'}`;
-            const headers = {
-                ...(this.config?.request?.headers || {}),
-                'Accept': 'application/json'
-            };
+            let data;
 
-            // Include prices in the request
-            const parameters = {
-                includePrices: 'true'
-            };
+            // Check if mock data mode is enabled
+            if (this.config?.mockData?.enabled) {
+                data = await this._loadMockData();
+            } else {
+                // DeFiLlama uses a different base URL for stablecoins
+                const baseUrl = 'https://stablecoins.llama.fi';
+                const url = `${baseUrl}${this.config?.endpoints?.stablecoins || '/stablecoins'}`;
+                const headers = {
+                    ...(this.config?.request?.headers || {}),
+                    'Accept': 'application/json'
+                };
 
-            const timeout = this.config?.request?.timeout || AppConfig.api.defaultTimeout;
-            const response = await axios.get(url, { headers, params: parameters, timeout });
-            const data = response.data;
+                // Include prices in the request
+                const parameters = {
+                    includePrices: 'true'
+                };
+
+                const timeout = this.config?.request?.timeout || AppConfig.api.defaultTimeout;
+                const response = await axios.get(url, { headers, params: parameters, timeout });
+                data = response.data;
+            }
 
             if (!data?.peggedAssets) {
                 throw new Error('No peggedAssets data received from DeFiLlama API');
             }
 
             const stablecoins = data.peggedAssets.filter((coin) => {
-                // Filter out coins without basic required data
+                // Only basic data validation - filter out coins without basic required data
                 return coin.symbol && coin.name && coin.circulating;
             });
 
@@ -193,6 +202,7 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
         return out;
     }
 
+
     _normalizeChainName(chainName) {
         if (!chainName || typeof chainName !== 'string') return 'Unknown';
         
@@ -250,6 +260,32 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
     _isRetryable(error) {
         const type = this._categorizeError(error);
         return ['timeout', 'network', 'server', 'rate_limit'].includes(type);
+    }
+
+    /**
+     * Load mock data from file for development/testing
+     * @private
+     * @returns {Object} Mock API response data
+     */
+    async _loadMockData() {
+        const mockFilePath = this.config?.mockData?.filePath || 'defillama_raw_output.json';
+        const fullPath = path.resolve(mockFilePath);
+        
+        try {
+            if (!fs.existsSync(fullPath)) {
+                throw new Error(`Mock data file not found: ${fullPath}`);
+            }
+            
+            const rawData = fs.readFileSync(fullPath, 'utf8');
+            const mockData = JSON.parse(rawData);
+            
+            // DeFiLlama data doesn't typically have a status field, but we can add timestamp
+            mockData._mockTimestamp = new Date().toISOString();
+            
+            return mockData;
+        } catch (error) {
+            throw new Error(`Failed to load DeFiLlama mock data from ${fullPath}: ${error.message}`);
+        }
     }
 }
 

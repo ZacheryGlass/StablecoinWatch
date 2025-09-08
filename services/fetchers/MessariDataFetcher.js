@@ -1,5 +1,7 @@
 const { MessariClient } = require('@messari/sdk');
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 const IDataFetcher = require('../../interfaces/IDataFetcher');
 const ApiConfig = require('../../config/ApiConfig');
 
@@ -95,8 +97,16 @@ class MessariDataFetcher extends IDataFetcher {
         }
 
         try {
-            const path = this.config?.endpoints?.stablecoinMetrics || '/metrics/v2/stablecoins';
-            const list = await this._fetchStablecoinMetrics(path);
+            let list;
+
+            // Check if mock data mode is enabled
+            if (this.config?.mockData?.enabled) {
+                const mockData = await this._loadMockData();
+                list = mockData.data || [];
+            } else {
+                const path = this.config?.endpoints?.stablecoinMetrics || '/metrics/v2/stablecoins';
+                list = await this._fetchStablecoinMetrics(path);
+            }
 
             if (this.healthMonitor) {
                 await this.healthMonitor.recordSuccess(sourceId, {
@@ -263,6 +273,34 @@ class MessariDataFetcher extends IDataFetcher {
     _isRetryable(error) {
         const type = this._categorizeError(error);
         return ['timeout', 'network', 'server', 'rate_limit'].includes(type);
+    }
+
+    /**
+     * Load mock data from file for development/testing
+     * @private
+     * @returns {Object} Mock API response data
+     */
+    async _loadMockData() {
+        const mockFilePath = this.config?.mockData?.filePath || 'messari_raw_output.json';
+        const fullPath = path.resolve(mockFilePath);
+        
+        try {
+            if (!fs.existsSync(fullPath)) {
+                throw new Error(`Mock data file not found: ${fullPath}`);
+            }
+            
+            const rawData = fs.readFileSync(fullPath, 'utf8');
+            const mockData = JSON.parse(rawData);
+            
+            // Add timestamp to simulate fresh data
+            if (mockData.status) {
+                mockData.status.timestamp = new Date().toISOString();
+            }
+            
+            return mockData;
+        } catch (error) {
+            throw new Error(`Failed to load Messari mock data from ${fullPath}: ${error.message}`);
+        }
     }
 }
 
