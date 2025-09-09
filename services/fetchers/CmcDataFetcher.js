@@ -194,6 +194,38 @@ class CmcDataFetcher extends IDataFetcher {
     }
 
     /**
+     * Filters raw CoinMarketCap data to include only valid stablecoins
+     * Applies tag-based filtering and price range validation based on configuration
+     * 
+     * @param {Array} rawData - Raw cryptocurrency data from CoinMarketCap API
+     * @returns {Array} Filtered array containing only valid stablecoins
+     * @private
+     * @memberof CmcDataFetcher
+     */
+    _filterStablecoins(rawData) {
+        if (!Array.isArray(rawData)) {
+            return [];
+        }
+
+        const priceRange = this.config?.processing?.stablecoinFilter?.priceRange || { min: 0.5, max: 2.0 };
+        const tagName = this.config?.processing?.stablecoinFilter?.tagName || 'stablecoin';
+
+        return rawData.filter((crypto) => {
+            // Check for stablecoin tag presence
+            const hasStablecoinTag = crypto.tags && crypto.tags.includes(tagName);
+            if (!hasStablecoinTag) {
+                return false;
+            }
+
+            // Validate price range for USD-pegged stablecoins
+            const price = crypto.quote?.USD?.price;
+            const isReasonablePrice = !price || (price >= priceRange.min && price <= priceRange.max);
+            
+            return isReasonablePrice;
+        });
+    }
+
+    /**
      * Transforms raw CoinMarketCap data to standardized internal format.
      * Maps CoinMarketCap API response fields to the standard data structure used
      * throughout the application for consistent data handling.

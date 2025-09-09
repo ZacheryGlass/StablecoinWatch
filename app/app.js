@@ -16,6 +16,8 @@ try {
         console.info(`Loaded environment overrides from .env.${envName}`);
     }
 } catch (_) { /* ignore */ }
+// Initialize global logger (respects LOG_LEVEL or VERBOSE_LOGGING)
+require('./logger');
 const express = require('express');
 const path = require('path');
 const cron = require('node-cron');
