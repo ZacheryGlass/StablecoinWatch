@@ -120,7 +120,7 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
                                     null;
 
             // Extract current price (included when includePrices=true)
-            const currentPrice = coin.price || 1.0;
+            const currentPrice = coin.price;
 
             // Build network breakdown from chainCirculating data
             const networkBreakdown = [];
@@ -290,4 +290,3 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
 }
 
 module.exports = DeFiLlamaDataFetcher;
-

@@ -21,11 +21,16 @@ StablecoinWatch uses a service-oriented architecture with pluggable data sources
 
 All data sources implement the `IDataFetcher` interface located in `interfaces/IDataFetcher.js`. This ensures consistency and interoperability across all APIs.
 
-Key interface methods:
-- `fetchStablecoinData()` - Primary data fetching
-- `getCapabilities()` - Declare what data this source provides
-- `getHealthStatus()` - Health monitoring integration
-- `validateConfig()` - Configuration validation
+Key interface methods (must implement):
+- `getSourceId()` and `getSourceName()`
+- `isConfigured()`
+- `fetchStablecoins()` — Primary data fetching (returns raw, source-native list)
+- `transformToStandardFormat(rawData)` — Convert raw payload to standardized records
+- `getCapabilities()` — Declare data types and priority for merging
+- `getHealthStatus()` — Health monitoring integration
+- `getRateLimitInfo()` — Rate limiting metadata
+
+For the canonical object schema produced by `transformToStandardFormat`, see `docs/standardized-stablecoin-format.md`.
 
 ### Configuration System
 
@@ -40,122 +45,104 @@ API configurations are centralized in `config/ApiConfig.js`. Each data source ha
 
 ### Step 1: Create the Data Fetcher
 
-Create a new file `services/[SourceName]DataFetcher.js`:
+Create a new file `services/fetchers/<SourceName>DataFetcher.js` that implements `IDataFetcher` and maps to the standardized schema:
 
 ```javascript
-const IDataFetcher = require('../interfaces/IDataFetcher');
+const axios = require('axios');
+const IDataFetcher = require('../../interfaces/IDataFetcher');
+const ApiConfig = require('../../config/ApiConfig');
 
-class CoinGeckoDataFetcher extends IDataFetcher {
-    constructor(config, healthMonitor) {
-        super();
-        this.config = config;
-        this.healthMonitor = healthMonitor;
-        this.sourceId = 'coingecko';
-        this.sourceName = 'CoinGecko';
+class MySourceDataFetcher extends IDataFetcher {
+  constructor(healthMonitor = null) {
+    super();
+    this.healthMonitor = healthMonitor;
+    this.config = ApiConfig.getApiConfig('mysource') || {};
+    this.sourceId = 'mysource';
+  }
+
+  getSourceId() { return this.sourceId; }
+  getSourceName() { return this.config?.name || 'MySource'; }
+  isConfigured() { return !!this.config?.enabled; }
+  getCapabilities() { return this.config?.capabilities || { priority: 5 }; }
+  getRateLimitInfo() { return this.config?.rateLimit || {}; }
+  async getHealthStatus() { return { healthy: true }; }
+
+  async fetchStablecoins() {
+    if (!this.isConfigured()) return [];
+    const start = Date.now();
+    try {
+      const baseUrl = this.config?.baseUrl || 'https://api.example.com';
+      const url = `${baseUrl}${this.config?.endpoints?.stablecoins || '/stablecoins'}`;
+      const headers = { ...(this.config?.request?.headers || {}) };
+      const timeout = this.config?.request?.timeout;
+      const resp = await axios.get(url, { headers, timeout });
+      const raw = Array.isArray(resp.data?.data) ? resp.data.data : (resp.data || []);
+      if (this.healthMonitor) {
+        await this.healthMonitor.recordSuccess(this.sourceId, {
+          operation: 'fetchStablecoins', duration: Date.now() - start,
+          recordCount: Array.isArray(raw) ? raw.length : 0, timestamp: Date.now()
+        });
+      }
+      return raw;
+    } catch (error) {
+      if (this.healthMonitor) {
+        await this.healthMonitor.recordFailure(this.sourceId, {
+          operation: 'fetchStablecoins', message: error?.message,
+          statusCode: error?.response?.status, retryable: true, timestamp: Date.now()
+        });
+      }
+      throw error;
     }
+  }
 
-    async fetchStablecoinData(options = {}) {
-        const startTime = Date.now();
-        
-        try {
-            // Implement your API call here
-            const response = await this.makeApiCall('/coins/markets', {
-                vs_currency: 'usd',
-                category: 'stablecoins',
-                order: 'market_cap_desc',
-                per_page: 250,
-                page: 1,
-                sparkline: false
-            });
-
-            // Transform to standard format
-            const stablecoins = this.transformData(response.data);
-
-            // Record success metrics
-            await this.healthMonitor.recordSuccess(this.sourceId, {
-                operation: 'fetchStablecoinData',
-                duration: Date.now() - startTime,
-                recordCount: stablecoins.length,
-                timestamp: Date.now()
-            });
-
-            return stablecoins;
-
-        } catch (error) {
-            // Record failure metrics
-            await this.healthMonitor.recordFailure(this.sourceId, {
-                operation: 'fetchStablecoinData',
-                errorType: this.categorizeError(error),
-                message: error.message,
-                statusCode: error.response?.status,
-                retryable: this.isRetryable(error),
-                timestamp: Date.now()
-            });
-            
-            throw error;
-        }
-    }
-
-    transformData(rawData) {
-        return rawData.map(coin => ({
-            // Standard stablecoin format
-            symbol: coin.symbol.toUpperCase(),
-            name: coin.name,
-            price: coin.current_price,
-            marketCap: coin.market_cap,
-            volume24h: coin.total_volume,
-            priceChange24h: coin.price_change_percentage_24h,
-            
-            // Source metadata
-            sourceData: {
-                coingecko: {
-                    id: coin.id,
-                    lastUpdated: coin.last_updated,
-                    // Store raw data for debugging
-                    raw: coin
-                }
-            },
-            
-            // Data quality indicators
-            confidence: this.calculateConfidence(coin),
-            lastUpdated: new Date(coin.last_updated).getTime()
-        }));
-    }
-
-    getCapabilities() {
-        return {
-            providesMarketData: true,
-            providesSupplyData: false,
-            providesPlatformData: false,
-            providesHistoricalData: true,
-            supportedOperations: ['fetchStablecoinData', 'fetchHistoricalData'],
-            updateFrequency: '1min',
-            dataQuality: 'high'
-        };
-    }
-
-    async validateConfig() {
-        const required = ['apiKey', 'baseUrl'];
-        const missing = required.filter(field => !this.config[field]);
-        
-        if (missing.length > 0) {
-            throw new Error(`Missing required config: ${missing.join(', ')}`);
-        }
-
-        // Test API connectivity
-        try {
-            await this.makeApiCall('/ping');
-            return { valid: true };
-        } catch (error) {
-            return { 
-                valid: false, 
-                error: `API connectivity test failed: ${error.message}` 
-            };
-        }
-    }
+  transformToStandardFormat(rawData) {
+    const ts = Date.now();
+    return (rawData || []).map(item => ({
+      sourceId: this.sourceId,
+      id: item.id,
+      name: item.name,
+      symbol: item.symbol ? String(item.symbol).toUpperCase() : item.symbol,
+      slug: (item.slug || item.symbol || item.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      marketData: {
+        price: item.price ?? null,
+        marketCap: item.market_cap ?? null,
+        volume24h: item.volume_24h ?? null,
+        percentChange24h: item.percent_change_24h ?? null,
+        rank: item.rank ?? null,
+      },
+      supplyData: {
+        circulating: item.circulating ?? null,
+        total: item.total ?? null,
+        max: item.max ?? null,
+        networkBreakdown: Array.isArray(item.networks) ? item.networks.map(n => ({
+          name: n.name || n.network,
+          network: (n.network || n.name || null) ? String(n.network || n.name).toLowerCase() : null,
+          contractAddress: n.contract || null,
+          supply: n.supply ?? null,
+          percentage: n.percentage ?? null,
+        })) : [],
+      },
+      platforms: Array.isArray(item.networks) ? item.networks.map(n => ({
+        name: n.name || n.network,
+        network: (n.network || n.name || null) ? String(n.network || n.name).toLowerCase() : null,
+        contractAddress: n.contract || null,
+        supply: n.supply ?? null,
+        percentage: n.percentage ?? null,
+      })) : [],
+      metadata: {
+        tags: Array.isArray(item.tags) ? item.tags : [],
+        description: item.description || null,
+        website: item.website || null,
+        logoUrl: item.logo || null,
+        dateAdded: item.date_added || null,
+      },
+      confidence: 0.8,
+      timestamp: ts,
+    }));
+  }
 }
 
-module.exports = CoinGeckoDataFetcher;
+module.exports = MySourceDataFetcher;
 ```
 
 ### Step 2: Update API Configuration
@@ -179,11 +166,13 @@ const apiConfigs = {
             burstLimit: 10
         },
         capabilities: {
-            providesMarketData: true,
-            providesSupplyData: false,
-            providesPlatformData: false,
-            dataQuality: 'high',
-            priority: 6 // Lower than CMC (10) but higher than others
+            hasMarketData: true,
+            hasSupplyData: false,
+            hasPlatformData: false,
+            hasNetworkBreakdown: false,
+            hasMetadata: true,
+            priority: 6, // Lower than CMC (10) but higher than others
+            dataTypes: ['price', 'market_cap', 'volume', 'rank', 'tags']
         },
         healthThresholds: {
             responseTime: 5000,
@@ -201,21 +190,16 @@ const apiConfigs = {
 
 ### Step 3: Register the Data Source
 
-Update the service initialization code to include your new fetcher:
+Add the new fetcher to the default registry so it’s auto-constructed when enabled:
 
 ```javascript
-// In app/app.js or your service container
-const CoinGeckoDataFetcher = require('./services/CoinGeckoDataFetcher');
-
-// Register the new data source
-const coinGeckoFetcher = new CoinGeckoDataFetcher(
-    apiConfigs.coingecko,
-    healthMonitor
-);
-
-// Add to your data service
-dataService.registerDataSource('coingecko', coinGeckoFetcher);
+// services/DataFetcherRegistry.js
+const MySourceDataFetcher = require('./fetchers/MySourceDataFetcher');
+// ... inside createDefault()
+if (enabled.includes('mysource')) registry.register(new MySourceDataFetcher(healthMonitor));
 ```
+
+Alternatively, you can manually register a fetcher on a custom registry instance.
 
 ### Step 4: Environment Configuration
 
@@ -290,13 +274,13 @@ async getHealthStatus() {
 
 ### Unit Tests
 
-Create comprehensive tests for your data fetcher:
+Create tests for both raw fetching and transformation:
 
 ```javascript
-describe('CoinGeckoDataFetcher', () => {
+describe('MySourceDataFetcher', () => {
     test('should fetch stablecoin data successfully', async () => {
-        const fetcher = new CoinGeckoDataFetcher(mockConfig, mockHealthMonitor);
-        const data = await fetcher.fetchStablecoinData();
+        const fetcher = new MySourceDataFetcher(mockHealthMonitor);
+        const data = await fetcher.fetchStablecoins();
         
         expect(data).toBeDefined();
         expect(data.length).toBeGreaterThan(0);
@@ -313,6 +297,16 @@ describe('CoinGeckoDataFetcher', () => {
     });
 });
 ```
+
+### Consistency Checklist (required)
+- `symbol` is uppercase
+- `slug` is lowercase and URL-safe
+- `network` fields are lowercase in both `platforms` and `supplyData.networkBreakdown`
+- `platforms` mirror `networkBreakdown` when applicable
+- `metadata` fields set when available; use null when missing
+- `confidence` in [0,1]; `timestamp` set to `Date.now()`
+
+See the canonical schema in `docs/standardized-stablecoin-format.md`.
 
 ### Integration Testing
 

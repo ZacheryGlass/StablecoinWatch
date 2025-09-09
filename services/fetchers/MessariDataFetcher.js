@@ -211,7 +211,7 @@ class MessariDataFetcher extends IDataFetcher {
                 sourceId: this.sourceId,
                 id: m.id,
                 name: m.name,
-                symbol: m.symbol,
+                symbol: m.symbol ? String(m.symbol).toUpperCase() : m.symbol,
                 slug: (m.slug || m.symbol || '').toLowerCase(),
                 marketData: {
                     price: 1.0,
@@ -227,7 +227,7 @@ class MessariDataFetcher extends IDataFetcher {
                     networkBreakdown: Array.isArray(nbArray)
                         ? nbArray.filter(n => !!(n.network || n.name)).map(n => ({
                             name: n.network || n.name,
-                            network: n.network || n.name || null,
+                            network: (n.network || n.name || null) ? String(n.network || n.name).toLowerCase() : null,
                             contractAddress: n.contract || n.contract_address || null,
                             supply: n.supply ?? n.amount ?? null,
                             percentage: n.share ?? n.percentage ?? null,
@@ -237,14 +237,15 @@ class MessariDataFetcher extends IDataFetcher {
                 platforms: Array.isArray(nbArray)
                     ? nbArray.filter((n) => !!(n.network || n.name)).map((n) => ({
                         name: n.network || n.name,
-                        network: n.network || n.name,
+                        network: (n.network || n.name || null) ? String(n.network || n.name).toLowerCase() : null,
                         contractAddress: n.contract || n.contract_address || null,
                         supply: n.supply ?? n.amount ?? null,
                         percentage: n.share ?? n.percentage ?? null,
                     }))
                     : [],
                 metadata: {
-                    tags: Array.isArray(m.tags) ? m.tags : ['stablecoin'],
+                    // Preserve tags if present
+                    tags: Array.isArray(m.tags) ? m.tags : [],
                     description: m.profile?.general?.overview?.project_details || null,
                     website: m.profile?.general?.overview?.official_links?.[0]?.link || null,
                     logoUrl: m.profile?.images?.logo || null,

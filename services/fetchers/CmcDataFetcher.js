@@ -133,7 +133,7 @@ class CmcDataFetcher extends IDataFetcher {
             sourceId: this.sourceId,
             id: coin.id,
             name: coin.name,
-            symbol: coin.symbol,
+            symbol: coin.symbol ? String(coin.symbol).toUpperCase() : coin.symbol,
             slug: (coin.slug || coin.symbol || '').toLowerCase(),
             marketData: {
                 price: coin.quote?.USD?.price ?? null,
@@ -150,7 +150,7 @@ class CmcDataFetcher extends IDataFetcher {
                 max: coin.max_supply ?? null,
                 networkBreakdown: coin.platform ? [{
                     name: coin.platform.name || 'Unknown',
-                    network: coin.platform.slug || coin.platform.symbol || null,
+                    network: (coin.platform.slug || coin.platform.symbol || null) ? String(coin.platform.slug || coin.platform.symbol).toLowerCase() : null,
                     contractAddress: coin.platform.token_address || null,
                     supply: null,
                     percentage: null,
@@ -158,7 +158,7 @@ class CmcDataFetcher extends IDataFetcher {
             },
             platforms: coin.platform ? [{
                 name: coin.platform.name || 'Unknown',
-                network: coin.platform.slug || coin.platform.symbol || null,
+                network: (coin.platform.slug || coin.platform.symbol || null) ? String(coin.platform.slug || coin.platform.symbol).toLowerCase() : null,
                 contractAddress: coin.platform.token_address || null,
                 supply: null,
                 percentage: null,

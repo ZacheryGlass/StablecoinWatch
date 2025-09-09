@@ -141,6 +141,17 @@ class IDataFetcher {
  * @property {number} circulating - Circulating supply
  * @property {number} total - Total supply
  * @property {number} max - Maximum supply
+ * @property {Array<NetworkBreakdownEntry>} networkBreakdown - Cross-chain breakdown (optional)
+ */
+
+/**
+ * Cross-chain supply breakdown entry
+ * @typedef {Object} NetworkBreakdownEntry
+ * @property {string} name - Platform name (e.g., 'Ethereum')
+ * @property {string} network - Network identifier/slug (e.g., 'eth', 'ethereum')
+ * @property {string} contractAddress - Token contract address on the network (if available)
+ * @property {number} supply - Supply on this network (if available)
+ * @property {number} percentage - Percentage share of total (if available)
  */
 
 /**

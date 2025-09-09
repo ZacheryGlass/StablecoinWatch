@@ -155,6 +155,9 @@ docs/
 
 ## How It Works
 
+### Standardized Stablecoin Format
+- Each data source transformer returns a common object shape used for merging. See `docs/standardized-stablecoin-format.md` for the schema and per-source behavior.
+
 ### Data Flow Architecture
 
 1. **Multi-Source Data Fetching**:
