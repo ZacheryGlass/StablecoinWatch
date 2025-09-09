@@ -29,6 +29,15 @@ class MessariDataFetcher extends IDataFetcher {
         this.config = ApiConfig.getApiConfig('messari') || {};
         this.sourceId = 'messari';
         this.client = null;
+        
+        // Pre-compile regex patterns for optimal performance
+        this._precompiledPatterns = {
+            stablecoinPatterns: [
+                /usdt|usdc|dai|busd|frax|usdd|tusd|pax|gusd|husd/i,  // Known stablecoin symbols
+                /stable|dollar|usd/i  // Generic stablecoin indicators
+            ]
+        };
+        
         if (this.isConfigured()) {
             try {
                 this.client = new MessariClient({ 
@@ -175,7 +184,7 @@ class MessariDataFetcher extends IDataFetcher {
             }
 
             // Filter the raw data to include only valid stablecoins
-            const filteredList = this._filterStablecoins(list);
+            const filteredList = await this._filterStablecoins(list);
 
             if (this.healthMonitor) {
                 await this.healthMonitor.recordSuccess(sourceId, {
@@ -282,10 +291,22 @@ class MessariDataFetcher extends IDataFetcher {
      * @private
      * @memberof MessariDataFetcher
      */
-    _filterStablecoins(rawData) {
+    async _filterStablecoins(rawData) {
         if (!Array.isArray(rawData)) {
             return [];
         }
+
+        // For large datasets, use async batching to prevent main thread blocking
+        if (rawData.length > 1000) {
+            return await this._filterStablecoinsAsync(rawData);
+        }
+
+        return this._filterStablecoinsSync(rawData);
+    }
+
+    _filterStablecoinsSync(rawData) {
+        // Use pre-compiled patterns for better performance
+        const stablecoinPatterns = this._precompiledPatterns.stablecoinPatterns;
 
         return rawData.filter(asset => {
             // Basic validation - ensure required fields exist
@@ -296,12 +317,6 @@ class MessariDataFetcher extends IDataFetcher {
             const symbol = (asset.symbol || '').toLowerCase();
             const name = (asset.name || '').toLowerCase();
             const tags = asset.tags || [];
-
-            // Define stablecoin patterns for symbol/name matching
-            const stablecoinPatterns = [
-                /usdt|usdc|dai|busd|frax|usdd|tusd|pax|gusd|husd/,  // Known stablecoin symbols
-                /stable|dollar|usd/,  // Generic stablecoin indicators
-            ];
 
             // Check for stablecoin-related tags
             const hasStablecoinTag = tags.some(tag => 
@@ -317,6 +332,24 @@ class MessariDataFetcher extends IDataFetcher {
             // Include asset if it has stablecoin tags OR matches known patterns
             return hasStablecoinTag || matchesPattern;
         });
+    }
+
+    async _filterStablecoinsAsync(rawData) {
+        const batchSize = 500;
+        const results = [];
+        
+        for (let i = 0; i < rawData.length; i += batchSize) {
+            const batch = rawData.slice(i, i + batchSize);
+            const filtered = this._filterStablecoinsSync(batch);
+            results.push(...filtered);
+            
+            // Yield control back to event loop to prevent blocking
+            if (i + batchSize < rawData.length) {
+                await new Promise(resolve => setImmediate(resolve));
+            }
+        }
+        
+        return results;
     }
 
     /**

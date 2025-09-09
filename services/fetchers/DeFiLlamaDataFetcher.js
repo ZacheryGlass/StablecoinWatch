@@ -28,6 +28,15 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
         this.healthMonitor = healthMonitor;
         this.config = ApiConfig.getApiConfig('defillama') || {};
         this.sourceId = 'defillama';
+        
+        // Pre-compile regex patterns for optimal performance
+        this._precompiledPatterns = {
+            excludePatterns: [
+                /wrapped/i, /liquid/i, /staked/i, /yield/i, /reward/i,
+                /^w[A-Z]+$/, // Wrapped tokens like wETH, wBTC
+                /pool/i, /vault/i, /interest/i, /synthetic/i
+            ]
+        };
     }
 
     /**
@@ -154,7 +163,7 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
             } catch (_) { /* ignore logging errors */ }
 
             // Filter the raw data to include only valid stablecoins
-            const stablecoins = this._filterStablecoins(data.peggedAssets);
+            const stablecoins = await this._filterStablecoins(data.peggedAssets);
 
             if (this.healthMonitor) {
                 await this.healthMonitor.recordSuccess(sourceId, {
@@ -191,12 +200,21 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
      * @private
      * @memberof DeFiLlamaDataFetcher
      */
-    _filterStablecoins(rawData) {
+    async _filterStablecoins(rawData) {
         if (!Array.isArray(rawData)) {
             return [];
         }
 
-        // Get filtering configuration
+        // For large datasets, use async batching to prevent main thread blocking
+        if (rawData.length > 1000) {
+            return await this._filterStablecoinsAsync(rawData);
+        }
+
+        return this._filterStablecoinsSync(rawData);
+    }
+
+    _filterStablecoinsSync(rawData) {
+        // Get filtering configuration and pre-compute Sets for O(1) lookups
         const filterCfg = this.config?.processing?.stablecoinFilter || {};
         const allowedPegTypes = new Set(
             (filterCfg.allowedPegTypes || ['peggedUSD'])
@@ -206,7 +224,9 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
         const priceRange = filterCfg.priceRange || { min: 0.5, max: 2.0 };
         const minCirculating = typeof filterCfg.minCirculatingSupply === 'number' ? filterCfg.minCirculatingSupply : 0;
         const excludeSymbols = new Set((filterCfg.excludeSymbols || []).map(s => String(s).toUpperCase()));
-        const excludePatterns = Array.isArray(filterCfg.excludePatterns) ? filterCfg.excludePatterns : [];
+        
+        // Use pre-compiled patterns instead of config patterns for better performance
+        const excludePatterns = this._precompiledPatterns.excludePatterns;
 
         return rawData.filter((coin) => {
             // Basic validation - ensure required fields exist
@@ -256,6 +276,24 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
 
             return true;
         });
+    }
+
+    async _filterStablecoinsAsync(rawData) {
+        const batchSize = 500;
+        const results = [];
+        
+        for (let i = 0; i < rawData.length; i += batchSize) {
+            const batch = rawData.slice(i, i + batchSize);
+            const filtered = this._filterStablecoinsSync(batch);
+            results.push(...filtered);
+            
+            // Yield control back to event loop to prevent blocking
+            if (i + batchSize < rawData.length) {
+                await new Promise(resolve => setImmediate(resolve));
+            }
+        }
+        
+        return results;
     }
 
     /**

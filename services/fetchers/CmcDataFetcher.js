@@ -28,6 +28,10 @@ class CmcDataFetcher extends IDataFetcher {
         this.healthMonitor = healthMonitor;
         this.config = ApiConfig.getApiConfig('cmc') || {};
         this.sourceId = 'cmc';
+        
+        // Pre-compile stablecoin tags Set for O(1) lookup performance
+        const tagName = this.config?.processing?.stablecoinFilter?.tagName || 'stablecoin';
+        this._stablecoinTags = new Set([tagName]);
     }
 
     /**
@@ -159,7 +163,7 @@ class CmcDataFetcher extends IDataFetcher {
             }
 
             // Filter the raw data to include only valid stablecoins
-            const stablecoins = this._filterStablecoins(data.data);
+            const stablecoins = await this._filterStablecoins(data.data);
 
             // No tracing logs in production
 
@@ -197,17 +201,26 @@ class CmcDataFetcher extends IDataFetcher {
      * @private
      * @memberof CmcDataFetcher
      */
-    _filterStablecoins(rawData) {
+    async _filterStablecoins(rawData) {
         if (!Array.isArray(rawData)) {
             return [];
         }
 
+        // For large datasets, use async batching to prevent main thread blocking
+        if (rawData.length > 1000) {
+            return await this._filterStablecoinsAsync(rawData);
+        }
+
+        return this._filterStablecoinsSync(rawData);
+    }
+
+    _filterStablecoinsSync(rawData) {
         const priceRange = this.config?.processing?.stablecoinFilter?.priceRange || { min: 0.5, max: 2.0 };
-        const tagName = this.config?.processing?.stablecoinFilter?.tagName || 'stablecoin';
 
         return rawData.filter((crypto) => {
-            // Check for stablecoin tag presence
-            const hasStablecoinTag = crypto.tags && crypto.tags.includes(tagName);
+            // Check for stablecoin tag presence using O(1) Set lookup
+            const hasStablecoinTag = crypto.tags && 
+                crypto.tags.some(tag => this._stablecoinTags.has(tag));
             if (!hasStablecoinTag) {
                 return false;
             }
@@ -218,6 +231,24 @@ class CmcDataFetcher extends IDataFetcher {
             
             return isReasonablePrice;
         });
+    }
+
+    async _filterStablecoinsAsync(rawData) {
+        const batchSize = 1000;
+        const results = [];
+        
+        for (let i = 0; i < rawData.length; i += batchSize) {
+            const batch = rawData.slice(i, i + batchSize);
+            const filtered = this._filterStablecoinsSync(batch);
+            results.push(...filtered);
+            
+            // Yield control back to event loop to prevent blocking
+            if (i + batchSize < rawData.length) {
+                await new Promise(resolve => setImmediate(resolve));
+            }
+        }
+        
+        return results;
     }
 
     /**
