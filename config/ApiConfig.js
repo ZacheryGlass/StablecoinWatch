@@ -228,7 +228,13 @@ class ApiConfig {
                             min: parseFloat(process.env.DEFILLAMA_PRICE_MIN) || 0.50,
                             max: parseFloat(process.env.DEFILLAMA_PRICE_MAX) || 2.00
                         },
-                        allowedPegTypes: (process.env.DEFILLAMA_ALLOWED_PEG_TYPES || 'peggedUSD').split(','),
+                        // Allow common fiat peg types by default (exclude VAR)
+                        allowedPegTypes: (process.env.DEFILLAMA_ALLOWED_PEG_TYPES || [
+                            'peggedUSD', 'peggedEUR', 'peggedGBP', 'peggedJPY', 'peggedCHF',
+                            'peggedCAD', 'peggedAUD', 'peggedSGD', 'peggedCNY', 'peggedRUB',
+                            'peggedTRY', 'peggedMXN', 'peggedARS', 'peggedPHP', 'peggedREAL',
+                            'peggedUAH'
+                        ].join(',')).split(','),
                         minCirculatingSupply: parseInt(process.env.DEFILLAMA_MIN_SUPPLY) || 1000000,
                         excludePatterns: [
                             // Common non-stablecoin patterns

@@ -144,9 +144,56 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
                 throw new Error('No peggedAssets data received from DeFiLlama API');
             }
 
+            // Log unique peg types from the response (pre-filter)
+            try {
+                const pegTypes = Array.from(new Set((data.peggedAssets || [])
+                    .map(c => c?.pegType)
+                    .filter(Boolean)))
+                    .sort();
+                console.info(`DeFiLlama peg types present (${pegTypes.length}): ${pegTypes.join(', ')}`);
+            } catch (_) { /* ignore logging errors */ }
+
+            // Apply filtering to include only desired peg types (e.g., peggedUSD) and sane prices
+            const filterCfg = this.config?.processing?.stablecoinFilter || {};
+            const allowedPegTypes = new Set(
+                (filterCfg.allowedPegTypes || ['peggedUSD'])
+                    .map(t => String(t).trim())
+                    .filter(Boolean)
+            );
+            const priceRange = filterCfg.priceRange || { min: 0.5, max: 2.0 };
+            const minCirculating = typeof filterCfg.minCirculatingSupply === 'number' ? filterCfg.minCirculatingSupply : 0;
+            const excludeSymbols = new Set((filterCfg.excludeSymbols || []).map(s => String(s).toUpperCase()));
+            const excludePatterns = Array.isArray(filterCfg.excludePatterns) ? filterCfg.excludePatterns : [];
+
             const stablecoins = data.peggedAssets.filter((coin) => {
-                // Only basic data validation - filter out coins without basic required data
-                return coin.symbol && coin.name && coin.circulating;
+                if (!coin || !coin.symbol || !coin.name || !coin.circulating) return false;
+
+                // 1) Peg type filter (primary guardrail to avoid BTC/EUR-pegged assets)
+                if (coin.pegType && !allowedPegTypes.has(coin.pegType)) return false;
+
+                // 2) Exclusions by symbol/pattern (defensive)
+                const sym = String(coin.symbol).toUpperCase();
+                if (excludeSymbols.has(sym)) return false;
+                const name = String(coin.name);
+                if (excludePatterns.some(rx => {
+                    try { return rx.test(name) || rx.test(sym); } catch (_) { return false; }
+                })) return false;
+
+                // 3) Price sanity for USD-pegged only (non-USD pegs have different USD price levels)
+                if (coin.pegType === 'peggedUSD') {
+                    const price = coin.price;
+                    if (typeof price === 'number' && isFinite(price)) {
+                        if (price < priceRange.min || price > priceRange.max) return false;
+                    }
+                }
+
+                // 4) Circulating supply sanity for USD leg (if present)
+                const circUSD = coin.circulating?.peggedUSD ?? null;
+                if (typeof circUSD === 'number' && isFinite(circUSD)) {
+                    if (circUSD < minCirculating) return false;
+                }
+
+                return true;
             });
 
             if (this.healthMonitor) {
