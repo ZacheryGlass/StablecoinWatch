@@ -27,13 +27,34 @@ const apiArg = args.find(arg => arg.startsWith('--api='));
 const verbose = args.includes('--verbose');
 const selectedApis = apiArg ? apiArg.split('=')[1].split(',') : ['cmc', 'messari', 'defillama'];
 
+/**
+ * Log an informational message with icon
+ * @param {string} message - The message to log
+ */
 const log = (message) => console.log(`🔄 ${message}`);
+
+/**
+ * Log a success message with icon
+ * @param {string} message - The message to log
+ */
 const success = (message) => console.log(`✅ ${message}`);
+
+/**
+ * Log a warning message with icon
+ * @param {string} message - The message to log
+ */
 const warn = (message) => console.log(`⚠️  ${message}`);
+
+/**
+ * Log an error message with icon
+ * @param {string} message - The message to log
+ */
 const error = (message) => console.error(`❌ ${message}`);
 
 /**
- * Fetch CMC data
+ * Fetch stablecoin data from CoinMarketCap API
+ * @returns {Promise<Object>} CMC API response data with cryptocurrency listings
+ * @throws {Error} If API key is missing or API request fails
  */
 async function fetchCMCData() {
     if (!process.env.CMC_API_KEY) {
@@ -71,7 +92,10 @@ async function fetchCMCData() {
 }
 
 /**
- * Fetch Messari data
+ * Fetch stablecoin data from Messari API
+ * Tries dedicated stablecoins endpoint first, falls back to general assets endpoint
+ * @returns {Promise<Object>} Messari API response data with asset information
+ * @throws {Error} If API key is missing or API request fails
  */
 async function fetchMessariData() {
     if (!process.env.MESSARI_API_KEY) {
@@ -128,7 +152,10 @@ async function fetchMessariData() {
 }
 
 /**
- * Fetch DeFiLlama data
+ * Fetch stablecoin data from DeFiLlama API
+ * Uses the dedicated stablecoins endpoint (no API key required)
+ * @returns {Promise<Object>} DeFiLlama API response data with pegged assets
+ * @throws {Error} If API request fails or no peggedAssets data is received
  */
 async function fetchDeFiLlamaData() {
     // DeFiLlama uses a different base URL for stablecoins
@@ -159,7 +186,10 @@ async function fetchDeFiLlamaData() {
 }
 
 /**
- * Update a single API's mock data
+ * Update mock data for a single API source
+ * Fetches fresh data and saves it to the corresponding JSON file
+ * @param {string} apiName - The API name ('cmc', 'messari', or 'defillama')
+ * @throws {Error} If API fetching fails or unknown API name is provided
  */
 async function updateApiMockData(apiName) {
     const startTime = Date.now();
@@ -242,7 +272,8 @@ async function updateApiMockData(apiName) {
 }
 
 /**
- * Main function
+ * Main script function that coordinates updating all selected APIs
+ * Processes command line arguments, updates APIs sequentially, and reports results
  */
 async function main() {
     const startTime = Date.now();

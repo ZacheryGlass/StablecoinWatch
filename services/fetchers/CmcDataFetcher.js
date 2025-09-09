@@ -5,7 +5,24 @@ const IDataFetcher = require('../../interfaces/IDataFetcher');
 const ApiConfig = require('../../config/ApiConfig');
 const AppConfig = require('../../config/AppConfig');
 
+/**
+ * CoinMarketCap data fetcher implementation.
+ * Fetches stablecoin data from the CoinMarketCap API, handles authentication,
+ * rate limiting, and provides comprehensive error handling with health monitoring.
+ * Supports both live API calls and mock data mode for development/testing.
+ * 
+ * @class CmcDataFetcher
+ * @extends {IDataFetcher}
+ */
 class CmcDataFetcher extends IDataFetcher {
+    /**
+     * Creates an instance of CmcDataFetcher.
+     * Initializes the fetcher with health monitoring, API configuration from ApiConfig,
+     * and sets up the source identifier.
+     * 
+     * @param {Object} [healthMonitor=null] - Health monitoring instance for tracking API health
+     * @memberof CmcDataFetcher
+     */
     constructor(healthMonitor = null) {
         super();
         this.healthMonitor = healthMonitor;
@@ -13,13 +30,40 @@ class CmcDataFetcher extends IDataFetcher {
         this.sourceId = 'cmc';
     }
 
+    /**
+     * Gets the unique identifier for this data source.
+     * 
+     * @returns {string} Source identifier 'cmc'
+     * @memberof CmcDataFetcher
+     */
     getSourceId() { return this.sourceId; }
+    /**
+     * Gets the human-readable name for this data source.
+     * 
+     * @returns {string} Source name from configuration or default 'CoinMarketCap'
+     * @memberof CmcDataFetcher
+     */
     getSourceName() { return this.config?.name || 'CoinMarketCap'; }
 
+    /**
+     * Checks if the fetcher is properly configured for API access.
+     * Validates that the source is enabled and API key is provided.
+     * 
+     * @returns {boolean} True if properly configured, false otherwise
+     * @memberof CmcDataFetcher
+     */
     isConfigured() {
         return !!(this.config?.enabled && this.config?.apiKey);
     }
 
+    /**
+     * Gets the data capabilities and priority information for this source.
+     * Returns configuration defining what types of data this source provides
+     * and its priority in data merging operations.
+     * 
+     * @returns {Object} Capabilities object with data types, priority, and feature flags
+     * @memberof CmcDataFetcher
+     */
     getCapabilities() {
         return this.config?.capabilities || {
             hasMarketData: true,
@@ -32,10 +76,23 @@ class CmcDataFetcher extends IDataFetcher {
         };
     }
 
+    /**
+     * Gets rate limiting configuration for this API source.
+     * 
+     * @returns {Object} Rate limit configuration object
+     * @memberof CmcDataFetcher
+     */
     getRateLimitInfo() {
         return this.config?.rateLimit || {};
     }
 
+    /**
+     * Gets the current health status of this data source.
+     * Queries the health monitor for source-specific health metrics and status.
+     * 
+     * @returns {Promise<Object>} Health status object with healthy flag and metrics
+     * @memberof CmcDataFetcher
+     */
     async getHealthStatus() {
         if (!this.healthMonitor) return { healthy: true };
         try {
@@ -45,6 +102,15 @@ class CmcDataFetcher extends IDataFetcher {
         }
     }
 
+    /**
+     * Fetches stablecoin data from CoinMarketCap API or mock data.
+     * Handles authentication, request parameters, filtering, and health monitoring.
+     * Filters results to include only stablecoins with appropriate price ranges.
+     * 
+     * @returns {Promise<Array>} Array of raw stablecoin data from CoinMarketCap
+     * @throws {Error} When API request fails, authentication issues, or data validation errors
+     * @memberof CmcDataFetcher
+     */
     async fetchStablecoins() {
         const startTime = Date.now();
         const sourceId = this.sourceId;
@@ -127,6 +193,15 @@ class CmcDataFetcher extends IDataFetcher {
         }
     }
 
+    /**
+     * Transforms raw CoinMarketCap data to standardized internal format.
+     * Maps CoinMarketCap API response fields to the standard data structure used
+     * throughout the application for consistent data handling.
+     * 
+     * @param {Array} rawData - Raw data array from CoinMarketCap API
+     * @returns {Array} Array of standardized stablecoin data objects
+     * @memberof CmcDataFetcher
+     */
     transformToStandardFormat(rawData) {
         const ts = Date.now();
         const out = (rawData || []).map((coin) => ({
@@ -176,6 +251,16 @@ class CmcDataFetcher extends IDataFetcher {
         return out;
     }
 
+    /**
+     * Categorizes errors for better error handling and monitoring.
+     * Maps different error types (HTTP status codes, network issues) to
+     * standardized error categories for consistent handling.
+     * 
+     * @param {Error} error - The error object to categorize
+     * @returns {string} Error category ('auth', 'rate_limit', 'network', 'server', etc.)
+     * @private
+     * @memberof CmcDataFetcher
+     */
     _categorizeError(error) {
         if (!error) return 'unknown';
         const status = error?.response?.status;
@@ -188,15 +273,29 @@ class CmcDataFetcher extends IDataFetcher {
         return 'unknown';
     }
 
+    /**
+     * Determines if an error is retryable for circuit breaker logic.
+     * Identifies which error types should trigger retry attempts vs. permanent failures.
+     * 
+     * @param {Error} error - The error object to evaluate
+     * @returns {boolean} True if the error type is retryable, false otherwise
+     * @private
+     * @memberof CmcDataFetcher
+     */
     _isRetryable(error) {
         const type = this._categorizeError(error);
         return ['timeout', 'network', 'server', 'rate_limit'].includes(type);
     }
 
     /**
-     * Load mock data from file for development/testing
+     * Loads mock data from file for development/testing purposes.
+     * Reads JSON data from configured mock file path and simulates fresh API response
+     * by updating timestamps. Used when mock data mode is enabled in configuration.
+     * 
+     * @returns {Promise<Object>} Mock API response data with updated timestamp
+     * @throws {Error} When mock file is not found or cannot be parsed
      * @private
-     * @returns {Object} Mock API response data
+     * @memberof CmcDataFetcher
      */
     async _loadMockData() {
         const mockFilePath = this.config?.mockData?.filePath || 'cmc_raw_output.json';

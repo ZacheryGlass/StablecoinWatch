@@ -3,7 +3,26 @@ const DataFetcherRegistry = require('./DataFetcherRegistry');
 const AppConfig = require('../config/AppConfig');
 const HybridTransformer = require('./HybridTransformer');
 
+/**
+ * Main service that coordinates stablecoin data fetching, aggregation, and transformation.
+ * Implements a comprehensive data aggregation system that combines data from multiple API sources
+ * (CoinMarketCap, Messari, DeFiLlama, CoinGecko) with priority-based merging, consensus scoring,
+ * and confidence metrics. Provides health monitoring, circuit breaker functionality, and
+ * degraded mode operation.
+ * 
+ * @class StablecoinDataService
+ * @extends {IStablecoinDataService}
+ */
 class StablecoinDataService extends IStablecoinDataService {
+    /**
+     * Creates an instance of StablecoinDataService.
+     * Initializes the service with health monitoring, data fetcher registry, and hybrid transformer.
+     * Sets up internal state for aggregated data, platform data, metrics, and view models.
+     * 
+     * @param {Object} [healthMonitor=null] - Health monitoring instance for tracking API source health
+     * @param {DataFetcherRegistry} [fetcherRegistry=null] - Registry of data fetchers, creates default if not provided
+     * @memberof StablecoinDataService
+     */
     constructor(healthMonitor = null, fetcherRegistry = null) {
         super();
         this.healthMonitor = healthMonitor;
@@ -21,17 +40,54 @@ class StablecoinDataService extends IStablecoinDataService {
     }
 
     // Interface methods
+    /**
+     * Gets all aggregated stablecoin data sorted by market cap.
+     * Returns the internal aggregated data array that contains merged data from all sources
+     * with confidence scores, consensus metrics, and quality indicators.
+     * 
+     * @returns {Promise<Array>} Array of aggregated stablecoin objects
+     * @memberof StablecoinDataService
+     */
     async getStablecoins() { return this._aggregated; }
 
+    /**
+     * Gets a specific stablecoin by identifier (slug or symbol).
+     * Performs case-insensitive matching on both slug and symbol fields.
+     * 
+     * @param {string} identifier - The stablecoin slug or symbol to search for
+     * @returns {Promise<Object|null>} The matching stablecoin object or null if not found
+     * @memberof StablecoinDataService
+     */
     async getStablecoin(identifier) {
         const id = String(identifier || '').toLowerCase();
         return this._aggregated.find(c => (c.slug || '').toLowerCase() === id || (c.symbol || '').toLowerCase() === id) || null;
     }
 
+    /**
+     * Gets aggregated platform/network data with market cap totals and coin counts.
+     * Returns platform breakdown data showing total market cap and stablecoin count per platform.
+     * 
+     * @returns {Promise<Array>} Array of platform data objects with aggregated metrics
+     * @memberof StablecoinDataService
+     */
     async getPlatformData() { return this._platformData; }
 
+    /**
+     * Gets overall market metrics including total market cap, volume, and counts.
+     * Returns aggregated metrics across all stablecoins with formatted values.
+     * 
+     * @returns {Promise<Object>} Market metrics object with totals and metadata
+     * @memberof StablecoinDataService
+     */
     async getMarketMetrics() { return this._metrics; }
 
+    /**
+     * Gets comprehensive health status including system health, data freshness, and warnings.
+     * Combines health monitor data with data freshness checks and degraded mode status.
+     * 
+     * @returns {Promise<Object>} Health status object with system status, freshness, sources, and warnings
+     * @memberof StablecoinDataService
+     */
     async getHealthStatus() {
         const system = this.healthMonitor ? await this.healthMonitor.getSystemHealth() : null;
         const freshness = await this.getDataFreshness();
@@ -50,6 +106,16 @@ class StablecoinDataService extends IStablecoinDataService {
         };
     }
 
+    /**
+     * Refreshes all stablecoin data from active sources and rebuilds aggregated data.
+     * Coordinates parallel data fetching from all active sources, performs priority-based
+     * data merging with consensus scoring, builds view models, and updates internal state.
+     * Implements degraded mode handling and comprehensive error tracking.
+     * 
+     * @returns {Promise<Object>} Refresh operation result with success status, counts, duration, and errors
+     * @throws {Error} When no data sources are available or all sources fail
+     * @memberof StablecoinDataService
+     */
     async refreshData() {
         const start = Date.now();
         const sourceResults = [];
@@ -295,6 +361,14 @@ class StablecoinDataService extends IStablecoinDataService {
         };
     }
 
+    /**
+     * Gets data freshness information including age, staleness, and next update time.
+     * Calculates data age based on last refresh timestamp and determines staleness
+     * based on configured update intervals.
+     * 
+     * @returns {Promise<Object>} Freshness data with timestamps, age, staleness status, and source info
+     * @memberof StablecoinDataService
+     */
     async getDataFreshness() {
         const lastUpdate = this._lastRefresh;
         const age = Date.now() - (lastUpdate || 0);
@@ -310,6 +384,14 @@ class StablecoinDataService extends IStablecoinDataService {
         return { lastUpdate, age, isStale, nextUpdate: lastUpdate + (AppConfig.dataUpdate.intervalMinutes * 60 * 1000), sources };
     }
 
+    /**
+     * Gets information about all configured data sources including health and capabilities.
+     * Returns detailed information about each data fetcher including configuration status,
+     * health status, capabilities, and rate limiting information.
+     * 
+     * @returns {Promise<Array>} Array of data source information objects
+     * @memberof StablecoinDataService
+     */
     async getDataSources() {
         const list = [];
         for (const f of this.fetcherRegistry.getAll()) {
@@ -331,10 +413,26 @@ class StablecoinDataService extends IStablecoinDataService {
         return list;
     }
 
-    // Compatibility for existing routes
+    /**
+     * Gets the view model data for legacy route compatibility.
+     * Returns the internal view model that matches the expected format for existing routes.
+     * 
+     * @returns {Object} View model object with stablecoins, metrics, and platform data
+     * @memberof StablecoinDataService
+     */
     getData() { return this._viewModel; }
 
     // Helpers
+    /**
+     * Computes consensus score for a set of numerical values.
+     * Calculates how closely values agree by measuring deviation from median.
+     * Higher scores indicate better agreement between sources.
+     * 
+     * @param {Array<number>} values - Array of numerical values to analyze
+     * @returns {number} Consensus score between 0 and 1 (1 = perfect agreement)
+     * @private
+     * @memberof StablecoinDataService
+     */
     _computeConsensus(values) {
         const nums = (values || []).filter(v => typeof v === 'number' && isFinite(v));
         if (nums.length <= 1) return 0.5;
@@ -346,6 +444,19 @@ class StablecoinDataService extends IStablecoinDataService {
         return Math.max(0, Math.min(1, score));
     }
 
+    /**
+     * Computes confidence scores for different data categories.
+     * Calculates overall confidence based on number of sources and consensus quality.
+     * 
+     * @param {Object} params - Configuration object
+     * @param {number} params.priceSources - Number of sources providing price data
+     * @param {number} params.mcapSources - Number of sources providing market cap data
+     * @param {number} params.supplySources - Number of sources providing supply data
+     * @param {number} params.consensus - Consensus score from _computeConsensus
+     * @returns {Object} Confidence scores object with overall, market, supply, and platform scores
+     * @private
+     * @memberof StablecoinDataService
+     */
     _computeConfidence({ priceSources, mcapSources, supplySources, consensus }) {
         const srcScore = Math.min(1, (priceSources + mcapSources + supplySources) / 6); // heuristic up to 6 datapoints
         const market = Math.min(1, ((priceSources >= 1 ? 0.5 : 0) + (mcapSources >= 1 ? 0.3 : 0) + consensus * 0.2));
@@ -355,6 +466,17 @@ class StablecoinDataService extends IStablecoinDataService {
         return { overall, market, supply, platform };
     }
 
+    /**
+     * Computes data quality metrics for a stablecoin entry.
+     * Evaluates completeness of data and identifies missing critical fields.
+     * 
+     * @param {Object} params - Data object to evaluate
+     * @param {Object} params.marketData - Market data object with price and market cap
+     * @param {Object} params.supply - Supply data object with circulating supply
+     * @returns {Object} Quality metrics object with completeness flags and missing fields
+     * @private
+     * @memberof StablecoinDataService
+     */
     _computeQuality({ marketData, supply }) {
         const missing = [];
         if (marketData.price == null) missing.push('price');
@@ -370,12 +492,32 @@ class StablecoinDataService extends IStablecoinDataService {
         };
     }
 
+    /**
+     * Calculates the median value of a numerical array.
+     * Handles both odd and even length arrays appropriately.
+     * 
+     * @param {Array<number>} arr - Array of numbers to find median of
+     * @returns {number} The median value
+     * @private
+     * @memberof StablecoinDataService
+     */
     _median(arr) {
         const s = [...arr].sort((a, b) => a - b);
         const m = Math.floor(s.length / 2);
         return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
     }
 
+    /**
+     * Converts aggregated data format to hybrid transformer compatible format.
+     * Transforms the internal aggregated format to the legacy format expected by HybridTransformer.
+     * Preserves source-specific data for image URLs and platform information.
+     * 
+     * @param {Object} agg - Aggregated stablecoin data object
+     * @param {Map} sourceMap - Map of source IDs to their raw data for this stablecoin
+     * @returns {Object} Hybrid-compatible data object
+     * @private
+     * @memberof StablecoinDataService
+     */
     _toHybridLike(agg, sourceMap) {
         // Prefer CMC id for image URL compatibility
         const cmc = sourceMap ? sourceMap.get('cmc') : null;

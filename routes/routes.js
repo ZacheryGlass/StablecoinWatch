@@ -4,10 +4,11 @@
 const express = require('express');
 const util = require('../app/util');
 
-/*---------------------------------------------------------
-    constants
----------------------------------------------------------*/
-// Factory to create router with injected services
+/**
+ * Factory to create router with injected services
+ * @param {Object} services - The services container with dataService and healthMonitor
+ * @returns {express.Router} Configured Express router
+ */
 module.exports = (services) => {
 const router = express.Router();
 
@@ -15,9 +16,11 @@ const router = express.Router();
     ROUTES
 ---------------------------------------------------------*/
 
-/*-----------------------------------------------
-    Home (Coins List)
------------------------------------------------*/
+/**
+ * Home page route - displays list of all stablecoins
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
 router.get('/', async (req, res) => {
     const svc = services || req.services || {};
     const data = svc.dataService.getData();
@@ -37,11 +40,13 @@ router.get('/', async (req, res) => {
             formatSupply: util.formatSupply
         }
     });
-}); // home
+});
 
-/*-----------------------------------------------
-    Status Page (HTML)
------------------------------------------------*/
+/**
+ * Status page route - displays application and health status
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
 router.get('/status', async (req, res) => {
     const svc = services || req.services || {};
     const data = svc.dataService.getData();
@@ -69,11 +74,13 @@ router.get('/status', async (req, res) => {
             formatSupply: require('../app/util').formatSupply
         }
     });
-}); // status
+});
 
-/*-----------------------------------------------
-    Health (JSON)
------------------------------------------------*/
+/**
+ * Health API endpoint - returns system health status as JSON
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
 router.get('/api/health', async (req, res) => {
     try {
         const svc = services || req.services || {};
@@ -85,11 +92,13 @@ router.get('/api/health', async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err?.message || 'Failed to get health' });
     }
-}); // api/health
+});
 
-/*-----------------------------------------------
-    Platforms List
------------------------------------------------*/
+/**
+ * Platforms list route - displays all blockchain platforms
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
 router.get('/platforms', async (req, res) => {
     const svc = services || req.services || {};
     const data = svc.dataService.getData();
@@ -108,11 +117,13 @@ router.get('/platforms', async (req, res) => {
             formatSupply: util.formatSupply
         }
     });
-}); // chains
+});
 
-/*-----------------------------------------------
-    Coins
------------------------------------------------*/
+/**
+ * Individual coin detail route - displays specific stablecoin information
+ * @param {Object} req - Express request object with symbol parameter
+ * @param {Object} res - Express response object
+ */
 router.get('/coins/:symbol', async (req, res) => {
     console.debug(`Request for coin page: ${req.params.symbol}`);
     const svc = services || req.services || {};
@@ -135,11 +146,13 @@ router.get('/coins/:symbol', async (req, res) => {
             formatSupply: util.formatSupply
         }
     });
-}); // coins
+});
 
-/*-----------------------------------------------
-    Platforms
------------------------------------------------*/
+/**
+ * Individual platform detail route - displays specific platform information
+ * @param {Object} req - Express request object with platform name parameter
+ * @param {Object} res - Express response object
+ */
 router.get('/platforms/:name', async (req, res) => {
     console.debug(`Request for platform page: ${req.params.name}`);
     const svc = services || req.services || {};
@@ -183,11 +196,13 @@ router.get('/platforms/:name', async (req, res) => {
             formatSupply: util.formatSupply
         }
     });
-}); // platforms
+});
 
-/*-----------------------------------------------
-    Donate
------------------------------------------------*/
+/**
+ * Donate page route - displays donation information
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
 router.get('/donate', async (req, res) => {
     const svc = services || req.services || {};
     const data = svc.dataService.getData();
@@ -206,7 +221,7 @@ router.get('/donate', async (req, res) => {
             formatSupply: util.formatSupply
         }
     });
-}); // donate
+});
 
 /*---------------------------------------------------------
     EXPORTS

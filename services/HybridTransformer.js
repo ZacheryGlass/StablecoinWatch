@@ -1,12 +1,35 @@
 const Stablecoin = require('../models/stablecoin');
 const Platform = require('../models/platform');
 
+/**
+ * Transforms and standardizes hybrid stablecoin data for view layer consumption.
+ * Handles data transformation from aggregated sources into view models compatible
+ * with the existing UI templates. Provides platform normalization, image URL generation,
+ * formatting utilities, and platform data calculations.
+ * 
+ * @class HybridTransformer
+ */
 class HybridTransformer {
+    /**
+     * Creates an instance of HybridTransformer.
+     * Initializes internal state for stablecoins array and metrics tracking.
+     * 
+     * @memberof HybridTransformer
+     */
     constructor() {
         this.stablecoins = [];
         this.metrics = { totalMCap: 0, totalVolume: 0, lastUpdated: null };
     }
 
+    /**
+     * Transforms hybrid stablecoin data into standardized view model format.
+     * Processes array of hybrid stablecoin objects, extracts and transforms data into
+     * Stablecoin model instances with proper formatting, platform extraction, and metrics calculation.
+     * Updates internal state with transformed stablecoins and aggregated metrics.
+     * 
+     * @param {Array} hybridStablecoins - Array of hybrid stablecoin data objects from aggregation service
+     * @memberof HybridTransformer
+     */
     transformHybridData(hybridStablecoins) {
         this.stablecoins = [];
         this.metrics.totalMCap = 0;
@@ -61,6 +84,18 @@ class HybridTransformer {
         this.stablecoins.sort((a, b) => (b.main.circulating_mcap || 0) - (a.main.circulating_mcap || 0));
     }
 
+    /**
+     * Gets the appropriate image URL for a stablecoin.
+     * Prioritizes CoinMarketCap image URLs if CMC ID is available, falls back to Messari logo URLs.
+     * 
+     * @param {Object} hybrid - Hybrid stablecoin data object
+     * @param {string} [hybrid.id] - CoinMarketCap ID for generating CMC image URL
+     * @param {Object} [hybrid._messari] - Messari-specific data container
+     * @param {Object} [hybrid._messari.profile.images] - Messari profile images
+     * @param {string} [hybrid._messari.profile.images.logo] - Messari logo URL
+     * @returns {string|null} Image URL or null if no image available
+     * @memberof HybridTransformer
+     */
     getCoinImageUrl(hybrid) {
         if (hybrid.id) {
             return `https://s2.coinmarketcap.com/static/img/coins/64x64/${hybrid.id}.png`;
@@ -71,6 +106,15 @@ class HybridTransformer {
         return null;
     }
 
+    /**
+     * Normalizes platform/blockchain names to standardized display names.
+     * Maps various platform name variations to consistent, user-friendly names.
+     * Handles common variations and aliases for major blockchain platforms.
+     * 
+     * @param {string} rawName - Raw platform name from API sources
+     * @returns {string} Normalized platform name for display
+     * @memberof HybridTransformer
+     */
     normalizePlatformName(rawName) {
         if (!rawName || typeof rawName !== 'string') return 'Unknown';
         const name = rawName.toLowerCase().trim();
@@ -98,6 +142,19 @@ class HybridTransformer {
         return rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
     }
 
+    /**
+     * Extracts and normalizes platform information from hybrid stablecoin data.
+     * Prioritizes network breakdown data, falls back to CMC platform data or tags.
+     * Returns array of Platform instances with deduplicated, normalized names.
+     * 
+     * @param {Object} hybrid - Hybrid stablecoin data object
+     * @param {Array} [hybrid.networkBreakdown] - Network breakdown data with platform details
+     * @param {Object} [hybrid._cmc] - CoinMarketCap-specific data
+     * @param {Object} [hybrid._cmc.platform] - CMC platform information
+     * @param {Array} [hybrid.tags] - Tag array that may contain platform indicators
+     * @returns {Array<Platform>} Array of Platform instances, with 'Unknown' fallback
+     * @memberof HybridTransformer
+     */
     extractPlatformsFromHybrid(hybrid) {
         const platforms = [];
         const seen = new Set();
@@ -140,6 +197,17 @@ class HybridTransformer {
         return platforms;
     }
 
+    /**
+     * Generates a descriptive text for a stablecoin based on its data sources and tags.
+     * Creates a standardized description indicating the stablecoin's data sources and associated tags.
+     * 
+     * @param {Object} hybrid - Hybrid stablecoin data object
+     * @param {string} [hybrid.name] - Stablecoin name
+     * @param {Array} [hybrid.tags] - Array of tags associated with the stablecoin
+     * @param {string} [hybrid.source] - Data source indicator ('hybrid', 'cmc-only', etc.)
+     * @returns {string} Generated description text
+     * @memberof HybridTransformer
+     */
     generateDescription(hybrid) {
         const tags = hybrid.tags ? hybrid.tags.join(', ') : '';
         const source = hybrid.source === 'hybrid' ? 'CMC + Messari' : 
@@ -147,6 +215,14 @@ class HybridTransformer {
         return `${hybrid.name} is a stablecoin tracked by ${source}. ${tags ? `Tags: ${tags}` : ''}`.trim();
     }
 
+    /**
+     * Calculates aggregated platform data from all processed stablecoins.
+     * Aggregates market cap totals and coin counts by platform, formats values for display,
+     * and generates URI slugs for routing.
+     * 
+     * @returns {Array} Array of platform data objects with totals, counts, and formatted values
+     * @memberof HybridTransformer
+     */
     calculatePlatformData() {
         const map = new Map();
         for (const sc of this.stablecoins) {
@@ -167,6 +243,16 @@ class HybridTransformer {
             .sort((a, b) => b.mcap_sum - a.mcap_sum);
     }
 
+    /**
+     * Formats numerical values with appropriate units and currency symbols.
+     * Converts large numbers to readable format with B (billions), M (millions), K (thousands) suffixes.
+     * Handles edge cases and provides fallback for invalid numbers.
+     * 
+     * @param {number} num - Numerical value to format
+     * @param {boolean} [includeDollarSign=true] - Whether to include dollar sign prefix
+     * @returns {string} Formatted number string with appropriate units
+     * @memberof HybridTransformer
+     */
     formatNumber(num, includeDollarSign = true) {
         if (typeof num !== 'number' || !isFinite(num)) return 'No data';
         const prefix = includeDollarSign ? '$' : '';
@@ -176,12 +262,38 @@ class HybridTransformer {
         return prefix + num.toFixed(includeDollarSign ? 2 : 0);
     }
 
+    /**
+     * Converts text to URL-friendly slug format.
+     * Converts to lowercase, replaces non-alphanumeric characters with hyphens,
+     * and removes leading/trailing hyphens.
+     * 
+     * @param {string} text - Text to convert to slug
+     * @returns {string} URL-friendly slug string
+     * @memberof HybridTransformer
+     */
     slugify(text) {
         if (!text) return '';
         return String(text).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     }
 
+    /**
+     * Gets the array of processed stablecoin objects.
+     * Returns the internal stablecoins array after transformation.
+     * 
+     * @returns {Array<Stablecoin>} Array of processed Stablecoin model instances
+     * @memberof HybridTransformer
+     */
     getStablecoins() { return this.stablecoins; }
+    /**
+     * Gets complete data object with stablecoins, metrics, and platform data.
+     * Returns a comprehensive data object suitable for view layer consumption.
+     * 
+     * @returns {Object} Complete data object with stablecoins array, metrics, and platform data
+     * @returns {Array} returns.stablecoins - Array of processed stablecoin objects
+     * @returns {Object} returns.metrics - Aggregated metrics (totalMCap, totalVolume, lastUpdated)
+     * @returns {Array} returns.platform_data - Platform aggregation data
+     * @memberof HybridTransformer
+     */
     getData() { return { stablecoins: this.stablecoins, metrics: this.metrics, platform_data: this.calculatePlatformData() }; }
 }
 

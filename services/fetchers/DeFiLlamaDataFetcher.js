@@ -5,7 +5,24 @@ const IDataFetcher = require('../../interfaces/IDataFetcher');
 const ApiConfig = require('../../config/ApiConfig');
 const AppConfig = require('../../config/AppConfig');
 
+/**
+ * DeFiLlama data fetcher implementation.
+ * Fetches stablecoin data from DeFiLlama's dedicated stablecoins API.
+ * Specializes in cross-chain supply data with detailed network breakdown.
+ * Does not require API key authentication and provides comprehensive
+ * chain-specific supply information.
+ * 
+ * @class DeFiLlamaDataFetcher
+ * @extends {IDataFetcher}
+ */
 class DeFiLlamaDataFetcher extends IDataFetcher {
+    /**
+     * Creates an instance of DeFiLlamaDataFetcher.
+     * Initializes the fetcher with health monitoring and API configuration.
+     * 
+     * @param {Object} [healthMonitor=null] - Health monitoring instance for tracking API health
+     * @memberof DeFiLlamaDataFetcher
+     */
     constructor(healthMonitor = null) {
         super();
         this.healthMonitor = healthMonitor;
@@ -13,25 +30,73 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
         this.sourceId = 'defillama';
     }
 
+    /**
+     * Gets the unique identifier for this data source.
+     * 
+     * @returns {string} Source identifier 'defillama'
+     * @memberof DeFiLlamaDataFetcher
+     */
     getSourceId() { return this.sourceId; }
+    /**
+     * Gets the human-readable name for this data source.
+     * 
+     * @returns {string} Source name from configuration or default 'DeFiLlama'
+     * @memberof DeFiLlamaDataFetcher
+     */
     getSourceName() { return this.config?.name || 'DeFiLlama'; }
 
+    /**
+     * Checks if the fetcher is properly configured for API access.
+     * DeFiLlama doesn't require an API key, only needs to be enabled in configuration.
+     * 
+     * @returns {boolean} True if enabled in configuration, false otherwise
+     * @memberof DeFiLlamaDataFetcher
+     */
     isConfigured() {
         // DeFiLlama doesn't require an API key; use enabled flag
         return !!this.config?.enabled;
     }
 
+    /**
+     * Gets the data capabilities and priority information for this source.
+     * DeFiLlama excels at cross-chain supply data and network breakdown information.
+     * 
+     * @returns {Object} Capabilities object from configuration or empty object
+     * @memberof DeFiLlamaDataFetcher
+     */
     getCapabilities() {
         return this.config?.capabilities || {};
     }
 
+    /**
+     * Gets rate limiting configuration for this API source.
+     * 
+     * @returns {Object} Rate limit configuration object or empty object
+     * @memberof DeFiLlamaDataFetcher
+     */
     getRateLimitInfo() { return this.config?.rateLimit || {}; }
 
+    /**
+     * Gets the current health status of this data source.
+     * Queries the health monitor for source-specific health metrics and status.
+     * 
+     * @returns {Promise<Object>} Health status object with healthy flag
+     * @memberof DeFiLlamaDataFetcher
+     */
     async getHealthStatus() {
         if (!this.healthMonitor) return { healthy: true };
         try { return await this.healthMonitor.getSourceHealth(this.sourceId); } catch (_) { return { healthy: true }; }
     }
 
+    /**
+     * Fetches stablecoin data from DeFiLlama stablecoins API or mock data.
+     * Requests data with prices included and handles circuit breaker logic.
+     * Filters results to include only coins with basic required data.
+     * 
+     * @returns {Promise<Array>} Array of raw stablecoin data from DeFiLlama
+     * @throws {Error} When API request fails, network issues, or data validation errors
+     * @memberof DeFiLlamaDataFetcher
+     */
     async fetchStablecoins() {
         const startTime = Date.now();
         const sourceId = this.sourceId;
@@ -109,6 +174,15 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
         }
     }
 
+    /**
+     * Transforms raw DeFiLlama data to standardized internal format.
+     * Maps DeFiLlama's peggedAssets format to the standard data structure,
+     * extracting cross-chain supply data and building comprehensive network breakdowns.
+     * 
+     * @param {Array} rawData - Raw data array from DeFiLlama stablecoins API
+     * @returns {Array} Array of standardized stablecoin data objects with network breakdown
+     * @memberof DeFiLlamaDataFetcher
+     */
     transformToStandardFormat(rawData) {
         const ts = Date.now();
         const out = (rawData || []).map((coin) => {
@@ -203,6 +277,16 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
     }
 
 
+    /**
+     * Normalizes blockchain/chain names to standardized display names.
+     * Maps DeFiLlama chain identifiers to consistent, user-friendly names.
+     * Handles common variations and aliases for major blockchain networks.
+     * 
+     * @param {string} chainName - Raw chain name from DeFiLlama API
+     * @returns {string} Normalized chain name for display
+     * @private
+     * @memberof DeFiLlamaDataFetcher
+     */
     _normalizeChainName(chainName) {
         if (!chainName || typeof chainName !== 'string') return 'Unknown';
         
@@ -245,6 +329,16 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
         return chainName.charAt(0).toUpperCase() + chainName.slice(1).toLowerCase();
     }
 
+    /**
+     * Categorizes errors for better error handling and monitoring.
+     * Maps different error types (HTTP status codes, network issues) to
+     * standardized error categories for consistent handling.
+     * 
+     * @param {Error} error - The error object to categorize
+     * @returns {string} Error category ('auth', 'rate_limit', 'network', 'server', etc.)
+     * @private
+     * @memberof DeFiLlamaDataFetcher
+     */
     _categorizeError(error) {
         if (!error) return 'unknown';
         const status = error?.response?.status;
@@ -257,15 +351,29 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
         return 'unknown';
     }
 
+    /**
+     * Determines if an error is retryable for circuit breaker logic.
+     * Identifies which error types should trigger retry attempts vs. permanent failures.
+     * 
+     * @param {Error} error - The error object to evaluate
+     * @returns {boolean} True if the error type is retryable, false otherwise
+     * @private
+     * @memberof DeFiLlamaDataFetcher
+     */
     _isRetryable(error) {
         const type = this._categorizeError(error);
         return ['timeout', 'network', 'server', 'rate_limit'].includes(type);
     }
 
     /**
-     * Load mock data from file for development/testing
+     * Loads mock data from file for development/testing purposes.
+     * Reads JSON data from configured mock file path and adds mock timestamp.
+     * Used when mock data mode is enabled in configuration.
+     * 
+     * @returns {Promise<Object>} Mock API response data with mock timestamp
+     * @throws {Error} When mock file is not found or cannot be parsed
      * @private
-     * @returns {Object} Mock API response data
+     * @memberof DeFiLlamaDataFetcher
      */
     async _loadMockData() {
         const mockFilePath = this.config?.mockData?.filePath || 'defillama_raw_output.json';

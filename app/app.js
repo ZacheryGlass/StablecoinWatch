@@ -33,7 +33,14 @@ const PORT = AppConfig.server.port;
 /*---------------------------------------------------------
     SERVICE CONTAINER & DEPENDENCY INJECTION
 ---------------------------------------------------------*/
+/**
+ * Service container for dependency injection and lifecycle management
+ * Manages application services, timers, and scheduled jobs
+ */
 class ServiceContainer {
+    /**
+     * Creates a new service container
+     */
     constructor() {
         this.services = {};
         this.started = false;
@@ -41,21 +48,40 @@ class ServiceContainer {
         this._jobs = [];
     }
 
+    /**
+     * Registers a service instance in the container
+     * @param {string} name - The name to register the service under
+     * @param {*} instance - The service instance to register
+     * @returns {ServiceContainer} The container instance for chaining
+     */
     register(name, instance) {
         this.services[name] = instance;
         return this;
     }
 
+    /**
+     * Retrieves a registered service by name
+     * @param {string} name - The name of the service to retrieve
+     * @returns {*} The registered service instance
+     */
     get(name) {
         return this.services[name];
     }
 
+    /**
+     * Attaches services to Express app for dependency injection
+     * @param {Express} app - The Express application instance
+     */
     attachToApp(app) {
         // Expose services to routes/handlers
         app.locals.services = this.services;
         app.use((req, _res, next) => { req.services = this.services; next(); });
     }
 
+    /**
+     * Starts all services and schedules periodic tasks
+     * Initializes data refresh and health monitoring
+     */
     async start() {
         if (this.started) return;
         this.started = true;
@@ -97,6 +123,10 @@ class ServiceContainer {
         this._timers.push(healthLogTimer);
     }
 
+    /**
+     * Stops all services, timers, and scheduled jobs
+     * Performs graceful shutdown cleanup
+     */
     async stop() {
         if (!this.started) return;
         this.started = false;
@@ -120,8 +150,13 @@ const dataService = ServiceFactory.createDataService(healthMonitor);
 container.register('healthMonitor', healthMonitor)
          .register('dataService', dataService);
 
-// Health monitoring middleware for Express routes
-// Records basic request duration and success/failure classification
+/**
+ * Health monitoring middleware for Express routes
+ * Records basic request duration and success/failure classification
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
 function healthMiddleware(req, res, next) {
     const start = Date.now();
     res.on('finish', async () => {

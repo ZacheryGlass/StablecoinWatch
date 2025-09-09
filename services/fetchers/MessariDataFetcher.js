@@ -5,7 +5,24 @@ const path = require('path');
 const IDataFetcher = require('../../interfaces/IDataFetcher');
 const ApiConfig = require('../../config/ApiConfig');
 
+/**
+ * Messari data fetcher implementation.
+ * Fetches stablecoin supply and network breakdown data from Messari API.
+ * Provides dual-mode operation using Messari SDK with Axios fallback for reliability.
+ * Includes comprehensive API key validation and detailed error handling.
+ * 
+ * @class MessariDataFetcher
+ * @extends {IDataFetcher}
+ */
 class MessariDataFetcher extends IDataFetcher {
+    /**
+     * Creates an instance of MessariDataFetcher.
+     * Initializes with health monitoring, API configuration, and attempts to create
+     * Messari SDK client. Falls back gracefully if SDK initialization fails.
+     * 
+     * @param {Object} [healthMonitor=null] - Health monitoring instance for tracking API health
+     * @memberof MessariDataFetcher
+     */
     constructor(healthMonitor = null) {
         super();
         this.healthMonitor = healthMonitor;
@@ -27,9 +44,29 @@ class MessariDataFetcher extends IDataFetcher {
         }
     }
 
+    /**
+     * Gets the unique identifier for this data source.
+     * 
+     * @returns {string} Source identifier 'messari'
+     * @memberof MessariDataFetcher
+     */
     getSourceId() { return this.sourceId; }
+    /**
+     * Gets the human-readable name for this data source.
+     * 
+     * @returns {string} Source name from configuration or default 'Messari'
+     * @memberof MessariDataFetcher
+     */
     getSourceName() { return this.config?.name || 'Messari'; }
 
+    /**
+     * Checks if the fetcher is properly configured for API access.
+     * Validates that the source is enabled, API key is provided, and performs
+     * comprehensive API key format validation with placeholder detection.
+     * 
+     * @returns {boolean} True if properly configured with valid API key, false otherwise
+     * @memberof MessariDataFetcher
+     */
     isConfigured() {
         if (!this.config?.enabled || !this.config?.apiKey) {
             return false;
@@ -53,6 +90,13 @@ class MessariDataFetcher extends IDataFetcher {
         return true;
     }
 
+    /**
+     * Gets the data capabilities and priority information for this source.
+     * Messari specializes in supply data, network breakdown, and platform information.
+     * 
+     * @returns {Object} Capabilities object with data types, priority, and feature flags
+     * @memberof MessariDataFetcher
+     */
     getCapabilities() {
         return this.config?.capabilities || {
             hasMarketData: false,
@@ -65,10 +109,23 @@ class MessariDataFetcher extends IDataFetcher {
         };
     }
 
+    /**
+     * Gets rate limiting configuration for this API source.
+     * 
+     * @returns {Object} Rate limit configuration object
+     * @memberof MessariDataFetcher
+     */
     getRateLimitInfo() {
         return this.config?.rateLimit || {};
     }
 
+    /**
+     * Gets the current health status of this data source.
+     * Queries the health monitor for source-specific health metrics and status.
+     * 
+     * @returns {Promise<Object>} Health status object with healthy flag and metrics
+     * @memberof MessariDataFetcher
+     */
     async getHealthStatus() {
         if (!this.healthMonitor) return { healthy: true };
         try {
@@ -78,6 +135,15 @@ class MessariDataFetcher extends IDataFetcher {
         }
     }
 
+    /**
+     * Fetches stablecoin metrics data from Messari API or mock data.
+     * Handles circuit breaker logic, tries Messari SDK first with Axios fallback.
+     * Provides comprehensive error handling and health monitoring.
+     * 
+     * @returns {Promise<Array>} Array of raw stablecoin metrics data from Messari
+     * @throws {Error} When API requests fail, authentication issues, or data validation errors
+     * @memberof MessariDataFetcher
+     */
     async fetchStablecoins() {
         const startTime = Date.now();
         const sourceId = this.sourceId;
@@ -134,10 +200,16 @@ class MessariDataFetcher extends IDataFetcher {
     }
 
     /**
-     * Wrapper for Messari stablecoins metrics endpoint.
-     * Tries the SDK request first, then falls back to Axios using ApiConfig.
-     * Always returns an array (possibly empty).
+     * Wrapper for Messari stablecoins metrics endpoint with dual-mode operation.
+     * Attempts to use the Messari SDK client first for optimized requests, then falls
+     * back to direct Axios HTTP calls if SDK fails. Provides detailed error logging
+     * for debugging authentication and rate limit issues.
+     * 
+     * @param {string} path - API endpoint path to request
+     * @returns {Promise<Array>} Array of stablecoin metrics data (possibly empty)
+     * @throws {Error} When both SDK and Axios requests fail
      * @private
+     * @memberof MessariDataFetcher
      */
     async _fetchStablecoinMetrics(path) {
         if (this.client && typeof this.client.request === "function") {
@@ -197,6 +269,15 @@ class MessariDataFetcher extends IDataFetcher {
         }
     }
 
+    /**
+     * Transforms raw Messari data to standardized internal format.
+     * Maps Messari API response fields to the standard data structure, handling
+     * multiple field name variations and extracting network breakdown information.
+     * 
+     * @param {Array} rawData - Raw data array from Messari API
+     * @returns {Array} Array of standardized stablecoin data objects with supply and platform data
+     * @memberof MessariDataFetcher
+     */
     transformToStandardFormat(rawData) {
         const ts = Date.now();
         const out = (rawData || []).map((m) => {
@@ -259,6 +340,16 @@ class MessariDataFetcher extends IDataFetcher {
         return out;
     }
 
+    /**
+     * Categorizes errors for better error handling and monitoring.
+     * Maps different error types (HTTP status codes, network issues) to
+     * standardized error categories for consistent handling.
+     * 
+     * @param {Error} error - The error object to categorize
+     * @returns {string} Error category ('auth', 'rate_limit', 'network', 'server', etc.)
+     * @private
+     * @memberof MessariDataFetcher
+     */
     _categorizeError(error) {
         if (!error) return 'unknown';
         const status = error?.response?.status;
@@ -271,15 +362,29 @@ class MessariDataFetcher extends IDataFetcher {
         return 'unknown';
     }
 
+    /**
+     * Determines if an error is retryable for circuit breaker logic.
+     * Identifies which error types should trigger retry attempts vs. permanent failures.
+     * 
+     * @param {Error} error - The error object to evaluate
+     * @returns {boolean} True if the error type is retryable, false otherwise
+     * @private
+     * @memberof MessariDataFetcher
+     */
     _isRetryable(error) {
         const type = this._categorizeError(error);
         return ['timeout', 'network', 'server', 'rate_limit'].includes(type);
     }
 
     /**
-     * Load mock data from file for development/testing
+     * Loads mock data from file for development/testing purposes.
+     * Reads JSON data from configured mock file path and simulates fresh API response
+     * by updating timestamps. Used when mock data mode is enabled in configuration.
+     * 
+     * @returns {Promise<Object>} Mock API response data with updated timestamp
+     * @throws {Error} When mock file is not found or cannot be parsed
      * @private
-     * @returns {Object} Mock API response data
+     * @memberof MessariDataFetcher
      */
     async _loadMockData() {
         const mockFilePath = this.config?.mockData?.filePath || 'messari_raw_output.json';
