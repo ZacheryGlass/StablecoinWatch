@@ -28,6 +28,9 @@
     console.error = withPrefix(original.error, 'error');
     console.log = withPrefix(original.log, 'log');
 
+    // Expose a global DEBUG flag for legacy modules that use it
+    global.DEBUG = !!isDebug;
+
     // Control debug output via the single toggle
     if (isDebug) {
         console.debug = withPrefix(original.debug, 'debug');
@@ -38,4 +41,3 @@
 })();
 
 module.exports = {};
-

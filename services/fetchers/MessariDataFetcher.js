@@ -174,16 +174,19 @@ class MessariDataFetcher extends IDataFetcher {
                 list = await this._fetchStablecoinMetrics(path);
             }
 
+            // Filter the raw data to include only valid stablecoins
+            const filteredList = this._filterStablecoins(list);
+
             if (this.healthMonitor) {
                 await this.healthMonitor.recordSuccess(sourceId, {
                     operation: 'fetchStablecoins',
                     duration: Date.now() - startTime,
-                    recordCount: Array.isArray(list) ? list.length : 0,
+                    recordCount: Array.isArray(filteredList) ? filteredList.length : 0,
                     timestamp: Date.now()
                 });
             }
 
-            return list || [];
+            return filteredList || [];
         } catch (error) {
             if (this.healthMonitor) {
                 await this.healthMonitor.recordFailure(sourceId, {
@@ -267,6 +270,53 @@ class MessariDataFetcher extends IDataFetcher {
             
             throw axiosError;
         }
+    }
+
+    /**
+     * Filters raw Messari data to include only valid stablecoins
+     * Applies pattern matching against symbols and names, plus tag-based filtering
+     * to identify assets that are likely to be stablecoins
+     * 
+     * @param {Array} rawData - Raw asset data from Messari API
+     * @returns {Array} Filtered array containing only potential stablecoins
+     * @private
+     * @memberof MessariDataFetcher
+     */
+    _filterStablecoins(rawData) {
+        if (!Array.isArray(rawData)) {
+            return [];
+        }
+
+        return rawData.filter(asset => {
+            // Basic validation - ensure required fields exist
+            if (!asset || !asset.symbol || !asset.name) {
+                return false;
+            }
+
+            const symbol = (asset.symbol || '').toLowerCase();
+            const name = (asset.name || '').toLowerCase();
+            const tags = asset.tags || [];
+
+            // Define stablecoin patterns for symbol/name matching
+            const stablecoinPatterns = [
+                /usdt|usdc|dai|busd|frax|usdd|tusd|pax|gusd|husd/,  // Known stablecoin symbols
+                /stable|dollar|usd/,  // Generic stablecoin indicators
+            ];
+
+            // Check for stablecoin-related tags
+            const hasStablecoinTag = tags.some(tag => 
+                tag.toLowerCase().includes('stable') || 
+                tag.toLowerCase().includes('currency')
+            );
+
+            // Check if symbol or name matches stablecoin patterns
+            const matchesPattern = stablecoinPatterns.some(pattern => 
+                pattern.test(symbol) || pattern.test(name)
+            );
+
+            // Include asset if it has stablecoin tags OR matches known patterns
+            return hasStablecoinTag || matchesPattern;
+        });
     }
 
     /**

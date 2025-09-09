@@ -97,6 +97,31 @@ class CoinGeckoDataFetcher extends IDataFetcher {
     }
 
     /**
+     * Filters raw CoinGecko data to include only valid stablecoins
+     * Prepares filtering structure for future implementation. Expected to filter by
+     * stablecoin category and price range validation when full implementation is added.
+     * 
+     * @param {Array} rawData - Raw cryptocurrency data from CoinGecko API
+     * @returns {Array} Filtered array containing only valid stablecoins (empty for stub)
+     * @private
+     * @memberof CoinGeckoDataFetcher
+     */
+    _filterStablecoins(rawData) {
+        if (!Array.isArray(rawData)) {
+            return [];
+        }
+
+        // Stub implementation - return empty array until full filtering is implemented
+        // Future implementation should filter by:
+        // 1. Stablecoin category membership
+        // 2. Price range validation (0.5 - 2.0 USD for USD-pegged stablecoins)
+        // 3. Market cap minimums
+        // 4. Active trading status
+        
+        return [];
+    }
+
+    /**
      * Transforms raw CoinGecko data to standardized internal format.
      * Stub implementation - returns empty array until full implementation is added.
      * 
