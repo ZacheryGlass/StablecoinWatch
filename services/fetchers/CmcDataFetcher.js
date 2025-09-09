@@ -158,13 +158,8 @@ class CmcDataFetcher extends IDataFetcher {
                 throw new Error('No data received from CoinMarketCap API');
             }
 
-            const priceRange = this.config?.processing?.stablecoinFilter?.priceRange || { min: 0.5, max: 2.0 };
-            const stablecoins = data.data.filter((crypto) => {
-                const hasStablecoinTag = crypto.tags && crypto.tags.includes(this.config?.processing?.stablecoinFilter?.tagName || 'stablecoin');
-                const price = crypto.quote?.USD?.price;
-                const isReasonablePrice = !price || (price >= priceRange.min && price <= priceRange.max);
-                return hasStablecoinTag && isReasonablePrice;
-            });
+            // Filter the raw data to include only valid stablecoins
+            const stablecoins = this._filterStablecoins(data.data);
 
             // No tracing logs in production
 

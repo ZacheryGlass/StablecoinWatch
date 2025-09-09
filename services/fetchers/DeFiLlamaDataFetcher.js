@@ -150,7 +150,7 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
                     .map(c => c?.pegType)
                     .filter(Boolean)))
                     .sort();
-                console.info(`DeFiLlama peg types present (${pegTypes.length}): ${pegTypes.join(', ')}`);
+                console.debug(`DeFiLlama peg types present (${pegTypes.length}): ${pegTypes.join(', ')}`);
             } catch (_) { /* ignore logging errors */ }
 
             // Apply filtering to include only desired peg types (e.g., peggedUSD) and sane prices
