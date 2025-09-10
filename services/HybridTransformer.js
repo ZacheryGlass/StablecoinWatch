@@ -50,6 +50,7 @@ class HybridTransformer {
                 circulating_mcap: hybrid.market_cap,
                 circulating_mcap_s: this.formatNumber(hybrid.market_cap),
                 volume_24h: hybrid.volume_24h,
+                volume_s: this.formatNumber(hybrid.volume_24h),
             };
 
             sc.platforms = this.extractPlatformsFromHybrid(hybrid);

@@ -34,7 +34,55 @@ This document provides a comprehensive tour of the StablecoinWatch codebase: arc
 
 5. Rendering (`routes/routes.js` + `views/*.ejs`)
    - Routes read the view model from the data service and render EJS templates
-   - Formatting helpers provided by `app/util.js`
+    - Formatting helpers provided by `app/util.js`
+
+### End-to-End Request-to-Render Walkthrough
+
+- Trigger
+  - Initial refresh at boot and every `UPDATE_INTERVAL_MINUTES` (cron). Users hitting the site always consume the latest successfully built view model.
+- Fetch
+  - Active fetchers (per `ApiConfig.getEnabledSources()` and `isConfigured()`) consult HealthMonitor’s circuit breaker; if open, they skip the call until retry time.
+  - Each fetcher requests upstream (or mock), filters stablecoins, and returns raw arrays.
+- Standardize
+  - Each fetcher maps raw arrays to `StandardizedStablecoin` objects (see `docs/standardized-stablecoin-format.md`).
+- Aggregate & Merge
+  - Group by symbol (case-insensitive). For each field, pick the value from the highest‑priority source that has data (CMC > Messari > DeFiLlama by default).
+  - Build a union of network/platform entries keyed by `network:contract` to avoid duplicates across sources.
+  - Compute consensus (deviation from median) for numerical fields and derive confidence scores across market/supply/platform.
+  - Compute quality flags (missing critical fields).
+- Transform for UI
+  - Convert aggregated records to “hybrid-like” objects for compatibility with the existing view transformer.
+  - `HybridTransformer` produces `Stablecoin` models with formatted fields and calculates platform aggregates (`platform_data`).
+- Persist view model
+  - `StablecoinDataService` stores `{ stablecoins, metrics, platform_data }` for routes to render.
+- Render
+  - Routes read the view model and render EJS templates. `/api/health` exposes system health JSON.
+
+### Merging, Consensus, and Confidence
+
+- Source priority by capability (from `ApiConfig`): higher priority wins per field group, e.g., CMC for market data, Messari/DeFiLlama for supply/network.
+- Consensus score: measures spread around the median of available numeric values (e.g., price). Lower spread ⇒ higher consensus.
+- Confidence scores: weighted by source coverage and consensus; overall is combined from market, supply, and platform facets.
+- Quality flags: identify missing critical fields (e.g., price/marketCap/circulating) for debugging and UI hints.
+
+### Health Monitoring & Circuit Breaker (Runtime Behavior)
+
+- Per‑source metrics recorded on each operation (`recordSuccess`/`recordFailure`): response times, counts, error types, consecutive failures.
+- Alerts (deduped by source+type):
+  - High Error Rate (errorRate > `ERROR_RATE_THRESHOLD`, default 0.3)
+  - Consecutive Failures (≥ 3 consecutive)
+  - Circuit Breaker Open (after failures exceed threshold; default 6)
+- Circuit breaker: closed → open (block) → half‑open (probe) → closed (recover). Fetchers skip calls while open until `nextRetryTime`.
+- System status aggregates per-source health to `healthy|degraded|critical|down`, printed every 5 minutes with active alerts.
+
+### Route-to-Template Mapping
+
+- `/` → `views/home.ejs`: list of stablecoins (`data.stablecoins`) and topline metrics (`data.metrics`).
+- `/coins/:symbol` → `views/coins.ejs`: detail for a single coin, using `uri` or `symbol`.
+- `/platforms` → `views/chains.ejs`: platform aggregates (`platform_data`).
+- `/platforms/:name` → `views/platforms.ejs`: detail for a single platform (slug or name matching).
+- `/status` → `views/status.ejs`: system health, metrics, and warnings from `HealthMonitor`.
+- `/api/health` → JSON health, including sources and alerts.
 
 ## Configuration
 
@@ -206,4 +254,3 @@ This document provides a comprehensive tour of the StablecoinWatch codebase: arc
 - `HybridTransformer` focuses on display models; deeper platform/supply analytics can be extended.
 - CoinGecko integration is a stub.
 - Add tests for critical merging logic and transform correctness.
-
