@@ -254,3 +254,55 @@ This document provides a comprehensive tour of the StablecoinWatch codebase: arc
 - `HybridTransformer` focuses on display models; deeper platform/supply analytics can be extended.
 - CoinGecko integration is a stub.
 - Add tests for critical merging logic and transform correctness.
+
+## Architecture Diagram
+
+```mermaid
+flowchart LR
+  A[Startup + Cron] --> DS[StablecoinDataService]
+  A --> HM[HealthMonitor]
+  A --> REG[DataFetcherRegistry]
+  A --> ROUTES[Express Routes]
+
+  subgraph FETCHERS
+    CMC[CmcDataFetcher]
+    MESS[MessariDataFetcher]
+    DEFI[DeFiLlamaDataFetcher]
+    CGKO[CoinGeckoDataFetcher (stub)]
+  end
+
+  REG --> CMC
+  REG --> MESS
+  REG --> DEFI
+  REG --> CGKO
+
+  HM -. circuit breaker .-> CMC
+  HM -. circuit breaker .-> MESS
+  HM -. circuit breaker .-> DEFI
+
+  CMC --> STD1[Standardized arrays]
+  MESS --> STD2[Standardized arrays]
+  DEFI --> STD3[Standardized arrays]
+  CGKO --> STD4[Standardized arrays]
+
+  STD1 --> DS
+  STD2 --> DS
+  STD3 --> DS
+  STD4 --> DS
+
+  DS --> AGG[Aggregated per symbol]
+  AGG --> HT[HybridTransformer]
+  HT --> VM[View model]
+  DS --> VM
+
+  ROUTES --> VM
+  ROUTES --> VIEWS[EJS templates]
+  VIEWS --> CLIENT[Browser]
+
+  CLIENT --> ROUTES
+  ROUTES -. record success/failure .-> HM
+
+  ROUTES --> HEALTH[API: /api/health]
+  HEALTH --> HM
+  HM --> ROUTES
+```
