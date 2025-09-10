@@ -115,7 +115,24 @@ class ServiceContainer {
                 const h = await healthMonitor.getSystemHealth();
                 console.log(`Health: status=${h.status} score=${h.overallScore} healthy=${h.metrics.healthySourceCount}/${h.metrics.sourceCount}`);
                 if (h.activeAlerts && h.activeAlerts.length) {
-                    const alerts = h.activeAlerts.filter(a => a.active).map(a => `${a.level.toUpperCase()}: ${a.title}`).join('; ');
+                    // De-duplicate alerts by (source,type) and show highest severity per pair
+                    const levelPriority = { info: 0, warning: 1, error: 2, critical: 3 };
+                    const dedup = new Map(); // key: source:type -> alert
+                    for (const a of h.activeAlerts) {
+                        if (!a || !a.active) continue;
+                        const key = `${a.source || 'unknown'}:${a.type || a.title}`;
+                        const prev = dedup.get(key);
+                        if (!prev) {
+                            dedup.set(key, a);
+                        } else {
+                            const prevP = levelPriority[prev.level] ?? 0;
+                            const currP = levelPriority[a.level] ?? 0;
+                            if (currP > prevP) dedup.set(key, a);
+                        }
+                    }
+                    const alerts = Array.from(dedup.values())
+                        .map(a => `${(a.level || 'info').toUpperCase()}: ${a.title} (${a.source || 'unknown'})`)
+                        .join('; ');
                     if (alerts) console.warn('Health alerts:', alerts);
                 }
             } catch (e) {

@@ -52,7 +52,7 @@ class AppConfig {
                 enabled: process.env.HEALTH_MONITORING !== 'false',
                 checkIntervalMs: parseInt(process.env.HEALTH_CHECK_INTERVAL_MS) || 60000,
                 degradedModeThreshold: parseFloat(process.env.DEGRADED_MODE_THRESHOLD) || 0.7,
-                errorRateThreshold: parseFloat(process.env.ERROR_RATE_THRESHOLD) || 0.2,
+                errorRateThreshold: parseFloat(process.env.ERROR_RATE_THRESHOLD) || 0.3,
                 responseTimeThreshold: parseInt(process.env.RESPONSE_TIME_THRESHOLD_MS) || 10000,
                 minimumHealthySources: parseInt(process.env.MIN_HEALTHY_SOURCES) || 1,
                 retentionDays: parseInt(process.env.HEALTH_RETENTION_DAYS) || 7
@@ -61,7 +61,7 @@ class AppConfig {
             // Circuit Breaker Configuration
             circuitBreaker: {
                 enabled: process.env.CIRCUIT_BREAKER !== 'false',
-                failureThreshold: parseInt(process.env.CIRCUIT_BREAKER_FAILURES) || 5,
+                failureThreshold: parseInt(process.env.CIRCUIT_BREAKER_FAILURES) || 6,
                 timeout: parseInt(process.env.CIRCUIT_BREAKER_TIMEOUT_MS) || 60000,
                 resetTimeout: parseInt(process.env.CIRCUIT_BREAKER_RESET_MS) || 300000
             },

@@ -731,8 +731,33 @@ class HealthMonitor extends IHealthMonitor {
      * @returns {void}
      */
     _createAlert(alertData) {
+        // De-duplicate: if there is an active alert for same source+type, keep the highest severity
+        const levelPriority = { info: 0, warning: 1, error: 2, critical: 3 };
+        let existingId = null;
+        let existing = null;
+        for (const [id, a] of this.activeAlerts) {
+            if (a.active && a.source === alertData.source && a.type === alertData.type) {
+                existingId = id; existing = a; break;
+            }
+        }
+
+        if (existing) {
+            const prevP = levelPriority[existing.level] ?? 0;
+            const currP = levelPriority[alertData.level] ?? 0;
+            if (currP > prevP) {
+                // Upgrade existing alert severity and refresh details
+                existing.level = alertData.level;
+                existing.title = alertData.title;
+                existing.description = alertData.description;
+                existing.metadata = { ...(existing.metadata || {}), ...(alertData.metadata || {}) };
+                existing.timestamp = Date.now();
+                this.activeAlerts.set(existingId, existing);
+            }
+            return;
+        }
+
         const alertId = `${alertData.source}_${alertData.type}_${Date.now()}`;
-        
+
         const alert = {
             id: alertId,
             level: alertData.level,
@@ -745,7 +770,7 @@ class HealthMonitor extends IHealthMonitor {
             metadata: alertData.metadata || {},
             actions: this._getRecommendedActions(alertData.type)
         };
-        
+
         this.activeAlerts.set(alertId, alert);
     }
 

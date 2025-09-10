@@ -42,7 +42,7 @@ NODE_ENV=production
 # Health Monitoring (active today)
 HEALTH_MONITORING=true
 HEALTH_CHECK_INTERVAL_MS=60000
-ERROR_RATE_THRESHOLD=0.2
+ERROR_RATE_THRESHOLD=0.3
 RESPONSE_TIME_THRESHOLD_MS=10000
 DEGRADED_MODE_THRESHOLD=0.7
 MIN_HEALTHY_SOURCES=1
@@ -77,7 +77,7 @@ Note: Data update cadence is controlled by `UPDATE_INTERVAL_MINUTES` (default: 1
 These values are consumed by the HealthMonitor service.
 - `HEALTH_MONITORING` (default: true) � Enable health monitoring.
 - `HEALTH_CHECK_INTERVAL_MS` (default: 60000) � Interval for health checks and cleanup.
-- `ERROR_RATE_THRESHOLD` (default: 0.2) � Error rate threshold for alerts/degraded state.
+- `ERROR_RATE_THRESHOLD` (default: 0.3) � Error rate threshold for alerts/degraded state.
 - `RESPONSE_TIME_THRESHOLD_MS` (default: 10000) � Response time alert threshold.
 - `DEGRADED_MODE_THRESHOLD` (default: 0.7) � Health score threshold for degraded mode.
 - `MIN_HEALTHY_SOURCES` (default: 1) � Minimum healthy data sources to consider system operational.
@@ -86,7 +86,7 @@ These values are consumed by the HealthMonitor service.
 ### Circuit Breaker
 Applied to external API calls via the HealthMonitor.
 - `CIRCUIT_BREAKER` (default: true) � Enable circuit breaker behavior.
-- `CIRCUIT_BREAKER_FAILURES` (default: 5) � Consecutive failures before opening the circuit.
+- `CIRCUIT_BREAKER_FAILURES` (default: 6) � Consecutive failures before opening the circuit.
 - `CIRCUIT_BREAKER_TIMEOUT_MS` (default: 60000) � Open state timeout before half-open.
 - `CIRCUIT_BREAKER_RESET_MS` (default: 300000) � Reset timeout used when transitioning states.
 
