@@ -170,55 +170,27 @@
 
                                 <!-- symbol -->
                                 <li class="symbol">
-                                    <% let img = coin.img_url; %>
-                                    <% if(!img) img = '/default-logo.png'; %>
-                                    <img class="coin_logo" src="<%= img %>" alt="" />
+                                    <img class="coin_logo" src="<%= h.getImage(coin) %>" alt="" />
                                     <%= coin.symbol %>
                                 </li>
 
                                 <!-- price -->
-                                <% if (coin.main.price) { %>
-                                    <li><%= formatter.formatPrice(coin.main.price) %></li>      
-                                <% } else { %>
-                                    <li>No data</li>
-                                <% } %>
+                                <li><%= h.getFormattedPrice(coin, 'main', formatter) %></li>
 
                                 <!-- market cap -->
-                                <% if (coin.main.circulating_mcap_s) { %>
-                                    <li><%= coin.main.circulating_mcap_s %></li>
-                                <% } else if (coin.scw.circulating_mcap_s) { %>
-                                    <li><%= coin.scw.circulating_mcap_s %></li>
-                                <% } else { %>
-                                        <li>No data</li>
-                                <% } %>
+                                <li><%= h.getMarketCap(coin, 'main') %></li>
 
                                 <!-- market cap dominance -->
-                                <% if (coin.main.circulating_mcap && data.metrics.totalMCap) { %>
-                                    <li class='mcap_dom'>
-                                        <%= formatter.formatPercentage((coin.main.circulating_mcap/data.metrics.totalMCap)*100, 2) %>
-                                    </li>
-                                <% } else { %>
-                                    <li class='mcap_dom'>
-                                        No data
-                                    </li>
-                                <% } %>
+                                <li class='mcap_dom'>
+                                    <%= h.getDominanceDisplay(coin, data.metrics, formatter) %>
+                                </li>
 
                                 <!-- volume -->
-                                <% if (coin.main.volume_s) { %>
-                                    <li><%= coin.main.volume_s %></li>
-                                <% } else { %>
-                                    <li>No data</li>
-                                <% } %>
+                                <li><%= h.getVolume(coin, 'main') %></li>
 
                                 <!-- platforms -->
                                 <li class="platform">
-                                    <% if (coin.platforms.length === 1) { %>
-                                        <%= coin.platforms[0].name %>
-                                    <% } else if (coin.platforms.length <= 3) { %>
-                                        <%= coin.platforms.map(p => p.name).join(', ') %>
-                                    <% } else { %>
-                                        <%= coin.platforms.slice(0, 2).map(p => p.name).join(', ') %> + <%= coin.platforms.length - 2 %> more
-                                    <% } %>
+                                    <%= h.getPlatformDisplay(coin.platforms) %>
                                 </li> 
                             </ul>
                         </article>

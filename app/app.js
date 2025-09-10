@@ -26,6 +26,7 @@ const ServiceFactory = require('../services/ServiceFactory');
 const HealthMonitor = require('../services/HealthMonitor');
 const AppConfig = require('../config/AppConfig');
 const ApiConfig = require('../config/ApiConfig');
+const templateHelpers = require('./util/templateHelpers');
 
 /*---------------------------------------------------------
     CONSTANTS
@@ -218,6 +219,8 @@ app.use(express.static(path.join(__dirname, '../res/js')));
 app.use(healthMiddleware);
 // Attach services to req/app for DI
 container.attachToApp(app);
+// Register template helpers globally for all EJS templates (after services are attached)
+app.locals.h = templateHelpers;
 // Wire routes with DI
 app.use('/', createRoutes(container.services));
 app.use(express.json());

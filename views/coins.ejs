@@ -232,8 +232,9 @@
                                 <% } %>
                             </div> -->
                             <div class="supply-item supply-explorer">
-                                <% if (coin.platforms[i].contract_url) { %>
-                                    <a href="<%= coin.platforms[i].contract_url %>">
+                                <% const contractUrl = h.getContractUrl(coin.platforms[i]); %>
+                                <% if (contractUrl) { %>
+                                    <a href="<%= contractUrl %>">
                                         <img src="/link.png" alt="link">
                                     </a>
                                 <% } else { %>
@@ -251,9 +252,7 @@
                     </p>
                 </section>
                 <section class="data-hd">
-                    <% let img = coin.img_url; %>
-                    <% if(!img) img = '/default-logo.png'; %>
-                    <img class="coin_logo" src="<%= img %>" alt="" /><h2><%= coin.name %></h2>
+                    <img class="coin_logo" src="<%= h.getImage(coin) %>" alt="" /><h2><%= coin.name %></h2>
                     <h3>(<%= coin.symbol %>)</h3>
                 </section>
 
@@ -269,59 +268,35 @@
                         </tr>
                         <tr>
                             <td>Coin Market Cap</td>
-                            <td>
-                                <% if (coin.cmc.price) { %>
-                                    <%= Number(coin.cmc.price).toFixed(3) %>
-                                <% } %>
-                            </td>
-                            <td><%= coin.cmc.circulating_mcap_s %></td>
-                            <% try { %>
-                            <td><%= coin.cmc.total_supply_s.replace('$', '') %></td>
-                            <% } catch {} %>
-                            <td><%= coin.cmc.circulating_supply_s %></td>
-                            <td><%= coin.cmc.volume_s %></td>
+                            <td><%= h.getFormattedPrice(coin, 'cmc', formatter) %></td>
+                            <td><%= h.getMarketCap(coin, 'cmc') %></td>
+                            <td><%= h.getSupply(coin, 'cmc', 'total_supply_s') %></td>
+                            <td><%= h.getSupply(coin, 'cmc', 'circulating_supply_s') %></td>
+                            <td><%= h.getVolume(coin, 'cmc') %></td>
                         </tr>
                         <tr>
                             <td>Messari</td>
-                            <td>
-                                <% if (coin.msri.price) { %>
-                                    <%= Number(coin.msri.price).toFixed(3) %>
-                                <% } %>
-                            </td>
-                            <td><%= coin.msri.circulating_mcap_s %></td>
-                            <% try { %>
-                            <td><%= coin.msri.total_supply_s.replace('$', '') %></td>
-                            <% } catch {} %>
-                            <td><%= coin.msri.circulating_supply_s %></td>
-                            <td><%= coin.msri.volume_s %></td>
+                            <td><%= h.getFormattedPrice(coin, 'msri', formatter) %></td>
+                            <td><%= h.getMarketCap(coin, 'msri') %></td>
+                            <td><%= h.getSupply(coin, 'msri', 'total_supply_s') %></td>
+                            <td><%= h.getSupply(coin, 'msri', 'circulating_supply_s') %></td>
+                            <td><%= h.getVolume(coin, 'msri') %></td>
                         </tr>
                         <tr>
                             <td>CoinGecko</td>
-                            <td>
-                                <% if (coin.cgko.price) { %>
-                                    <%= Number(coin.cgko.price).toFixed(3) %>
-                                <% } %>
-                            </td>
-                            <td><%= coin.cgko.circulating_mcap_s %></td>
-                            <% try { %>
-                            <td><%= coin.cgko.total_supply_s.replace('$', '') %></td>
-                            <% } catch {} %>
-                            <td><%= coin.cgko.circulating_supply_s %></td>
-                            <td><%= coin.cgko.volume_s %></td>
+                            <td><%= h.getFormattedPrice(coin, 'cgko', formatter) %></td>
+                            <td><%= h.getMarketCap(coin, 'cgko') %></td>
+                            <td><%= h.getSupply(coin, 'cgko', 'total_supply_s') %></td>
+                            <td><%= h.getSupply(coin, 'cgko', 'circulating_supply_s') %></td>
+                            <td><%= h.getVolume(coin, 'cgko') %></td>
                         </tr>
                         <tr>
                             <td>Stablecoin Watch</td>
-                            <td>
-                                <% if (coin.scw.price) { %>
-                                    <%= Number(coin.scw.price).toFixed(3) %>
-                                <% } %>
-                            </td>
-                            <td><%= coin.scw.circulating_mcap_s %></td>
-                            <% try { %>
-                            <td><%= coin.scw.total_supply_s.replace('$', '') %></td>
-                            <% } catch {} %>
-                            <td><%= coin.scw.circulating_supply_s %></td>
-                            <td><%= coin.scw.volume_s %></td>
+                            <td><%= h.getFormattedPrice(coin, 'scw', formatter) %></td>
+                            <td><%= h.getMarketCap(coin, 'scw') %></td>
+                            <td><%= h.getSupply(coin, 'scw', 'total_supply_s') %></td>
+                            <td><%= h.getSupply(coin, 'scw', 'circulating_supply_s') %></td>
+                            <td><%= h.getVolume(coin, 'scw') %></td>
                         </tr>
 
                     </table>
@@ -329,13 +304,13 @@
                 <section class="data-desc">
                     <h1><%= coin.name %> Description</h1>
                     <div class="desc-bar">
-                        <% if( coin.msri.desc ) { %>
+                        <% if( h.hasDescription(coin, 'msri') ) { %>
                             <button id="msri_btn" class="bar-btn" onclick="showDesc('msri')">Messari</button>
-                        <% } if( coin.cmc.desc ) { %>
+                        <% } if( h.hasDescription(coin, 'cmc') ) { %>
                             <button id="cmc_btn" class="bar-btn" onclick="showDesc('cmc')">CoinMarketCap</button>
-                        <% } if( coin.cgko.desc ) { %>
+                        <% } if( h.hasDescription(coin, 'cgko') ) { %>
                             <button id="cgko_btn" class="bar-btn" onclick="showDesc('cgko')">CoinGecko</button>
-                        <% } if( coin.scw && coin.scw.desc ) { %>
+                        <% } if( h.hasDescription(coin, 'scw') ) { %>
                             <button id="scw_btn" class="bar-btn" onclick="showDesc('scw')">Stablecoin Watch</button>
                         <% } %>
                     </div>
@@ -343,30 +318,30 @@
                     <% let found = false; %>
 
                     <!-- Messari Description -->
-                    <% if( coin.msri.desc) { %>
+                    <% if( h.hasDescription(coin, 'msri') ) { %>
                         <div id="msri" class="desc-container">
-                            <p><%- coin.msri.desc %></p>
+                            <p><%- h.safeGet(coin, 'msri.desc', '') %></p>
                         </div>
                     <% found = true; } %>
 
                     <!-- CoinGecko Description -->
-                    <% if( coin.cgko.desc) { %>
+                    <% if( h.hasDescription(coin, 'cgko') ) { %>
                         <div id="cgko" class="desc-container" <% if( found ) { %> style="display:none" <% } %> >
-                            <p><%- coin.cgko.desc %></p>
+                            <p><%- h.safeGet(coin, 'cgko.desc', '') %></p>
                         </div>
                     <% found = true; } %>
 
                     <!-- CoinMarketCap Description -->
-                    <% if( coin.cmc.desc) { %>
+                    <% if( h.hasDescription(coin, 'cmc') ) { %>
                         <div id="cmc" class="desc-container" <% if( found ) { %> style="display:none" <% } %> >
-                            <p><%- coin.cmc.desc %></p>
+                            <p><%- h.safeGet(coin, 'cmc.desc', '') %></p>
                         </div>
                     <% found = true; } %>
 
                     <!-- StablecoinWatch Description -->
-                    <% if( coin.scw && coin.scw.desc ) { %>
+                    <% if( h.hasDescription(coin, 'scw') ) { %>
                         <div id="scw" class="desc-container" <% if( found ) { %> style="display:none" <% } %> >
-                            <p><%- coin.scw.desc %></p>
+                            <p><%- h.safeGet(coin, 'scw.desc', '') %></p>
                         </div>
                     <% } %>
                 </section>
@@ -393,11 +368,7 @@
                     label: '% on Platforms',
                     data: [
                         <% for (let i = 0; i < coin.platforms.length; i++) { %>
-                            <% if( typeof(coin.platforms[i].circulating_supply) == 'number') { %>
-                                <%= formatter.formatNumber(((coin.platforms[i].circulating_supply/coin.scw.circulating_supply)*100), 2) %>,
-                            <% } else { %>
-                                undefined,
-                            <% } %>
+                            <%= h.getPlatformChartPercentage(coin.platforms[i], coin, formatter) || 'undefined' %>,
                         <% } %>  
                     ],
                     

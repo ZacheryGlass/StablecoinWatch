@@ -117,30 +117,18 @@
 
                                 <!-- symbol -->
                                 <li class="symbol">
-                                    <img class="coin_logo" src="<%= coin.img_url %>" alt="" />
+                                    <img class="coin_logo" src="<%= h.getImage(coin) %>" alt="" />
                                     <%= coin.symbol %>
                                 </li>
 
                                 <!-- price -->
-                                <% if (coin.main.price) { %>
-                                    <li><%= formatter.formatPrice(coin.main.price) %></li>      
-                                <% } else { %>
-                                    <li>No data</li>
-                                <% } %>
+                                <li><%= h.getFormattedPrice(coin, 'main', formatter) %></li>
 
                                 <!-- market cap -->
-                                <% if (coin_plfm.circulating_supply_s) { %>
-                                    <li><%= coin_plfm.circulating_supply_s %></li>
-                                <% } else { %>
-                                        <li>No data</li>
-                                <% } %>
+                                <li><%= h.safeString(coin_plfm.circulating_supply_s, 'No data') %></li>
 
                                 <!-- % of total coin's market cap on this platform -->
-                                <% if (coin_plfm.circulating_supply && coin.scw.circulating_supply) { %>
-                                    <li><%= formatter.formatPercentage((coin_plfm.circulating_supply / coin.scw.circulating_supply)*100, 2) %></li>
-                                <% } else { %>
-                                        <li>No data</li>
-                                <% } %>
+                                <li><%= h.getPlatformPercentage(coin_plfm, coin, formatter) %></li>
 
                             </ul>
                         </article>
