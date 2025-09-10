@@ -27,6 +27,10 @@ class Stablecoin {
         this.msri = {};
         /** @type {Object} StablecoinWatch-specific calculated data */
         this.scw = {};
+        /** @type {Object} CoinMarketCap-specific data */
+        this.cmc = {};
+        /** @type {Object} CoinGecko-specific data */
+        this.cgko = {};
     }
 }
 

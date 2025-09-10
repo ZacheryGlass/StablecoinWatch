@@ -542,10 +542,53 @@ class StablecoinDataService extends IStablecoinDataService {
             })),
             tags: agg.metadata?.tags || ['stablecoin'],
             source: (sourceMap && sourceMap.size > 1) ? 'hybrid' : 'single',
-            _cmc: cmc ? { platform: (cmc.platforms && cmc.platforms[0]) ? { name: cmc.platforms[0].name } : undefined } : undefined,
-            _messari: messari ? { profile: { images: { logo: messari.metadata?.logoUrl || null } } } : undefined
+            _cmc: cmc ? { 
+                platform: (cmc.platforms && cmc.platforms[0]) ? { name: cmc.platforms[0].name } : undefined,
+                description: cmc.metadata?.description || null,
+                marketData: cmc.marketData || null
+            } : undefined,
+            _messari: messari ? { 
+                profile: { images: { logo: messari.metadata?.logoUrl || null } },
+                description: messari.metadata?.description || null
+            } : undefined,
+            _cgko: this._extractCoinGeckoData(sourceMap),
+            _defillama: this._extractDeFiLlamaData(sourceMap)
         };
         return obj;
+    }
+
+    /**
+     * Extracts CoinGecko-specific data from source map for hybrid transformation.
+     * Provides CoinGecko metadata and market data for enhanced container population.
+     * 
+     * @param {Map} sourceMap - Map of source IDs to their raw data
+     * @returns {Object|undefined} CoinGecko data object or undefined if not available
+     * @private
+     * @memberof StablecoinDataService
+     */
+    _extractCoinGeckoData(sourceMap) {
+        const cgko = sourceMap ? sourceMap.get('coingecko') : null;
+        return cgko ? {
+            description: cgko.metadata?.description || null,
+            marketData: cgko.marketData || null
+        } : undefined;
+    }
+
+    /**
+     * Extracts DeFiLlama-specific data from source map for hybrid transformation.
+     * Provides DeFiLlama network breakdown and chain-specific data.
+     * 
+     * @param {Map} sourceMap - Map of source IDs to their raw data
+     * @returns {Object|undefined} DeFiLlama data object or undefined if not available
+     * @private
+     * @memberof StablecoinDataService
+     */
+    _extractDeFiLlamaData(sourceMap) {
+        const defillama = sourceMap ? sourceMap.get('defillama') : null;
+        return defillama ? {
+            networkBreakdown: defillama.supplyData?.networkBreakdown || [],
+            chainData: defillama.chainCirculating || null
+        } : undefined;
     }
 }
 

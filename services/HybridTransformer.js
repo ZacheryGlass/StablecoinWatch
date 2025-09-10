@@ -73,8 +73,8 @@ class HybridTransformer {
                 circulating_supply: hybrid.circulating_supply,
             };
 
-            if (!sc.cmc) sc.cmc = {};
-            if (!sc.cgko) sc.cgko = {};
+            sc.cmc = this._populateCMCContainer(hybrid);
+            sc.cgko = this._populateCoinGeckoContainer(hybrid);
 
             if (typeof hybrid.market_cap === 'number') this.metrics.totalMCap += hybrid.market_cap;
             if (typeof hybrid.volume_24h === 'number') this.metrics.totalVolume += hybrid.volume_24h;
@@ -296,6 +296,51 @@ class HybridTransformer {
      * @memberof HybridTransformer
      */
     getData() { return { stablecoins: this.stablecoins, metrics: this.metrics, platform_data: this.calculatePlatformData() }; }
+
+    /**
+     * Populates CoinMarketCap-specific data container with formatted values.
+     * Creates a complete CMC data object with price, market cap, supply, and volume data
+     * formatted consistently with other containers in the system.
+     * 
+     * @param {Object} hybrid - Hybrid stablecoin data object
+     * @returns {Object} Populated CMC container with formatted data
+     * @private
+     * @memberof HybridTransformer
+     */
+    _populateCMCContainer(hybrid) {
+        const cmcData = hybrid._cmc || {};
+        return {
+            price: hybrid.price,
+            circulating_mcap_s: this.formatNumber(hybrid.market_cap),
+            total_supply_s: this.formatNumber(hybrid.total_supply, false),
+            circulating_supply_s: this.formatNumber(hybrid.circulating_supply, false),
+            volume_s: this.formatNumber(hybrid.volume_24h),
+            desc: cmcData.description || null,
+            platform: cmcData.platform || null
+        };
+    }
+
+    /**
+     * Populates CoinGecko-specific data container with formatted values.
+     * Creates a complete CoinGecko data object with price, market cap, supply, and volume data
+     * formatted consistently with other containers in the system.
+     * 
+     * @param {Object} hybrid - Hybrid stablecoin data object  
+     * @returns {Object} Populated CoinGecko container with formatted data
+     * @private
+     * @memberof HybridTransformer
+     */
+    _populateCoinGeckoContainer(hybrid) {
+        const cgkoData = hybrid._cgko || {};
+        return {
+            price: hybrid.price,
+            circulating_mcap_s: this.formatNumber(hybrid.market_cap),
+            total_supply_s: this.formatNumber(hybrid.total_supply, false),
+            circulating_supply_s: this.formatNumber(hybrid.circulating_supply, false),
+            volume_s: this.formatNumber(hybrid.volume_24h),
+            desc: cgkoData.description || null
+        };
+    }
 }
 
 module.exports = HybridTransformer;
