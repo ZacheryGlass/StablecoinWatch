@@ -1,6 +1,7 @@
 const IStablecoinDataService = require('../interfaces/IStablecoinDataService');
 const DataFetcherRegistry = require('./DataFetcherRegistry');
 const AppConfig = require('../config/AppConfig');
+const DEBUG = AppConfig.development.debugMode || AppConfig.development.verbose;
 
 /**
  * Main service that coordinates stablecoin data fetching, aggregation, and transformation.
@@ -238,7 +239,7 @@ class StablecoinDataService extends IStablecoinDataService {
                 if (!logo && data.metadata?.logoUrl) {
                     logo = data.metadata.logoUrl;
                     // Debug logging for image URL processing
-                    if (key === 'USDT' || key === 'USDC') {
+                    if (DEBUG && (key === 'USDT' || key === 'USDC')) {
                         console.log(`[Aggregation Debug] ${key}: Setting logo from ${sourceId}: ${logo}`);
                     }
                 }
@@ -268,7 +269,7 @@ class StablecoinDataService extends IStablecoinDataService {
             };
             
             // Debug logging for volume data processing
-            if (key === 'USDT' || key === 'USDC') {
+            if (DEBUG && (key === 'USDT' || key === 'USDC')) {
                 console.log(`[Volume Debug] ${key}: volumes array length=${volumes.length}, primaryVol=${primaryVol?.value}, final volume24h=${marketData.volume24h}`);
                 if (volumes.length > 0) {
                     console.log(`[Volume Debug] ${key}: volumes[0]=${volumes[0]?.v} from source ${volumes[0]?.s}`);
