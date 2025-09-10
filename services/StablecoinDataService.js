@@ -235,7 +235,13 @@ class StablecoinDataService extends IStablecoinDataService {
                 (data.metadata?.tags || []).forEach(t => allTags.add(t));
                 if (!description && data.metadata?.description) description = data.metadata.description;
                 if (!website && data.metadata?.website) website = data.metadata.website;
-                if (!logo && data.metadata?.logoUrl) logo = data.metadata.logoUrl;
+                if (!logo && data.metadata?.logoUrl) {
+                    logo = data.metadata.logoUrl;
+                    // Debug logging for image URL processing
+                    if (key === 'USDT' || key === 'USDC') {
+                        console.log(`[Aggregation Debug] ${key}: Setting logo from ${sourceId}: ${logo}`);
+                    }
+                }
                 if (!dateAdded && data.metadata?.dateAdded) dateAdded = data.metadata.dateAdded;
             }
 
@@ -260,6 +266,14 @@ class StablecoinDataService extends IStablecoinDataService {
                 rank: pickBy(d => d.marketData?.rank)?.value ?? null,
                 sourcePrices: Object.fromEntries(prices.map(p => [p.s, p.v]))
             };
+            
+            // Debug logging for volume data processing
+            if (key === 'USDT' || key === 'USDC') {
+                console.log(`[Volume Debug] ${key}: volumes array length=${volumes.length}, primaryVol=${primaryVol?.value}, final volume24h=${marketData.volume24h}`);
+                if (volumes.length > 0) {
+                    console.log(`[Volume Debug] ${key}: volumes[0]=${volumes[0]?.v} from source ${volumes[0]?.s}`);
+                }
+            }
 
             const agg = {
                 id: slugPick?.value || symbolPick?.value || key,

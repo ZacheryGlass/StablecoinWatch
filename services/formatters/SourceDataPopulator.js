@@ -10,9 +10,11 @@ const DataFormatter = require('./DataFormatter');
 class SourceDataPopulator {
     /**
      * Gets the appropriate image URL for a stablecoin.
-     * Prioritizes CoinMarketCap image URLs if CMC ID is available, falls back to Messari logo URLs.
+     * Updated to work with new aggregated data structure. Prioritizes existing imageUrl,
+     * then falls back to CoinMarketCap URLs if CMC ID is available, then Messari URLs.
      * 
-     * @param {Object} hybrid - Hybrid stablecoin data object
+     * @param {Object} hybrid - Hybrid stablecoin data object (aggregated data structure)
+     * @param {string} [hybrid.imageUrl] - Direct image URL from aggregated data
      * @param {string} [hybrid.id] - CoinMarketCap ID for generating CMC image URL
      * @param {Object} [hybrid._messari] - Messari-specific data container
      * @param {Object} [hybrid._messari.profile.images] - Messari profile images
@@ -21,12 +23,21 @@ class SourceDataPopulator {
      * @memberof SourceDataPopulator
      */
     getCoinImageUrl(hybrid) {
+        // First check for direct imageUrl from aggregated data structure
+        if (hybrid.imageUrl && typeof hybrid.imageUrl === 'string') {
+            return hybrid.imageUrl;
+        }
+        
+        // Fall back to legacy CMC ID-based URL generation
         if (hybrid.id) {
             return `https://s2.coinmarketcap.com/static/img/coins/64x64/${hybrid.id}.png`;
         }
+        
+        // Fall back to Messari logo URL
         if (hybrid._messari?.profile?.images?.logo) {
             return hybrid._messari.profile.images.logo;
         }
+        
         return null;
     }
 
@@ -52,19 +63,27 @@ class SourceDataPopulator {
      * Populates CoinMarketCap-specific data container with formatted values.
      * Creates a complete CMC data object with price, market cap, supply, and volume data
      * formatted consistently with other containers in the system.
+     * Updated to work with new aggregated data structure.
      * 
-     * @param {Object} hybrid - Hybrid stablecoin data object
+     * @param {Object} hybrid - Hybrid stablecoin data object (aggregated data structure)
      * @returns {Object} Populated CMC container with formatted data
      * @memberof SourceDataPopulator
      */
     populateCMCContainer(hybrid) {
         const cmcData = hybrid._cmc || {};
+        // Handle both legacy and new data structures
+        const price = hybrid.marketData?.price ?? hybrid.price;
+        const marketCap = hybrid.marketData?.marketCap ?? hybrid.market_cap;
+        const totalSupply = hybrid.supplyData?.total ?? hybrid.total_supply;
+        const circSupply = hybrid.supplyData?.circulating ?? hybrid.circulating_supply;
+        const volume = hybrid.marketData?.volume24h ?? hybrid.volume_24h;
+        
         return {
-            price: hybrid.price,
-            circulating_mcap_s: DataFormatter.formatNumber(hybrid.market_cap),
-            total_supply_s: DataFormatter.formatNumber(hybrid.total_supply, false),
-            circulating_supply_s: DataFormatter.formatNumber(hybrid.circulating_supply, false),
-            volume_s: DataFormatter.formatNumber(hybrid.volume_24h),
+            price: price,
+            circulating_mcap_s: DataFormatter.formatNumber(marketCap),
+            total_supply_s: DataFormatter.formatNumber(totalSupply, false),
+            circulating_supply_s: DataFormatter.formatNumber(circSupply, false),
+            volume_s: DataFormatter.formatNumber(volume),
             desc: cmcData.description || null,
             platform: cmcData.platform || null
         };
@@ -74,19 +93,27 @@ class SourceDataPopulator {
      * Populates CoinGecko-specific data container with formatted values.
      * Creates a complete CoinGecko data object with price, market cap, supply, and volume data
      * formatted consistently with other containers in the system.
+     * Updated to work with new aggregated data structure.
      * 
-     * @param {Object} hybrid - Hybrid stablecoin data object  
+     * @param {Object} hybrid - Hybrid stablecoin data object (aggregated data structure)  
      * @returns {Object} Populated CoinGecko container with formatted data
      * @memberof SourceDataPopulator
      */
     populateCoinGeckoContainer(hybrid) {
         const cgkoData = hybrid._cgko || {};
+        // Handle both legacy and new data structures
+        const price = hybrid.marketData?.price ?? hybrid.price;
+        const marketCap = hybrid.marketData?.marketCap ?? hybrid.market_cap;
+        const totalSupply = hybrid.supplyData?.total ?? hybrid.total_supply;
+        const circSupply = hybrid.supplyData?.circulating ?? hybrid.circulating_supply;
+        const volume = hybrid.marketData?.volume24h ?? hybrid.volume_24h;
+        
         return {
-            price: hybrid.price,
-            circulating_mcap_s: DataFormatter.formatNumber(hybrid.market_cap),
-            total_supply_s: DataFormatter.formatNumber(hybrid.total_supply, false),
-            circulating_supply_s: DataFormatter.formatNumber(hybrid.circulating_supply, false),
-            volume_s: DataFormatter.formatNumber(hybrid.volume_24h),
+            price: price,
+            circulating_mcap_s: DataFormatter.formatNumber(marketCap),
+            total_supply_s: DataFormatter.formatNumber(totalSupply, false),
+            circulating_supply_s: DataFormatter.formatNumber(circSupply, false),
+            volume_s: DataFormatter.formatNumber(volume),
             desc: cgkoData.description || null
         };
     }
@@ -94,36 +121,44 @@ class SourceDataPopulator {
     /**
      * Populates common data fields shared across different containers.
      * Creates standardized data structure with formatted values for main, msri, and scw containers.
+     * Updated to work with new aggregated data structure.
      * 
-     * @param {Object} hybrid - Hybrid stablecoin data object
+     * @param {Object} hybrid - Hybrid stablecoin data object (aggregated data structure)
      * @returns {Object} Object containing main, msri, and scw formatted data containers
      * @memberof SourceDataPopulator
      */
     populateCommonContainers(hybrid) {
+        // Handle both legacy and new data structures
+        const price = hybrid.marketData?.price ?? hybrid.price;
+        const marketCap = hybrid.marketData?.marketCap ?? hybrid.market_cap;
+        const totalSupply = hybrid.supplyData?.total ?? hybrid.total_supply;
+        const circSupply = hybrid.supplyData?.circulating ?? hybrid.circulating_supply;
+        const volume = hybrid.marketData?.volume24h ?? hybrid.volume_24h;
+        
         const main = {
-            price: hybrid.price,
-            circulating_mcap: hybrid.market_cap,
-            circulating_mcap_s: DataFormatter.formatNumber(hybrid.market_cap),
-            volume_24h: hybrid.volume_24h,
-            volume_s: DataFormatter.formatNumber(hybrid.volume_24h),
+            price: price,
+            circulating_mcap: marketCap,
+            circulating_mcap_s: DataFormatter.formatNumber(marketCap),
+            volume_24h: volume,
+            volume_s: DataFormatter.formatNumber(volume),
         };
 
         const msri = {
-            price: hybrid.price,
-            circulating_mcap_s: DataFormatter.formatNumber(hybrid.market_cap),
-            total_supply_s: DataFormatter.formatNumber(hybrid.total_supply, false),
-            circulating_supply_s: DataFormatter.formatNumber(hybrid.circulating_supply, false),
-            volume_s: DataFormatter.formatNumber(hybrid.volume_24h),
+            price: price,
+            circulating_mcap_s: DataFormatter.formatNumber(marketCap),
+            total_supply_s: DataFormatter.formatNumber(totalSupply, false),
+            circulating_supply_s: DataFormatter.formatNumber(circSupply, false),
+            volume_s: DataFormatter.formatNumber(volume),
             desc: this.generateDescription(hybrid),
         };
 
         const scw = {
-            price: hybrid.price,
-            circulating_mcap_s: DataFormatter.formatNumber(hybrid.market_cap),
-            total_supply_s: DataFormatter.formatNumber(hybrid.total_supply, false),
-            circulating_supply_s: DataFormatter.formatNumber(hybrid.circulating_supply, false),
-            volume_s: DataFormatter.formatNumber(hybrid.volume_24h),
-            circulating_supply: hybrid.circulating_supply,
+            price: price,
+            circulating_mcap_s: DataFormatter.formatNumber(marketCap),
+            total_supply_s: DataFormatter.formatNumber(totalSupply, false),
+            circulating_supply_s: DataFormatter.formatNumber(circSupply, false),
+            volume_s: DataFormatter.formatNumber(volume),
+            circulating_supply: circSupply,
         };
 
         return { main, msri, scw };
@@ -137,9 +172,11 @@ class SourceDataPopulator {
      * @memberof SourceDataPopulator
      */
     isValidHybridData(hybrid) {
-        return hybrid && 
-               (hybrid.name || hybrid.symbol) && 
-               typeof hybrid.price === 'number';
+        if (!hybrid || !(hybrid.name || hybrid.symbol)) return false;
+        const price = (typeof hybrid?.marketData?.price === 'number')
+            ? hybrid.marketData.price
+            : hybrid.price;
+        return typeof price === 'number';
     }
 
     /**

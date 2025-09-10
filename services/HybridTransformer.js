@@ -102,12 +102,10 @@ class HybridTransformer extends IViewModelTransformer {
      * @memberof HybridTransformer
      */
     _updateMetrics(hybrid) {
-        if (typeof hybrid.market_cap === 'number') {
-            this.metrics.totalMCap += hybrid.market_cap;
-        }
-        if (typeof hybrid.volume_24h === 'number') {
-            this.metrics.totalVolume += hybrid.volume_24h;
-        }
+        const mcap = hybrid?.marketData?.marketCap ?? hybrid.market_cap;
+        const vol = hybrid?.marketData?.volume24h ?? hybrid.volume_24h;
+        if (typeof mcap === 'number') this.metrics.totalMCap += mcap;
+        if (typeof vol === 'number') this.metrics.totalVolume += vol;
     }
 
     /**

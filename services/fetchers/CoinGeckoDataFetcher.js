@@ -1,5 +1,6 @@
 const IDataFetcher = require('../../interfaces/IDataFetcher');
 const ApiConfig = require('../../config/ApiConfig');
+const axios = require('axios');
 
 /**
  * CoinGecko data fetcher implementation (stub).
@@ -86,14 +87,62 @@ class CoinGeckoDataFetcher extends IDataFetcher {
 
     /**
      * Fetches stablecoin data from CoinGecko API.
-     * Stub implementation - returns empty array until full implementation is added.
+     * Uses the markets endpoint with the stablecoins category to retrieve
+     * price, market cap, volume, supply, and image URL data.
      * 
-     * @returns {Promise<Array>} Empty array (stub implementation)
-     * @memberof CoinGeckoDataFetcher
+     * @returns {Promise<Array>} Raw CoinGecko response array
      */
     async fetchStablecoins() {
-        // Stub: implementation to be added later
-        return [];
+        if (!this.isConfigured()) return [];
+        const startTime = Date.now();
+        const sourceId = this.sourceId;
+
+        try {
+            // Basic free endpoint; API key optional. Respect config for base URL.
+            const baseUrl = this.config?.baseUrl || 'https://api.coingecko.com/api/v3';
+            const url = `${baseUrl}/coins/markets`;
+            const params = {
+                vs_currency: (this.config?.processing?.currency || 'usd'),
+                category: (this.config?.processing?.category || 'stablecoins'),
+                per_page: 250,
+                page: 1,
+                sparkline: this.config?.processing?.includeSparkline ? true : false,
+                price_change_percentage: (this.config?.processing?.priceChangePercentage || '24h')
+            };
+            const headers = { ...(this.config?.request?.headers || {}) };
+            if (this.config?.apiKey) headers['x-cg-pro-api-key'] = this.config.apiKey;
+
+            const resp = await axios.get(url, { params, headers, timeout: this.config?.request?.timeout || 10000 });
+            const data = Array.isArray(resp?.data) ? resp.data : [];
+
+            // Optional: record health success
+            if (this.healthMonitor) {
+                await this.healthMonitor.recordSuccess(sourceId, {
+                    operation: 'fetchStablecoins',
+                    duration: Date.now() - startTime,
+                    recordCount: data.length,
+                    timestamp: Date.now()
+                });
+            }
+
+            // Filter and transform
+            const filtered = this._filterStablecoins(data);
+            return filtered;
+        } catch (error) {
+            if (this.healthMonitor) {
+                try {
+                    await this.healthMonitor.recordFailure(sourceId, {
+                        operation: 'fetchStablecoins',
+                        errorType: error?.response?.status === 429 ? 'rate_limit' : 'network',
+                        message: error?.message || 'CoinGecko fetch error',
+                        statusCode: error?.response?.status,
+                        retryable: [429, 500, 502, 503, 504].includes(error?.response?.status),
+                        timestamp: Date.now()
+                    });
+                } catch (_) {}
+            }
+            return [];
+        }
     }
 
     /**
@@ -107,18 +156,28 @@ class CoinGeckoDataFetcher extends IDataFetcher {
      * @memberof CoinGeckoDataFetcher
      */
     _filterStablecoins(rawData) {
-        if (!Array.isArray(rawData)) {
-            return [];
-        }
-
-        // Stub implementation - return empty array until full filtering is implemented
-        // Future implementation should filter by:
-        // 1. Stablecoin category membership
-        // 2. Price range validation (0.5 - 2.0 USD for USD-pegged stablecoins)
-        // 3. Market cap minimums
-        // 4. Active trading status
-        
-        return [];
+        if (!Array.isArray(rawData)) return [];
+        const minPrice = 0.5;
+        const maxPrice = 2.0;
+        const minMcap = 1_000_000; // 1M
+        return rawData
+            // API already filtered by stablecoins category; apply sanity filters
+            .filter(c => typeof c.current_price === 'number' && c.current_price >= minPrice && c.current_price <= maxPrice)
+            .filter(c => (c.market_cap || 0) >= minMcap)
+            .map(c => ({
+                // Keep only fields we need for transform
+                id: c.id,
+                symbol: c.symbol,
+                name: c.name,
+                image: c.image,
+                current_price: c.current_price,
+                market_cap: c.market_cap,
+                total_volume: c.total_volume,
+                price_change_percentage_24h: c.price_change_percentage_24h,
+                market_cap_rank: c.market_cap_rank,
+                circulating_supply: c.circulating_supply,
+                total_supply: c.total_supply
+            }));
     }
 
     /**
@@ -130,10 +189,39 @@ class CoinGeckoDataFetcher extends IDataFetcher {
      * @memberof CoinGeckoDataFetcher
      */
     transformToStandardFormat(rawData) {
-        // Stub transformer for future use
-        return [];
+        const ts = Date.now();
+        const out = (rawData || []).map((coin) => ({
+            sourceId: this.sourceId,
+            id: coin.id,
+            name: coin.name,
+            symbol: coin.symbol ? String(coin.symbol).toUpperCase() : coin.symbol,
+            slug: (coin.id || coin.symbol || '').toLowerCase(),
+            marketData: {
+                price: coin.current_price ?? null,
+                marketCap: coin.market_cap ?? null,
+                volume24h: coin.total_volume ?? null,
+                percentChange24h: coin.price_change_percentage_24h ?? null,
+                rank: coin.market_cap_rank ?? null,
+            },
+            supplyData: {
+                circulating: coin.circulating_supply ?? null,
+                total: coin.total_supply ?? null,
+                max: null,
+                networkBreakdown: []
+            },
+            platforms: [],
+            metadata: {
+                tags: ['coingecko'],
+                description: null,
+                website: null,
+                logoUrl: coin.image || null,
+                dateAdded: null,
+            },
+            confidence: 0.6,
+            timestamp: ts,
+        }));
+        return out;
     }
 }
 
 module.exports = CoinGeckoDataFetcher;
-

@@ -116,12 +116,15 @@ class CmcDataFetcher extends IDataFetcher {
      * @memberof CmcDataFetcher
      */
     async fetchStablecoins() {
+        console.log(`[CMC Debug] fetchStablecoins called`);
         const startTime = Date.now();
         const sourceId = this.sourceId;
 
         if (!this.isConfigured()) {
+            console.log(`[CMC Debug] CMC not configured, returning empty array`);
             return [];
         }
+        console.log(`[CMC Debug] CMC is configured, proceeding with API call`);
 
         if (this.healthMonitor) {
             try {
@@ -158,12 +161,17 @@ class CmcDataFetcher extends IDataFetcher {
                 data = response.data;
             }
 
+            console.log(`[CMC Debug] API response received, data.data length: ${data?.data?.length || 'null'}`);
+            
             if (!data?.data) {
+                console.log(`[CMC Debug] No data.data in API response - throwing error`);
                 throw new Error('No data received from CoinMarketCap API');
             }
 
+            console.log(`[CMC Debug] Proceeding to filter ${data.data.length} coins from API`);
             // Filter the raw data to include only valid stablecoins
             const stablecoins = await this._filterStablecoins(data.data);
+            console.log(`[CMC Debug] After filtering: ${stablecoins.length} stablecoins found`);
 
             // No tracing logs in production
 
@@ -178,6 +186,7 @@ class CmcDataFetcher extends IDataFetcher {
 
             return stablecoins;
         } catch (error) {
+            console.log(`[CMC Debug] Error in fetchStablecoins: ${error.message}`);
             if (this.healthMonitor) {
                 await this.healthMonitor.recordFailure(sourceId, {
                     operation: 'fetchStablecoins',
@@ -262,6 +271,18 @@ class CmcDataFetcher extends IDataFetcher {
      */
     transformToStandardFormat(rawData) {
         const ts = Date.now();
+        
+        // Debug logging for first few coins to understand data structure
+        if (rawData && rawData.length > 0) {
+            console.log(`[CMC Debug] Processing ${rawData.length} coins from API`);
+            for (let i = 0; i < Math.min(3, rawData.length); i++) {
+                const coin = rawData[i];
+                console.log(`[CMC Debug] Coin ${i + 1}: id=${coin.id}, name=${coin.name}, symbol=${coin.symbol}, slug=${coin.slug}`);
+                console.log(`[CMC Debug] Volume: ${coin.quote?.USD?.volume_24h}, Price: ${coin.quote?.USD?.price}, MCap: ${coin.quote?.USD?.market_cap}`);
+                console.log(`[CMC Debug] Generated image URL: https://s2.coinmarketcap.com/static/img/coins/64x64/${coin.id}.png`);
+            }
+        }
+        
         const out = (rawData || []).map((coin) => ({
             sourceId: this.sourceId,
             id: coin.id,

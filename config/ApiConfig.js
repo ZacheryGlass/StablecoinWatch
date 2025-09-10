@@ -129,7 +129,9 @@ class ApiConfig {
             // CoinGecko Configuration (for future use)
             coingecko: {
                 name: 'CoinGecko',
-                enabled: !!process.env.COINGECKO_API_KEY,
+                // CoinGecko can operate without an API key (free tier)
+                // Enable by default to provide resilient fallback for price/volume/images
+                enabled: true,
                 baseUrl: process.env.COINGECKO_BASE_URL || 'https://api.coingecko.com/api/v3',
                 apiKey: process.env.COINGECKO_API_KEY, // Optional for free tier
                 
