@@ -108,6 +108,7 @@ class HybridTransformerAdapter extends IViewModelTransformer {
             name: agg.name,
             symbol: agg.symbol,
             slug: agg.slug || (agg.symbol || '').toLowerCase(),
+            imageUrl: agg.imageUrl || (meta.logoUrl || null),
             price: md.price ?? null,
             market_cap: md.marketCap ?? (sd.circulating && md.price ? sd.circulating * md.price : null),
             volume_24h: md.volume24h ?? null,
@@ -127,4 +128,3 @@ class HybridTransformerAdapter extends IViewModelTransformer {
 }
 
 module.exports = HybridTransformerAdapter;
-

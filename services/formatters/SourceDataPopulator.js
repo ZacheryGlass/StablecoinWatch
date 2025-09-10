@@ -28,14 +28,14 @@ class SourceDataPopulator {
             return hybrid.imageUrl;
         }
         
-        // Fall back to legacy CMC ID-based URL generation
-        if (hybrid.id) {
-            return `https://s2.coinmarketcap.com/static/img/coins/64x64/${hybrid.id}.png`;
-        }
-        
-        // Fall back to Messari logo URL
+        // Prefer Messari-style embedded logo if present
         if (hybrid._messari?.profile?.images?.logo) {
             return hybrid._messari.profile.images.logo;
+        }
+
+        // Fall back to legacy CMC ID-based URL generation only if ID is numeric
+        if (hybrid.id && /^\d+$/.test(String(hybrid.id))) {
+            return `https://s2.coinmarketcap.com/static/img/coins/64x64/${hybrid.id}.png`;
         }
         
         return null;
