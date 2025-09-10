@@ -1,14 +1,12 @@
 const IStablecoinDataService = require('../interfaces/IStablecoinDataService');
 const DataFetcherRegistry = require('./DataFetcherRegistry');
 const AppConfig = require('../config/AppConfig');
-const HybridTransformer = require('./HybridTransformer');
 
 /**
  * Main service that coordinates stablecoin data fetching, aggregation, and transformation.
  * Implements a comprehensive data aggregation system that combines data from multiple API sources
  * (CoinMarketCap, Messari, DeFiLlama, CoinGecko) with priority-based merging, consensus scoring,
- * and confidence metrics. Provides health monitoring, circuit breaker functionality, and
- * degraded mode operation.
+ * and confidence metrics. Uses dependency injection for loose coupling with transformation layer.
  * 
  * @class StablecoinDataService
  * @extends {IStablecoinDataService}
@@ -16,17 +14,23 @@ const HybridTransformer = require('./HybridTransformer');
 class StablecoinDataService extends IStablecoinDataService {
     /**
      * Creates an instance of StablecoinDataService.
-     * Initializes the service with health monitoring, data fetcher registry, and hybrid transformer.
+     * Initializes the service with injected dependencies for transformation and formatting.
      * Sets up internal state for aggregated data, platform data, metrics, and view models.
      * 
      * @param {Object} [healthMonitor=null] - Health monitoring instance for tracking API source health
      * @param {DataFetcherRegistry} [fetcherRegistry=null] - Registry of data fetchers, creates default if not provided
+     * @param {IViewModelTransformer} [viewModelTransformer=null] - Transformer for view layer data conversion
+     * @param {IDataFormatter} [dataFormatter=null] - Formatter for numerical and text data
      * @memberof StablecoinDataService
      */
-    constructor(healthMonitor = null, fetcherRegistry = null) {
+    constructor(healthMonitor = null, fetcherRegistry = null, viewModelTransformer = null, dataFormatter = null) {
         super();
         this.healthMonitor = healthMonitor;
         this.fetcherRegistry = fetcherRegistry || DataFetcherRegistry.createDefault(healthMonitor);
+
+        // Injected dependencies for loose coupling
+        this.viewModelTransformer = viewModelTransformer;
+        this.dataFormatter = dataFormatter;
 
         this._aggregated = [];
         this._platformData = [];
@@ -34,9 +38,6 @@ class StablecoinDataService extends IStablecoinDataService {
         this._lastRefresh = 0;
         this._viewModel = { stablecoins: [], metrics: {}, platform_data: [] };
         this._degraded = { active: false, reasons: [] };
-
-        // Use dedicated transformer for view model shape
-        this._hybridTransformer = new HybridTransformer();
     }
 
     // Interface methods
@@ -148,7 +149,6 @@ class StablecoinDataService extends IStablecoinDataService {
 
         // 2) Build map keyed by symbol for merging
         const bySymbol = new Map();
-        const bySourceForSymbol = new Map();
         for (const res of settled) {
             const payload = res.value || res.reason || null;
             if (!payload || !Array.isArray(payload.list)) continue;
@@ -158,8 +158,6 @@ class StablecoinDataService extends IStablecoinDataService {
                 if (!key) continue;
                 if (!bySymbol.has(key)) bySymbol.set(key, []);
                 bySymbol.get(key).push({ sourceId: src, data: item });
-                if (!bySourceForSymbol.has(key)) bySourceForSymbol.set(key, new Map());
-                bySourceForSymbol.get(key).set(src, item);
             }
         }
 
@@ -299,9 +297,8 @@ class StablecoinDataService extends IStablecoinDataService {
                 quality: this._computeQuality({ marketData, supply: { circ: supplyCirc?.value, total: supplyTotal?.value } })
             };
 
-            // Prepare a hybrid-like object for existing view transformer
-            const hybridLike = this._toHybridLike(agg, bySourceForSymbol.get(key));
-            aggregated.push({ aggregated: agg, hybridLike });
+            // Store aggregated record; transformer adapter will handle input mapping
+            aggregated.push({ aggregated: agg });
         }
         
 
@@ -317,11 +314,11 @@ class StablecoinDataService extends IStablecoinDataService {
             };
         }
 
-        // 5) Build view models using the hybrid transformer for compatibility
-        const hybridInput = aggregated.map(x => x.hybridLike);
-        this._hybridTransformer.transformHybridData(hybridInput);
-        const viewStablecoins = this._hybridTransformer.getStablecoins();
-        const platformData = this._hybridTransformer.calculatePlatformData();
+        // 5) Build view models using the injected transformer for compatibility
+        // Pass aggregated DTOs; adapter handles any required mapping
+        this.viewModelTransformer.transformData(aggregated.map(x => x.aggregated));
+        const viewStablecoins = this.viewModelTransformer.getTransformedData();
+        const platformData = this.viewModelTransformer.calculateAggregations();
 
         // 6) Store results and metrics
         this._aggregated = aggregated.map(x => x.aggregated)
@@ -329,9 +326,9 @@ class StablecoinDataService extends IStablecoinDataService {
         this._platformData = platformData;
         this._metrics = {
             totalMarketCap: this._aggregated.reduce((s, c) => s + (c.marketData.marketCap || 0), 0),
-            totalMarketCapFormatted: this._hybridTransformer.formatNumber(this._aggregated.reduce((s, c) => s + (c.marketData.marketCap || 0), 0)),
+            totalMarketCapFormatted: this.dataFormatter.formatNumber(this._aggregated.reduce((s, c) => s + (c.marketData.marketCap || 0), 0)),
             totalVolume: this._aggregated.reduce((s, c) => s + (c.marketData.volume24h || 0), 0),
-            totalVolumeFormatted: this._hybridTransformer.formatNumber(this._aggregated.reduce((s, c) => s + (c.marketData.volume24h || 0), 0)),
+            totalVolumeFormatted: this.dataFormatter.formatNumber(this._aggregated.reduce((s, c) => s + (c.marketData.volume24h || 0), 0)),
             stablecoinCount: this._aggregated.length,
             platformCount: platformData.length,
             lastUpdated: Date.now(),
@@ -343,9 +340,9 @@ class StablecoinDataService extends IStablecoinDataService {
             stablecoins: viewStablecoins,
             metrics: {
                 totalMCap: this._metrics.totalMarketCap,
-                totalMCap_s: this._hybridTransformer.formatNumber(this._metrics.totalMarketCap),
+                totalMCap_s: this.dataFormatter.formatNumber(this._metrics.totalMarketCap),
                 totalVolume: this._metrics.totalVolume,
-                totalVolume_s: this._hybridTransformer.formatNumber(this._metrics.totalVolume),
+                totalVolume_s: this.dataFormatter.formatNumber(this._metrics.totalVolume),
                 lastUpdated: new Date(this._metrics.lastUpdated || Date.now()).toISOString()
             },
             platform_data: platformData
@@ -507,89 +504,6 @@ class StablecoinDataService extends IStablecoinDataService {
         return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
     }
 
-    /**
-     * Converts aggregated data format to hybrid transformer compatible format.
-     * Transforms the internal aggregated format to the legacy format expected by HybridTransformer.
-     * Preserves source-specific data for image URLs and platform information.
-     * 
-     * @param {Object} agg - Aggregated stablecoin data object
-     * @param {Map} sourceMap - Map of source IDs to their raw data for this stablecoin
-     * @returns {Object} Hybrid-compatible data object
-     * @private
-     * @memberof StablecoinDataService
-     */
-    _toHybridLike(agg, sourceMap) {
-        // Prefer CMC id for image URL compatibility
-        const cmc = sourceMap ? sourceMap.get('cmc') : null;
-        const messari = sourceMap ? sourceMap.get('messari') : null;
-        const obj = {
-            id: cmc?.id || null,
-            name: agg.name,
-            symbol: agg.symbol,
-            slug: agg.slug,
-            price: agg.marketData.price ?? 1.0,
-            market_cap: agg.marketData.marketCap ?? (agg.supplyData?.circulating ? agg.supplyData.circulating * (agg.marketData.price || 1.0) : null),
-            volume_24h: agg.marketData.volume24h ?? null,
-            percent_change_24h: agg.marketData.percentChange24h ?? null,
-            cmc_rank: agg.marketData.rank ?? null,
-            circulating_supply: agg.supplyData?.circulating ?? null,
-            total_supply: agg.supplyData?.total ?? null,
-            networkBreakdown: (agg.supplyData?.networkBreakdown || []).map(n => ({
-                network: n.network || n.platform,
-                supply: n.supply,
-                share: n.percentage,
-                contract: n.contractAddress
-            })),
-            tags: agg.metadata?.tags || ['stablecoin'],
-            source: (sourceMap && sourceMap.size > 1) ? 'hybrid' : 'single',
-            _cmc: cmc ? { 
-                platform: (cmc.platforms && cmc.platforms[0]) ? { name: cmc.platforms[0].name } : undefined,
-                description: cmc.metadata?.description || null,
-                marketData: cmc.marketData || null
-            } : undefined,
-            _messari: messari ? { 
-                profile: { images: { logo: messari.metadata?.logoUrl || null } },
-                description: messari.metadata?.description || null
-            } : undefined,
-            _cgko: this._extractCoinGeckoData(sourceMap),
-            _defillama: this._extractDeFiLlamaData(sourceMap)
-        };
-        return obj;
-    }
-
-    /**
-     * Extracts CoinGecko-specific data from source map for hybrid transformation.
-     * Provides CoinGecko metadata and market data for enhanced container population.
-     * 
-     * @param {Map} sourceMap - Map of source IDs to their raw data
-     * @returns {Object|undefined} CoinGecko data object or undefined if not available
-     * @private
-     * @memberof StablecoinDataService
-     */
-    _extractCoinGeckoData(sourceMap) {
-        const cgko = sourceMap ? sourceMap.get('coingecko') : null;
-        return cgko ? {
-            description: cgko.metadata?.description || null,
-            marketData: cgko.marketData || null
-        } : undefined;
-    }
-
-    /**
-     * Extracts DeFiLlama-specific data from source map for hybrid transformation.
-     * Provides DeFiLlama network breakdown and chain-specific data.
-     * 
-     * @param {Map} sourceMap - Map of source IDs to their raw data
-     * @returns {Object|undefined} DeFiLlama data object or undefined if not available
-     * @private
-     * @memberof StablecoinDataService
-     */
-    _extractDeFiLlamaData(sourceMap) {
-        const defillama = sourceMap ? sourceMap.get('defillama') : null;
-        return defillama ? {
-            networkBreakdown: defillama.supplyData?.networkBreakdown || [],
-            chainData: defillama.chainCirculating || null
-        } : undefined;
-    }
 }
 
 module.exports = StablecoinDataService;

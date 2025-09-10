@@ -1,4 +1,5 @@
 const Stablecoin = require('../models/stablecoin');
+const IViewModelTransformer = require('../interfaces/IViewModelTransformer');
 const DataFormatter = require('./formatters/DataFormatter');
 const PlatformNormalizer = require('./formatters/PlatformNormalizer');
 const SourceDataPopulator = require('./formatters/SourceDataPopulator');
@@ -6,21 +7,25 @@ const SourceDataPopulator = require('./formatters/SourceDataPopulator');
 /**
  * Transforms and standardizes hybrid stablecoin data for view layer consumption.
  * Orchestrates data transformation using specialized formatter classes following
- * the Single Responsibility Principle. Maintains backward compatibility with 
- * existing interface while providing cleaner internal structure.
+ * the Single Responsibility Principle. Implements IViewModelTransformer interface
+ * for loose coupling with service layer.
  * 
  * @class HybridTransformer
+ * @extends {IViewModelTransformer}
  */
-class HybridTransformer {
+class HybridTransformer extends IViewModelTransformer {
     /**
      * Creates an instance of HybridTransformer.
      * Initializes formatter dependencies and internal state for stablecoins and metrics.
      * 
+     * @param {Object} [config={}] - Configuration options for the transformer
      * @memberof HybridTransformer
      */
-    constructor() {
+    constructor(config = {}) {
+        super();
         this.stablecoins = [];
         this.metrics = { totalMCap: 0, totalVolume: 0, lastUpdated: null };
+        this.config = config;
         
         // Initialize formatter dependencies
         this.dataFormatter = new DataFormatter();
@@ -174,6 +179,93 @@ class HybridTransformer {
             stablecoins: this.stablecoins,
             metrics: this.metrics,
             platform_data: this.calculatePlatformData()
+        };
+    }
+
+    // IViewModelTransformer interface implementations
+    /**
+     * Transforms raw aggregated data into standardized view model format.
+     * Maps to transformHybridData for interface compliance.
+     * 
+     * @param {Array} aggregatedData - Array of aggregated data objects from multiple sources
+     * @returns {void} Method updates internal state with transformed data
+     * @memberof HybridTransformer
+     */
+    transformData(aggregatedData) {
+        return this.transformHybridData(aggregatedData);
+    }
+
+    /**
+     * Gets the array of transformed data objects.
+     * Maps to getStablecoins for interface compliance.
+     * 
+     * @returns {Array} Array of transformed data objects
+     * @memberof HybridTransformer
+     */
+    getTransformedData() {
+        return this.getStablecoins();
+    }
+
+    /**
+     * Calculates aggregated data for specific view requirements.
+     * Maps to calculatePlatformData for interface compliance.
+     * 
+     * @returns {Array} Array of aggregated data objects
+     * @memberof HybridTransformer
+     */
+    calculateAggregations() {
+        return this.calculatePlatformData();
+    }
+
+    /**
+     * Gets complete transformed data structure for view layer.
+     * Maps to getData for interface compliance.
+     * 
+     * @returns {Object} Complete transformed data structure
+     * @memberof HybridTransformer
+     */
+    getCompleteViewModel() {
+        return this.getData();
+    }
+
+    /**
+     * Resets the internal state of the transformer.
+     * Clears cached data to prepare for new transformation cycle.
+     * 
+     * @returns {void}
+     * @memberof HybridTransformer
+     */
+    reset() {
+        this.stablecoins = [];
+        this.metrics = { totalMCap: 0, totalVolume: 0, lastUpdated: null };
+    }
+
+    /**
+     * Validates input data structure before transformation.
+     * Checks if the provided data meets transformation requirements.
+     * 
+     * @param {Array} data - Data array to validate
+     * @returns {boolean} True if data is valid for transformation
+     * @memberof HybridTransformer
+     */
+    validateInputData(data) {
+        return Array.isArray(data) && data.every(item => 
+            item && typeof item === 'object' && (item.name || item.symbol)
+        );
+    }
+
+    /**
+     * Gets metadata about the transformer implementation.
+     * Returns information about capabilities and version.
+     * 
+     * @returns {Object} Transformer metadata
+     * @memberof HybridTransformer
+     */
+    getTransformerInfo() {
+        return {
+            name: 'HybridTransformer',
+            version: '2.0.0',
+            capabilities: ['hybrid_data_transformation', 'platform_aggregation', 'view_formatting']
         };
     }
 
