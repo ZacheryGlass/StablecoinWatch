@@ -7,12 +7,13 @@
  * the corresponding raw output files used for mocking during development.
  * 
  * Usage:
- *   node scripts/update-mock-data.js [--api=cmc,messari,defillama] [--verbose]
+ *   node scripts/update-mock-data.js [--api=cmc,messari,defillama,coingecko] [--verbose]
  * 
  * Examples:
  *   node scripts/update-mock-data.js                    # Update all APIs
  *   node scripts/update-mock-data.js --api=cmc         # Update only CMC
  *   node scripts/update-mock-data.js --api=cmc,messari # Update CMC and Messari
+ *   node scripts/update-mock-data.js --api=coingecko   # Update only CoinGecko
  *   node scripts/update-mock-data.js --verbose         # Verbose output
  */
 
@@ -25,7 +26,7 @@ require('dotenv').config();
 const args = process.argv.slice(2);
 const apiArg = args.find(arg => arg.startsWith('--api='));
 const verbose = args.includes('--verbose');
-const selectedApis = apiArg ? apiArg.split('=')[1].split(',') : ['cmc', 'messari', 'defillama'];
+const selectedApis = apiArg ? apiArg.split('=')[1].split(',') : ['cmc', 'messari', 'defillama', 'coingecko'];
 
 /**
  * Log an informational message with icon
@@ -186,6 +187,44 @@ async function fetchDeFiLlamaData() {
 }
 
 /**
+ * Fetch stablecoin data from CoinGecko API
+ * Uses the markets endpoint with stablecoins category (no API key required)
+ * @returns {Promise<Array>} CoinGecko API response data with market data
+ * @throws {Error} If API request fails or no data is received
+ */
+async function fetchCoinGeckoData() {
+    const baseUrl = 'https://api.coingecko.com/api/v3';
+    const url = `${baseUrl}/coins/markets`;
+    
+    const headers = {
+        'Accept': 'application/json'
+    };
+
+    const parameters = {
+        vs_currency: 'usd',
+        category: 'stablecoins',
+        per_page: 250,
+        page: 1,
+        sparkline: false,
+        price_change_percentage: '24h'
+    };
+
+    if (verbose) log(`Making request to: ${url}`);
+    
+    const response = await axios.get(url, { 
+        headers, 
+        params: parameters, 
+        timeout: 30000 
+    });
+    
+    if (!Array.isArray(response.data)) {
+        throw new Error('No array data received from CoinGecko API');
+    }
+
+    return response.data;
+}
+
+/**
  * Update mock data for a single API source
  * Fetches fresh data and saves it to the corresponding JSON file
  * @param {string} apiName - The API name ('cmc', 'messari', or 'defillama')
@@ -244,6 +283,17 @@ async function updateApiMockData(apiName) {
                 data = await fetchDeFiLlamaData();
                 fileName = 'defillama_raw_output.json';
                 filterInfo = ` (${data.peggedAssets.length} stablecoins)`;
+                break;
+                
+            case 'coingecko':
+                data = await fetchCoinGeckoData();
+                fileName = 'coingecko_raw_output.json';
+                const validStablecoins = data.filter(coin => {
+                    const price = coin.current_price;
+                    const marketCap = coin.market_cap || 0;
+                    return price >= 0.5 && price <= 2.0 && marketCap >= 1_000_000;
+                });
+                filterInfo = ` (${validStablecoins.length} valid stablecoins out of ${data.length} total coins)`;
                 break;
                 
             default:
@@ -321,4 +371,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { updateApiMockData, fetchCMCData, fetchMessariData, fetchDeFiLlamaData };
+module.exports = { updateApiMockData, fetchCMCData, fetchMessariData, fetchDeFiLlamaData, fetchCoinGeckoData };
