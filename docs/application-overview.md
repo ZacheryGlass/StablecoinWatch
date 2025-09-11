@@ -60,7 +60,7 @@ This document provides a comprehensive tour of the StablecoinWatch codebase: arc
 
 ### Merging, Consensus, and Confidence
 
-- Source priority by capability (from `ApiConfig`): higher priority wins per field group, e.g., CMC for market data, Messari/DeFiLlama for supply/network.
+- Source priority by capability (from `ApiConfig`), with optional env override via `SOURCE_PRIORITY`: higher priority wins per field group, e.g., CMC for market data, Messari/DeFiLlama for supply/network.
 - Consensus score: measures spread around the median of available numeric values (e.g., price). Lower spread ⇒ higher consensus.
 - Confidence scores: weighted by source coverage and consensus; overall is combined from market, supply, and platform facets.
 - Quality flags: identify missing critical fields (e.g., price/marketCap/circulating) for debugging and UI hints.

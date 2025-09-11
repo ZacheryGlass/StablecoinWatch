@@ -226,6 +226,8 @@ Data sources have priority levels that determine which data is used when multipl
 - **Priority 6**: CoinGecko (market data)
 - **Priority 4**: DeFiLlama (supply data)
 
+Note: You can override these per-environment without code changes using the `SOURCE_PRIORITY` env var (JSON object). Any source not present in the override keeps its built-in priority from `ApiConfig`.
+
 ### Confidence Scoring
 
 Each data point receives a confidence score based on:

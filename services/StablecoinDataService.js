@@ -125,7 +125,18 @@ class StablecoinDataService extends IStablecoinDataService {
 
         // 1) Fetch and standardize data from all active fetchers
         const activeFetchers = this.fetcherRegistry.getActive();
-        const sourcePriority = new Map(activeFetchers.map(f => [f.getSourceId(), f.getCapabilities()?.priority || 0]));
+        // Build effective priority map: env override (SOURCE_PRIORITY) takes precedence over fetcher-declared capability
+        const priorityOverrides = (AppConfig?.dataSources?.priority) || {};
+        const sourcePriority = new Map(activeFetchers.map(f => {
+            const id = f.getSourceId();
+            const declared = f.getCapabilities()?.priority || 0;
+            const hasOverride = Object.prototype.hasOwnProperty.call(priorityOverrides, id);
+            const effective = hasOverride ? priorityOverrides[id] : declared;
+            if (DEBUG) {
+                console.log(`[Priority] ${id}: effective=${effective} (override=${hasOverride ? priorityOverrides[id] : 'none'}, declared=${declared})`);
+            }
+            return [id, effective];
+        }));
 
         const settled = await Promise.allSettled(activeFetchers.map(async (f) => {
             try {
@@ -412,13 +423,17 @@ class StablecoinDataService extends IStablecoinDataService {
                 const h = await f.getHealthStatus();
                 healthy = !!h?.healthy || (h?.status !== 'down');
             } catch (_) { healthy = false; }
+            const priorityOverrides = (AppConfig?.dataSources?.priority) || {};
+            const declared = f.getCapabilities()?.priority || 0;
+            const hasOverride = Object.prototype.hasOwnProperty.call(priorityOverrides, f.getSourceId());
+            const effectivePriority = hasOverride ? priorityOverrides[f.getSourceId()] : declared;
             list.push({
                 sourceId: f.getSourceId(),
                 sourceName: f.getSourceName(),
                 configured: f.isConfigured(),
                 healthy,
                 capabilities: f.getCapabilities(),
-                priority: f.getCapabilities()?.priority || 0,
+                priority: effectivePriority,
                 rateLimit: f.getRateLimitInfo()
             });
         }

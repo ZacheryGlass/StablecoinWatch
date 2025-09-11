@@ -224,6 +224,11 @@ docs/
 - `CIRCUIT_BREAKER_TIMEOUT_MS` — Open timeout (default: 60000)
 - `CIRCUIT_BREAKER_RESET_MS` — Reset timeout (default: 300000)
 
+### Data Source Control
+- `ENABLED_SOURCES` — Comma-separated list of sources to use (e.g., `cmc,messari,coingecko,defillama`).
+- `SOURCE_PRIORITY` — Optional JSON to override per-source priority in merge selection. Higher wins. If a source isn’t present in the JSON, its built-in priority from `ApiConfig` is used. Example:
+  - `SOURCE_PRIORITY={"cmc":10,"messari":9,"coingecko":6,"defillama":4}`
+
 ## Current Capabilities & Limitations
 
 ### What's Working
