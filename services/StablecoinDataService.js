@@ -173,7 +173,7 @@ class StablecoinDataService extends IStablecoinDataService {
             }
         }
 
-        // 3) Merge per symbol using priority and consensus
+        // 3) Merge per symbol using priority and consensusd
         const aggregated = [];
         for (const [key, entries] of bySymbol) {
             const pickBy = (picker) => {
@@ -240,21 +240,20 @@ class StablecoinDataService extends IStablecoinDataService {
 
             // track if breakdown has entries (used for internal metrics if needed)
 
-            // Metadata merge
+            // Metadata merge (priority-aware for description, website, logo, dateAdded)
             const allTags = new Set();
-            let description = null; let website = null; let logo = null; let dateAdded = null;
-            for (const { sourceId, data } of entries) {
+            for (const { data } of entries) {
                 (data.metadata?.tags || []).forEach(t => allTags.add(t));
-                if (!description && data.metadata?.description) description = data.metadata.description;
-                if (!website && data.metadata?.website) website = data.metadata.website;
-                if (!logo && data.metadata?.logoUrl) {
-                    logo = data.metadata.logoUrl;
-                    // Debug logging for image URL processing
-                    if (DEBUG && (key === 'USDT' || key === 'USDC')) {
-                        console.log(`[Aggregation Debug] ${key}: Setting logo from ${sourceId}: ${logo}`);
-                    }
+            }
+
+            const descriptionPick = pickBy(d => d.metadata?.description);
+            const websitePick = pickBy(d => d.metadata?.website);
+            const logoPick = pickBy(d => d.metadata?.logoUrl);
+            const dateAddedPick = pickBy(d => d.metadata?.dateAdded);
+            if (DEBUG && (key === 'USDT' || key === 'USDC')) {
+                if (logoPick?.value) {
+                    console.log(`[Aggregation Debug] ${key}: logo chosen from ${logoPick.sourceId}: ${logoPick.value}`);
                 }
-                if (!dateAdded && data.metadata?.dateAdded) dateAdded = data.metadata.dateAdded;
             }
 
             // Consensus + confidence
@@ -292,7 +291,7 @@ class StablecoinDataService extends IStablecoinDataService {
                 name: namePick?.value || key,
                 symbol: symbolPick?.value || key,
                 slug: (slugPick?.value || symbolPick?.value || key).toLowerCase(),
-                imageUrl: logo || null,
+                imageUrl: logoPick?.value || null,
                 marketData,
                 supplyData: {
                     circulating: supplyCirc?.value ?? null,
@@ -305,10 +304,10 @@ class StablecoinDataService extends IStablecoinDataService {
                 platforms: [], // filled in view transformation
                 metadata: {
                     tags: Array.from(allTags),
-                    description,
-                    website,
-                    logoUrl: logo,
-                    dateAdded
+                    description: descriptionPick?.value || null,
+                    website: websitePick?.value || null,
+                    logoUrl: logoPick?.value || null,
+                    dateAdded: dateAddedPick?.value || null
                 },
                 confidence: {
                     overall: confidence.overall,
