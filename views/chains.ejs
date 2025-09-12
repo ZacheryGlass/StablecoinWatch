@@ -319,15 +319,15 @@
             </div>
 
             <% if (data.platform_data && data.platform_data.length) { %>
-                <!-- Market Share Chart -->
+                <!-- Value Share Chart -->
                 <div class="chart-container">
-                    <button type="button" class="collapsible">📊 View Market Share Chart</button>
+                    <button type="button" class="collapsible">📊 View Value Share Chart</button>
                     <div class="chart-content" id="chartContent">
                         <div class="chart-wrapper">
                             <canvas id="chart"></canvas>
                         </div>
                         <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
-                            Market share distribution across top blockchains
+                            Value share distribution across top blockchains
                         </p>
                     </div>
                 </div>
@@ -364,22 +364,21 @@
                                             <%= platform.name %>
                                         </a>
                                         <div class="platform-stats">
-                                            <%= h.getPlatformRank(index, 'mcap') %>
+                                            <%= h.getPlatformRank(index, 'supply') %>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-sort="<%= platform.total_supply || 0 %>">
                                         <strong><%= h.getPlatformSupplyDisplay(platform, formatter) %></strong>
                                         <div class="supply-bar">
                                             <div class="supply-fill" style="width: <%= Math.min(platform.supply_percentage || 0, 100) %>%"></div>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-sort="<%= platform.supply_percentage || 0 %>">
                                         <span class="metric-highlight">
-                                            <% let mcapPct = (platform.mcap_sum / data.metrics.totalMCap) * 100; %>
-                                            <%= formatter.formatPercentage(mcapPct, 2) %>
+                                            <%= h.getPlatformSupplyPercentage(platform) %>
                                         </span>
                                     </td>
-                                    <td>
+                                    <td data-sort="<%= platform.coin_count || 0 %>">
                                         <%= h.getPlatformCoinCount(platform) %>
                                     </td>
                                     <td>
@@ -451,16 +450,18 @@
                         <% } %>
                     ],
                     datasets: [{
-                        label: 'Market Share (%)',
+                        label: 'Value Share (%)',
                         data: [
                             <% let totalOther = 0; %>
+                            <% let totalSupplyAll = 0; data.platform_data.forEach(p => totalSupplyAll += (p.total_supply || 0)); %>
                             <% for (let i = 0; i < displayCount; i++) { %>
-                                <% let pct = (data.platform_data[i].mcap_sum / data.metrics.totalMCap) * 100; %>
+                                <% let pct = totalSupplyAll > 0 ? ((data.platform_data[i].total_supply || 0) / totalSupplyAll) * 100 : 0; %>
                                 <%= pct.toFixed(2) %>,
                             <% } %>
                             <% if (data.platform_data.length > displayCount) { %>
                                 <% for (let i = displayCount; i < data.platform_data.length; i++) { %>
-                                    <% totalOther += (data.platform_data[i].mcap_sum / data.metrics.totalMCap) * 100; %>
+                                    <% let pct = totalSupplyAll > 0 ? ((data.platform_data[i].total_supply || 0) / totalSupplyAll) * 100 : 0; %>
+                                    <% totalOther += pct; %>
                                 <% } %>
                                 <%= totalOther.toFixed(2) %>
                             <% } %>
@@ -521,20 +522,33 @@
             
             // Determine sort direction
             const currentHeader = headers[columnIndex];
-            const isAscending = !currentHeader.classList.contains('sort-desc');
+            let isAscending;
+            const hasAsc = currentHeader.classList.contains('sort-asc');
+            const hasDesc = currentHeader.classList.contains('sort-desc');
+            if (!hasAsc && !hasDesc) {
+                // Default: numeric columns sort descending first
+                const isNumericColumn = (columnIndex === 0 || columnIndex === 2 || columnIndex === 3 || columnIndex === 4);
+                isAscending = !isNumericColumn;
+            } else {
+                isAscending = !currentHeader.classList.contains('sort-desc');
+            }
             
             // Sort rows
             rows.sort((a, b) => {
-                let aValue = a.getElementsByTagName('td')[columnIndex].textContent.trim();
-                let bValue = b.getElementsByTagName('td')[columnIndex].textContent.trim();
-                
-                // Handle numeric values
+                const aCell = a.getElementsByTagName('td')[columnIndex];
+                const bCell = b.getElementsByTagName('td')[columnIndex];
+                let aValue = aCell ? aCell.textContent.trim() : '';
+                let bValue = bCell ? bCell.textContent.trim() : '';
+
+                // Handle numeric values with data-sort normalization
                 if (columnIndex === 0 || columnIndex === 2 || columnIndex === 3 || columnIndex === 4) {
-                    aValue = parseFloat(aValue.replace(/[^0-9.-]/g, '')) || 0;
-                    bValue = parseFloat(bValue.replace(/[^0-9.-]/g, '')) || 0;
-                    return isAscending ? aValue - bValue : bValue - aValue;
+                    const aSort = aCell?.getAttribute('data-sort');
+                    const bSort = bCell?.getAttribute('data-sort');
+                    const aNum = aSort != null ? parseFloat(aSort) : (parseFloat(aValue.replace(/[^0-9.-]/g, '')) || 0);
+                    const bNum = bSort != null ? parseFloat(bSort) : (parseFloat(bValue.replace(/[^0-9.-]/g, '')) || 0);
+                    return isAscending ? aNum - bNum : bNum - aNum;
                 }
-                
+
                 // Handle text values
                 return isAscending ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
             });
@@ -545,6 +559,9 @@
             // Reorder rows in table
             rows.forEach(row => tbody.appendChild(row));
         }
+
+        // Initial default view sort by total stablecoin value (descending)
+        sortTable(2);
 
         // View toggle functionality
         function showView(viewType) {

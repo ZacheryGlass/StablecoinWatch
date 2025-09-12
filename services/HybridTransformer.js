@@ -203,7 +203,7 @@ class HybridTransformer extends IViewModelTransformer {
         const platformMap = new Map();
         
         for (const sc of this.stablecoins) {
-            if (!sc?.platforms || !sc?.main?.circulating_mcap) continue;
+            if (!sc?.platforms) continue;
             
             for (const platform of sc.platforms) {
                 if (!platformMap.has(platform.name)) {
@@ -219,7 +219,7 @@ class HybridTransformer extends IViewModelTransformer {
                 }
                 
                 const entry = platformMap.get(platform.name);
-                entry.mcap_sum += sc.main.circulating_mcap;
+                entry.mcap_sum += (sc.main?.circulating_mcap || 0);
                 entry.coin_count += 1;
                 
                 // Enhanced supply aggregation using cross-chain data
@@ -301,7 +301,7 @@ class HybridTransformer extends IViewModelTransformer {
                     dominant_stablecoin: platform.dominant_stablecoin.name ? platform.dominant_stablecoin : null
                 };
             })
-            .sort((a, b) => b.mcap_sum - a.mcap_sum);
+            .sort((a, b) => (b.total_supply || 0) - (a.total_supply || 0));
     }
 
     /**
