@@ -5,7 +5,7 @@
     "main": "app/app.js",
     "dependencies": {
         "@messari/sdk": "^0.0.10",
-        "axios": "^1.11.0",
+        "axios": "^1.12.0",
         "dotenv": "^17.2.2",
         "ejs": "^3.1.3",
         "express": "^4.17.1",
