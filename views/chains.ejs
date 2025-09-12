@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Blockchain Platforms - Stablecoin Watch</title>
+    <title>Blockchains - Stablecoin Watch</title>
     <link rel="stylesheet" type="text/css" href="/common.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script type="application/javascript" src="/chart.min.js"></script>
@@ -277,15 +277,15 @@
         <!-- Header -->
 
         <main>
-            <!-- Platforms Header -->
+            <!-- Blockchains Header -->
             <div class="platforms-header">
-                <h1>Blockchain Platforms</h1>
+                <h1>Blockchains</h1>
                 <p>Comprehensive overview of stablecoin distribution across blockchain networks</p>
                 
                 <div class="summary-stats">
                     <div class="summary-card">
                         <span class="summary-value"><%= data.platform_data ? data.platform_data.length : 0 %></span>
-                        <span class="summary-label">Active Platforms</span>
+                        <span class="summary-label">Active Blockchains</span>
                     </div>
                     <div class="summary-card">
                         <span class="summary-value"><%= data.metrics.totalMCap_s || 'No data' %></span>
@@ -317,15 +317,15 @@
                     <div class="chart-content" id="chartContent">
                         <canvas id="chart" width="400" height="300"></canvas>
                         <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
-                            Market share distribution across top blockchain platforms
+                            Market share distribution across top blockchains
                         </p>
                     </div>
                 </div>
 
-                <!-- Platforms Table -->
+                <!-- Blockchains Table -->
                 <div class="content-section">
                     <div class="section-title">
-                        <h2>Platform Rankings</h2>
+                        <h2>Blockchain Rankings</h2>
                         <div class="view-toggle">
                             <button class="toggle-btn active" onclick="showView('mcap')">By Market Cap</button>
                             <button class="toggle-btn" onclick="showView('supply')">By Supply</button>
@@ -337,7 +337,7 @@
                         <thead>
                             <tr>
                                 <th onclick="sortTable(0)">Rank</th>
-                                <th onclick="sortTable(1)">Platform</th>
+                                <th onclick="sortTable(1)">Blockchain</th>
                                 <th onclick="sortTable(2)">Market Cap (USD)</th>
                                 <th onclick="sortTable(3)">Supply Value (USD)</th>
                                 <th onclick="sortTable(4)">% of Market</th>
@@ -395,9 +395,9 @@
                     </table>
                 </div>
 
-                <!-- Top Platform Highlights -->
+                <!-- Top Blockchain Highlights -->
                 <div class="content-section">
-                    <h2 class="section-title">Platform Highlights</h2>
+                    <h2 class="section-title">Blockchain Highlights</h2>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
                         <% data.platform_data.slice(0, 3).forEach((platform, index) => { %>
                             <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 1.5rem; transition: box-shadow 0.2s ease;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='none'">
@@ -424,8 +424,8 @@
                 </div>
             <% } else { %>
                 <div class="content-section">
-                    <h2>No Platform Data Available</h2>
-                    <p>Platform data is currently being loaded or is unavailable.</p>
+                    <h2>No Blockchain Data Available</h2>
+                    <p>Blockchain data is currently being loaded or is unavailable.</p>
                 </div>
             <% } %>
         </main>

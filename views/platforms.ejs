@@ -205,7 +205,7 @@
         <main>
             <% if (platform.notFound) { %>
                 <div class="not-found">
-                    <h1>Platform Not Found</h1>
+                    <h1>Blockchain Not Found</h1>
                     <p>The platform "<%= platform.name %>" was not found or has no stablecoin data.</p>
                     <p><a href="/platforms">← Back to all platforms</a></p>
                 </div>
@@ -315,7 +315,7 @@
                                     <th>Symbol</th>
                                     <th>Price</th>
                                     <th>Supply on <%= platform.name %></th>
-                                    <th>% of Platform</th>
+                                    <th>% of Blockchain</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -342,13 +342,13 @@
                             </tbody>
                         </table>
                     <% } else { %>
-                        <p>No stablecoin data available for this platform.</p>
+                        <p>No stablecoin data available for this blockchain.</p>
                     <% } %>
                 </div>
 
-                <!-- Platform Diversity -->
+                <!-- Blockchain Analysis -->
                 <div class="content-section">
-                    <h2 class="section-title">Platform Analysis</h2>
+                    <h2 class="section-title">Blockchain Analysis</h2>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                         <div style="text-align: center; padding: 1rem; border: 1px solid #e0e0e0; border-radius: 8px;">
                             <strong>Diversity Score</strong><br>
@@ -381,7 +381,7 @@
                         transition: background 0.2s ease;
                     " onmouseover="this.style.background='#764ba2'" 
                        onmouseout="this.style.background='#667eea'">
-                        ← View All Platforms
+                        ← View All Blockchains
                     </a>
                 </div>
             <% } %>
