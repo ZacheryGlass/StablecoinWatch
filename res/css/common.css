@@ -53,10 +53,10 @@ main {
 .type2 a       { color:       #52d29a;           }
 .type2 a:hover { color:       #279766;           }
 
-.type3         { border-left: #9d7919 5px solid; }
-.type3:hover   { border-left: #e7c468 5px solid; }
-.type3 a       { color:       #e7c468;           }
-.type3 a:hover { color:       #c99a20;           }
+.type3         { border-left: #3730a3 5px solid; }
+.type3:hover   { border-left: #818cf8 5px solid; }
+.type3 a       { color:       #818cf8;           }
+.type3 a:hover { color:       #4f46e5;           }
 
 .type4         { border-left: #952f12 5px solid; }
 .type4:hover   { border-left: #eb7655 5px solid; }
