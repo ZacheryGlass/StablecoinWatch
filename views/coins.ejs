@@ -1,273 +1,183 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8" />
-        <title>Stablecoin Watch</title>
-        <link rel="stylesheet" type="text/css" href="/common.css" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <script type="application/javascript" src="/chart.min.js"></script>
-        <style>
+<head>
+    <meta charset="utf-8" />
+    <title><%= coin.name %> (<%= coin.symbol %>) - Stablecoin Watch</title>
+    <link rel="stylesheet" type="text/css" href="/common.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        .coin-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
 
-            /****************************************
-                    Main Grid
-            *****************************************/
-            .grid-wrap {
-                display: grid;
-                grid-template-areas:
-                    'data-hd     data-hd      data-hd      data-hd'
-                    'data-tb     data-tb      data-tb      data-tb'
-                    'data-desc   data-desc    data-desc    data-desc'
-                    'supply-hd   supply-hd    supply-hd    supply-hd'
-                    'supply-tbl  supply-tbl   supply-chrt  supply-chrt';
-                grid-gap: 25px;
-                width: 100%;
-                padding-bottom: 80px;
-            }
-            .grid-wrap > *  { overflow:  auto;          }
-            .supply-hd      { grid-area: supply-hd;     }
-            .supply-tbl     { grid-area: supply-tbl;    }
-            .supply-chrt    { grid-area: supply-chrt;   }
-            .data-hd        { grid-area: data-hd;       }
-            .data-tb        { grid-area: data-tb;       }
-            .data-desc      { grid-area: data-desc;     }
+        .coin-header .title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
 
-            .supply-tbl   {
-                width: 100%;
-                height: 100%;
-            }
+        .coin-header h1 {
+            margin: 0;
+            font-size: 2.2rem;
+        }
 
-            canvas { 
-                width: 100%;
-                max-width: 400px;
-                margin: auto;
-            }
-            
-            /****************************************
-                    Platform Section
-            *****************************************/
+        .coin-symbol {
+            opacity: 0.9;
+            font-weight: 600;
+        }
 
-            .supply-grid {
-                display: grid;
-                /* TODO: Re-enable for issue #31 when API provides reliable per-platform supply data */
-                /* grid-template-areas: 'name amount explore'; */
-                grid-template-areas: 'name explore';
-                grid-template-columns: 1fr auto;
-                margin: auto;
-                padding: 10px;
+        .coin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
 
-            }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
 
-            .supply-item {
-                padding: 5px;
-                text-align: center;
-            }
-            
-            .supply-head {
-                font-weight: bold;
-                text-align: center;
-                text-decoration: underline;
-            }
+        .stat-value { font-size: 1.4rem; font-weight: bold; display: block; }
+        .stat-label { font-size: 0.9rem; opacity: 0.85; }
 
-            .supply-item img {
-                width: 20px;
-            }
+        .content-section {
+            background: white;
+            margin: 2rem 0;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
 
-            .supply-explorer {
-                text-align: center;
-            }
+        .section-title {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
 
-            h1, h2, h3 {
-                text-align: center;
-                margin: auto;
-                margin-top: 20px;
-                padding: 20px;
-            }
+        .breakdown-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
 
-            /****************************************
-                    Data Comparison Table
-            *****************************************/
-            .data-hd {
-                display: flex;
-                margin: auto;
-                padding: 20px 0;
-            }
-            
-            .data-hd h2,
-            .data-hd h3 {
-                padding: 5px;
-                margin: 0px;
-            }
+        .breakdown-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1rem;
+            transition: box-shadow 0.2s ease;
+        }
 
-            .coin_logo {
-                width: 40px;
-                height: 40px;
-            }
+        .breakdown-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
 
-            table {
-                margin: auto;
-            }
+        .comparison-bar { background: #eee; border-radius: 6px; height: 8px; overflow: hidden; }
+        .comparison-fill { background: #667eea; height: 100%; border-radius: 6px; }
 
-            table td {
-                border-bottom: 1px solid black;
-                padding: 10px;
-            }
+        .source-table { width: 100%; border-collapse: collapse; }
+        .source-table th, .source-table td { padding: 0.8rem; border-bottom: 1px solid #e0e0e0; text-align: left; }
+        .source-table th { background: #f8f9fa; color: #333; font-weight: bold; }
+        .source-name { font-weight: 600; color: #555; }
 
-            table th {
-                border-bottom: 1px solid black;
-                padding: 10px;
-                color: white;
-                background: #003c60;
-            }
+        .desc-tabs { text-align: center; margin-bottom: 1rem; }
+        .desc-tabs .bar-btn { padding: 0.5rem 0.9rem; margin: 0.25rem; border: 1px solid #d9d9d9; background: #fff; border-radius: 6px; cursor: pointer; }
+        .desc-container { text-align: left; margin: auto; padding: 0.5rem 0; max-width: 900px; }
 
-            tr > td:first-of-type {
-                font-weight: bold;
-                text-align: right;
-            }
-            /****************************************
-                    Description
-            *****************************************/
-            /* fix line feed (white space between buttons) */
-            .data-desc     { font-size: 0px; }
-            .data-desc h1 { font-size: 20px; }
-            .data-desc p { font-size: 14px; }
-            /* https://stackoverflow.com/questions/2095886/htmlcss-space-between-input-buttons */
-            
-            .desc-bar {
-                background: rgba( 0, 0, 0, 0.5);
-                height: 40px;
-                background: #003c60;
-                overflow-x: visible;
-                overflow-y: hidden;
-                white-space: nowrap;
-            }
+        .nav-back { text-align: center; margin: 2rem 0; }
+        .nav-back a { background: #667eea; color: #fff; padding: 0.8rem 1.5rem; text-decoration: none; border-radius: 5px; display: inline-block; transition: background 0.2s ease; }
+        .nav-back a:hover { background: #764ba2; }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        <!-- Header -->
+        <%- include('partials/header') %>
+        <!-- Header -->
 
-            .bar-btn {
-                height: 100%;
-                font-size: 16px;
-                margin: 0;
-                background: #007ac1;
-                color: white;
-                border: 1px solid #003c60;
-                font-family: Verdana,sans-serif;
-            }
+        <main>
+            <!-- Coin Header -->
+            <div class="coin-header">
+                <div class="title">
+                    <img class="coin_logo" src="<%= h.getImage(coin) %>" alt="" style="width:48px;height:48px;border-radius:6px;"/>
+                    <h1><%= coin.name %></h1>
+                    <span class="coin-symbol">(<%= coin.symbol %>)</span>
+                </div>
+                <div class="coin-stats">
+                    <div class="stat-card">
+                        <span class="stat-value"><%= h.getFormattedPrice(coin, 'scw', formatter) %></span>
+                        <span class="stat-label">Price</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value"><%= h.getMarketCap(coin, 'scw') %></span>
+                        <span class="stat-label">Market Cap</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value"><%= h.getSupply(coin, 'scw', 'circulating_supply_s') %></span>
+                        <span class="stat-label">Circulating Supply</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value"><%= h.getVolume(coin, 'scw') %></span>
+                        <span class="stat-label">Volume (24h)</span>
+                    </div>
+                </div>
+            </div>
 
-            .bar-btn:hover {
-                background: rgba( 0, 0, 0, 0.5);
-            }
-            
-            .desc-container > p {
-                margin: auto;
-                padding: 3%;
-                border: 1px solid black;
-                border-radius: 5px;
-                animation-duration: 0.2s;
-            }
+            <!-- Chain Distribution -->
+            <% if (Array.isArray(coin.platforms) && coin.platforms.length > 0) { %>
+                <div class="content-section">
+                    <h2 class="section-title">Supply by Chain</h2>
+                    <p>Breakdown of <%= coin.symbol %> circulating supply across major chains:</p>
+                    <div class="breakdown-grid">
+                        <% coin.platforms.forEach((p, index) => { %>
+                            <% if (index < 6) { %>
+                                <div class="breakdown-item">
+                                    <div>
+                                        <strong style="color:#667eea;"><a href="/platforms/<%= encodeURIComponent(p.name.toLowerCase()) %>"><%= p.name %></a></strong>
+                                        <% if (p.supply_percentage) { %>
+                                            <span class="coin-percentage"><%= typeof p.supply_percentage_s !== 'undefined' ? p.supply_percentage_s : p.supply_percentage.toFixed(2) + '%' %></span>
+                                        <% } %>
+                                    </div>
+                                    <div style="margin: 0.5rem 0; font-size: 0.9rem; color: #666;">Chain</div>
+                                    <div style="font-weight:bold;">
+                                        <%= p.total_supply_s || (p.total_supply ? formatter.formatSupply(p.total_supply) : 'No data') %>
+                                    </div>
+                                    <div class="comparison-bar" style="margin-top: 0.5rem;">
+                                        <div class="comparison-fill" style="width: <%= Math.min(p.supply_percentage || 0, 100) %>%"></div>
+                                    </div>
+                                </div>
+                            <% } %>
+                        <% }); %>
+                    </div>
+                    <% if (coin.platforms.length > 6) { %>
+                        <p style="text-align:center;margin-top:1rem;color:#666;">... and <%= coin.platforms.length - 6 %> more chains</p>
+                    <% } %>
+                </div>
+            <% } %>
 
-            /****************************************
-                    Mobile Support
-                    3:33:44
-            *****************************************/
-
-            @media only screen and (max-width: 767px) {
-                .grid-wrap {
-                    grid-template-areas:
-                        'data-hd'
-                        'data-tb'
-                        'data-desc'
-                        'supply-hd'
-                        'supply-tbl'
-                        'supply-chrt';
-                }
-
-                .data-hd {
-                    justify-content: left;
-                    padding-left: 10%;
-                }
-
-
-
-                table td, table th {
-                    padding: 5px 3px;
-                    font-size: 13px;
-                }
-                canvas { 
-                    width: 100%;
-                    max-width: 350px;
-                    margin: auto;
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <div id="wrapper">
-            <!-- Header -->
-            <%- include('partials/header') %>
-            <!-- Header -->
-            <main class="grid-wrap">
-                <section class="supply-hd"><h1><%= coin.name %> is issued on <%= coin.platforms.length %> platform(s)</h1></section>
-                <section class="supply-tbl">
-                    <article class="supply-grid">
-                        <div class="supply-item name supply-head">
-                            Platform
-                        </div>
-                        <!-- TODO: Re-enable for issue #31 when API provides reliable per-platform supply data -->
-                        <!-- <div class="supply-item supply-amount supply-head">
-                            Amount (<%= coin.symbol %>)
-                        </div> -->
-                        <div class="supply-item supply-head">
-                            Explore Contract
-                        </div>
-                        <% for (let i = 0; i < coin.platforms.length; i++) { %>
-                            <div class="supply-item name">
-                                <a href="/platforms/<%= coin.platforms[i].name %>" style='text-decoration:none;'>
-                                    <%= coin.platforms[i].name %>
-                                </a>
-                            </div>
-                            <!-- TODO: Re-enable for issue #31 when API provides reliable per-platform supply data -->
-                            <!-- <div class="supply-item supply-amount">
-                                <% if( typeof(coin.platforms[i].circulating_supply) == 'number') { %>
-                                    <%= coin.platforms[i].circulating_supply.toFixed().toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") %> 
-                                <% } else { %>
-                                    ?
-                                <% } %>
-                            </div> -->
-                            <div class="supply-item supply-explorer">
-                                <% const contractUrl = h.getContractUrl(coin.platforms[i]); %>
-                                <% if (contractUrl) { %>
-                                    <a href="<%= contractUrl %>">
-                                        <img src="/link.png" alt="link">
-                                    </a>
-                                <% } else { %>
-                                    <span>-</span>
-                                <% } %>
-                            </div>
-                        <% } %>
-                    </article>
-                </section>
-                <section class="supply-chrt">
-                    <!-- TODO: Re-enable for issue #31 when API provides reliable per-platform supply data -->
-                    <!-- <canvas id="supply_chart" width="40" height="40"></canvas> -->
-                    <p style="text-align: center; padding: 20px; font-style: italic;">
-                        Platform distribution data is not available at this time.
-                    </p>
-                </section>
-                <section class="data-hd">
-                    <img class="coin_logo" src="<%= h.getImage(coin) %>" alt="" /><h2><%= coin.name %></h2>
-                    <h3>(<%= coin.symbol %>)</h3>
-                </section>
-
-                <section class="data-tb">
-                    <table>
+            <!-- Source Comparison -->
+            <div class="content-section">
+                <h2 class="section-title">Source Comparison</h2>
+                <table class="source-table">
+                    <thead>
                         <tr>
                             <th>Source</th>
-                            <th>Price (USD)</th>
+                            <th>Price</th>
                             <th>Market Cap</th>
                             <th>Total Supply</th>
                             <th>Circulating Supply</th>
-                            <th>24h Vol</th>
+                            <th>Volume (24h)</th>
                         </tr>
+                    </thead>
+                    <tbody>
                         <tr>
-                            <td>Coin Market Cap</td>
+                            <td class="source-name">CoinMarketCap</td>
                             <td><%= h.getFormattedPrice(coin, 'cmc', formatter) %></td>
                             <td><%= h.getMarketCap(coin, 'cmc') %></td>
                             <td><%= h.getSupply(coin, 'cmc', 'total_supply_s') %></td>
@@ -275,7 +185,7 @@
                             <td><%= h.getVolume(coin, 'cmc') %></td>
                         </tr>
                         <tr>
-                            <td>Messari</td>
+                            <td class="source-name">Messari</td>
                             <td><%= h.getFormattedPrice(coin, 'msri', formatter) %></td>
                             <td><%= h.getMarketCap(coin, 'msri') %></td>
                             <td><%= h.getSupply(coin, 'msri', 'total_supply_s') %></td>
@@ -283,7 +193,7 @@
                             <td><%= h.getVolume(coin, 'msri') %></td>
                         </tr>
                         <tr>
-                            <td>CoinGecko</td>
+                            <td class="source-name">CoinGecko</td>
                             <td><%= h.getFormattedPrice(coin, 'cgko', formatter) %></td>
                             <td><%= h.getMarketCap(coin, 'cgko') %></td>
                             <td><%= h.getSupply(coin, 'cgko', 'total_supply_s') %></td>
@@ -291,121 +201,78 @@
                             <td><%= h.getVolume(coin, 'cgko') %></td>
                         </tr>
                         <tr>
-                            <td>Stablecoin Watch</td>
+                            <td class="source-name">Stablecoin Watch</td>
                             <td><%= h.getFormattedPrice(coin, 'scw', formatter) %></td>
                             <td><%= h.getMarketCap(coin, 'scw') %></td>
                             <td><%= h.getSupply(coin, 'scw', 'total_supply_s') %></td>
                             <td><%= h.getSupply(coin, 'scw', 'circulating_supply_s') %></td>
                             <td><%= h.getVolume(coin, 'scw') %></td>
                         </tr>
+                    </tbody>
+                </table>
+            </div>
 
-                    </table>
-                </section>
-                <section class="data-desc">
-                    <h1><%= coin.name %> Description</h1>
-                    <div class="desc-bar">
-                        <% if( h.hasDescription(coin, 'msri') ) { %>
-                            <button id="msri_btn" class="bar-btn" onclick="showDesc('msri')">Messari</button>
-                        <% } if( h.hasDescription(coin, 'cmc') ) { %>
-                            <button id="cmc_btn" class="bar-btn" onclick="showDesc('cmc')">CoinMarketCap</button>
-                        <% } if( h.hasDescription(coin, 'cgko') ) { %>
-                            <button id="cgko_btn" class="bar-btn" onclick="showDesc('cgko')">CoinGecko</button>
-                        <% } if( h.hasDescription(coin, 'scw') ) { %>
-                            <button id="scw_btn" class="bar-btn" onclick="showDesc('scw')">Stablecoin Watch</button>
-                        <% } %>
-                    </div>
-
-                    <% let found = false; %>
-
-                    <!-- Messari Description -->
+            <!-- Descriptions -->
+            <div class="content-section">
+                <h2 class="section-title"><%= coin.name %> Description</h2>
+                <div class="desc-tabs">
                     <% if( h.hasDescription(coin, 'msri') ) { %>
-                        <div id="msri" class="desc-container">
-                            <p><%- h.safeGet(coin, 'msri.desc', '') %></p>
-                        </div>
-                    <% found = true; } %>
-
-                    <!-- CoinGecko Description -->
-                    <% if( h.hasDescription(coin, 'cgko') ) { %>
-                        <div id="cgko" class="desc-container" <% if( found ) { %> style="display:none" <% } %> >
-                            <p><%- h.safeGet(coin, 'cgko.desc', '') %></p>
-                        </div>
-                    <% found = true; } %>
-
-                    <!-- CoinMarketCap Description -->
-                    <% if( h.hasDescription(coin, 'cmc') ) { %>
-                        <div id="cmc" class="desc-container" <% if( found ) { %> style="display:none" <% } %> >
-                            <p><%- h.safeGet(coin, 'cmc.desc', '') %></p>
-                        </div>
-                    <% found = true; } %>
-
-                    <!-- StablecoinWatch Description -->
-                    <% if( h.hasDescription(coin, 'scw') ) { %>
-                        <div id="scw" class="desc-container" <% if( found ) { %> style="display:none" <% } %> >
-                            <p><%- h.safeGet(coin, 'scw.desc', '') %></p>
-                        </div>
+                        <button id="msri_btn" class="bar-btn" onclick="showDesc('msri')">Messari</button>
+                    <% } if( h.hasDescription(coin, 'cmc') ) { %>
+                        <button id="cmc_btn" class="bar-btn" onclick="showDesc('cmc')">CoinMarketCap</button>
+                    <% } if( h.hasDescription(coin, 'cgko') ) { %>
+                        <button id="cgko_btn" class="bar-btn" onclick="showDesc('cgko')">CoinGecko</button>
+                    <% } if( h.hasDescription(coin, 'scw') ) { %>
+                        <button id="scw_btn" class="bar-btn" onclick="showDesc('scw')">Stablecoin Watch</button>
                     <% } %>
-                </section>
-            </main>
-            <!-- Footer -->
-            <%- include('partials/footer') %>
-            <!-- Footer -->
-        </div>
-    </body>
+                </div>
+
+                <% let found = false; %>
+                <% if( h.hasDescription(coin, 'msri') ) { %>
+                    <div id="msri" class="desc-container">
+                        <p><%- h.safeGet(coin, 'msri.desc', '') %></p>
+                    </div>
+                <% found = true; } %>
+
+                <% if( h.hasDescription(coin, 'cgko') ) { %>
+                    <div id="cgko" class="desc-container" <% if( found ) { %> style="display:none" <% } %> >
+                        <p><%- h.safeGet(coin, 'cgko.desc', '') %></p>
+                    </div>
+                <% found = true; } %>
+
+                <% if( h.hasDescription(coin, 'cmc') ) { %>
+                    <div id="cmc" class="desc-container" <% if( found ) { %> style="display:none" <% } %> >
+                        <p><%- h.safeGet(coin, 'cmc.desc', '') %></p>
+                    </div>
+                <% found = true; } %>
+
+                <% if( h.hasDescription(coin, 'scw') ) { %>
+                    <div id="scw" class="desc-container" <% if( found ) { %> style="display:none" <% } %> >
+                        <p><%- h.safeGet(coin, 'scw.desc', '') %></p>
+                    </div>
+                <% } %>
+            </div>
+
+            <!-- Navigation -->
+            <div class="nav-back">
+                <a href="/">← Back to Stablecoins</a>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <%- include('partials/footer') %>
+        <!-- Footer -->
+    </div>
+
     <script type="text/javascript">
-        // TODO: Re-enable for issue #31 when API provides reliable per-platform supply data
-        /*
-        let ctx = document.getElementById('supply_chart').getContext('2d');
-        let supply_chart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: [
-                    <% for (let i = 0; i < coin.platforms.length; i++) { %>
-                        "<%= coin.platforms[i].name %>",
-                    <% } %>  
-                ],
-
-                datasets: [{
-                    label: '% on Platforms',
-                    data: [
-                        <% for (let i = 0; i < coin.platforms.length; i++) { %>
-                            <%= h.getPlatformChartPercentage(coin.platforms[i], coin, formatter) || 'undefined' %>,
-                        <% } %>  
-                    ],
-                    
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.5)',
-                        'rgba(54, 162, 235, 0.5)',
-                        'rgba(255, 206, 86, 0.5)',
-                        'rgba(75, 192, 192, 0.5)',
-                        'rgba(153, 102, 255, 0.5)',
-                        'rgba(255, 159, 64, 0.5)'
-                    ],
-                    borderColor: [
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)',
-                        'rgba(255, 159, 64, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        });
-        */
-
         function showDesc(descSource) {
-            let i;
-            let x = document.getElementsByClassName("desc-container");
-            for (i = 0; i < x.length; i++) {
-                x[i].style.display = "none";  
+            const sections = document.getElementsByClassName("desc-container");
+            for (let i = 0; i < sections.length; i++) {
+                sections[i].style.display = "none";
             }
-            document.getElementById(descSource).style.display = "block";
+            const el = document.getElementById(descSource);
+            if (el) el.style.display = "block";
         }
     </script>
+</body>
 </html>
