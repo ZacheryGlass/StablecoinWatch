@@ -514,23 +514,19 @@
             const tbody = table.getElementsByTagName('tbody')[0];
             const rows = Array.from(tbody.getElementsByTagName('tr'));
             
-            // Remove existing sort classes
             const headers = table.getElementsByTagName('th');
-            for (let header of headers) {
-                header.classList.remove('sort-asc', 'sort-desc');
-            }
-            
-            // Determine sort direction
             const currentHeader = headers[columnIndex];
+            
+            // Determine sort direction (toggle on repeated clicks)
             let isAscending;
-            const hasAsc = currentHeader.classList.contains('sort-asc');
-            const hasDesc = currentHeader.classList.contains('sort-desc');
-            if (!hasAsc && !hasDesc) {
-                // Default: numeric columns sort descending first
+            if (currentHeader.classList.contains('sort-asc')) {
+                isAscending = false; // toggle to descending
+            } else if (currentHeader.classList.contains('sort-desc')) {
+                isAscending = true; // toggle to ascending
+            } else {
+                // Default: numeric columns sort descending first, text ascending
                 const isNumericColumn = (columnIndex === 0 || columnIndex === 2 || columnIndex === 3 || columnIndex === 4);
                 isAscending = !isNumericColumn;
-            } else {
-                isAscending = !currentHeader.classList.contains('sort-desc');
             }
             
             // Sort rows
@@ -553,7 +549,10 @@
                 return isAscending ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
             });
             
-            // Add sort class
+            // Reset header classes, then add the current direction
+            for (let header of headers) {
+                header.classList.remove('sort-asc', 'sort-desc');
+            }
             currentHeader.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
             
             // Reorder rows in table
