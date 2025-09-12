@@ -32,6 +32,15 @@
         .symbol { color: #555; }
         .platforms { color: #666; font-size: 0.9rem; }
 
+        .metric-highlight {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
         @media (max-width: 860px) {
             .hide-sm { display: none; }
         }
@@ -94,7 +103,7 @@
                                     <td class="hide-sm symbol"><%= coin.symbol %></td>
                                     <td><%= h.getFormattedPrice(coin, 'main', formatter) %></td>
                                     <td><%= h.getMarketCap(coin, 'main') %></td>
-                                    <td class="hide-sm"><%= h.getDominanceDisplay(coin, data.metrics, formatter) %></td>
+                                    <td class="hide-sm"><span class="metric-highlight"><%= h.getDominanceDisplay(coin, data.metrics, formatter) %></span></td>
                                     <td class="hide-sm"><%= h.getVolume(coin, 'main') %></td>
                                     <td class="hide-sm platforms"><%= h.getPlatformDisplay(coin.platforms) %></td>
                                 </tr>
