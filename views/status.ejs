@@ -39,7 +39,7 @@
         <% function badgeClass(s) { const map = { healthy: 'healthy', degraded: 'degraded', critical: 'critical', down: 'down' }; return map[s] || 'degraded'; } %>
 
         <div class="page-header">
-            <h1>System Status</h1>
+            <h1>System Status <% if (typeof mockMode !== 'undefined' && mockMode) { %><span class="badge degraded" style="margin-left:8px;">Mock Data Mode</span><% } %></h1>
             <% if (health && !health.error) { %>
                 <div class="summary-grid">
                     <div class="summary-card">
@@ -57,6 +57,10 @@
                     <div class="summary-card">
                         <span class="summary-value"><%= health.uptime %></span>
                         <span class="summary-label">Uptime</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-value"><span class="badge <%= (mockMode ? 'degraded' : 'healthy') %>"><%= mockMode ? 'Mock Data' : 'Live APIs' %></span></span>
+                        <span class="summary-label">Data Mode</span>
                     </div>
                 </div>
                 <p class="note" style="margin-top:0.75rem;">Last updated: <%= new Date(data && data.metrics && data.metrics.lastUpdated || Date.now()).toLocaleString() %></p>

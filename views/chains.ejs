@@ -313,9 +313,9 @@
                             %>
                             <%= formatter.formatSupply(totalSupply) %>
                         </span>
-                        <span class="summary-label">Total Supply Value</span>
-                    </div>
+                        <span class="summary-label">Total Stablecoin Value</span>
                 </div>
+            </div>
             </div>
 
             <% if (data.platform_data && data.platform_data.length) { %>
@@ -337,8 +337,7 @@
                     <div class="section-title">
                         <h2>Blockchain Rankings</h2>
                         <div class="view-toggle">
-                            <button class="toggle-btn active" onclick="showView('mcap')">By Market Cap</button>
-                            <button class="toggle-btn" onclick="showView('supply')">By Supply</button>
+                            <button class="toggle-btn active" onclick="showView('supply')">By Total Stablecoin Value</button>
                             <button class="toggle-btn" onclick="showView('diversity')">By Diversity</button>
                         </div>
                     </div>
@@ -348,11 +347,10 @@
                             <tr>
                                 <th onclick="sortTable(0)">Rank</th>
                                 <th onclick="sortTable(1)">Blockchain</th>
-                                <th onclick="sortTable(2)">Market Cap (USD)</th>
-                                <th onclick="sortTable(3)">Supply Value (USD)</th>
-                                <th onclick="sortTable(4)">% of Market</th>
-                                <th onclick="sortTable(5)">Stablecoins</th>
-                                <th onclick="sortTable(6)">Diversity</th>
+                                <th onclick="sortTable(2)">Total Stablecoin Value</th>
+                                <th onclick="sortTable(3)">% of Market</th>
+                                <th onclick="sortTable(4)">Stablecoins</th>
+                                <th onclick="sortTable(5)">Diversity</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -370,13 +368,6 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <strong><%= platform.mcap_sum_s %></strong>
-                                        <% let mcapPct = (platform.mcap_sum / data.metrics.totalMCap) * 100; %>
-                                        <div class="supply-bar">
-                                            <div class="supply-fill" style="width: <%= Math.min(mcapPct, 100) %>%"></div>
-                                        </div>
-                                    </td>
-                                    <td>
                                         <strong><%= h.getPlatformSupplyDisplay(platform, formatter) %></strong>
                                         <div class="supply-bar">
                                             <div class="supply-fill" style="width: <%= Math.min(platform.supply_percentage || 0, 100) %>%"></div>
@@ -384,6 +375,7 @@
                                     </td>
                                     <td>
                                         <span class="metric-highlight">
+                                            <% let mcapPct = (platform.mcap_sum / data.metrics.totalMCap) * 100; %>
                                             <%= formatter.formatPercentage(mcapPct, 2) %>
                                         </span>
                                     </td>
@@ -415,10 +407,7 @@
                                     #<%= index + 1 %> <a href="/platforms/<%= platform.uri %>" style="color: inherit; text-decoration: none;"><%= platform.name %></a>
                                 </h3>
                                 <div style="margin-bottom: 0.5rem;">
-                                    <strong>Market Cap:</strong> <%= platform.mcap_sum_s %>
-                                </div>
-                                <div style="margin-bottom: 0.5rem;">
-                                    <strong>Supply Value:</strong> <%= h.getPlatformSupplyDisplay(platform, formatter) %>
+                                    <strong>Total Stablecoin Value:</strong> <%= h.getPlatformSupplyDisplay(platform, formatter) %>
                                 </div>
                                 <div style="margin-bottom: 0.5rem;">
                                     <strong>Stablecoins:</strong> <%= h.getPlatformCoinCount(platform) %>
@@ -566,14 +555,11 @@
             
             // Sort table based on view type
             switch(viewType) {
-                case 'mcap':
-                    sortTable(2); // Sort by market cap
-                    break;
                 case 'supply':
-                    sortTable(3); // Sort by supply
+                    sortTable(2); // Sort by total stablecoin value
                     break;
                 case 'diversity':
-                    sortTable(5); // Sort by stablecoin count
+                    sortTable(4); // Sort by stablecoin count
                     break;
             }
         }

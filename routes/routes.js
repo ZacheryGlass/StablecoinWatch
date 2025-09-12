@@ -3,6 +3,7 @@
 ---------------------------------------------------------*/
 const express = require('express');
 const util = require('../app/util');
+const ApiConfig = require('../config/ApiConfig');
 
 /**
  * Factory to create router with injected services
@@ -61,11 +62,19 @@ router.get('/status', async (req, res) => {
         health = { error: e?.message || 'Unable to retrieve health' };
     }
 
+    // Determine if any source is using mock data
+    let mockMode = false;
+    try {
+        const cfgs = ApiConfig.getAllApiConfigs();
+        mockMode = Object.values(cfgs).some(c => c?.mockData && c.mockData.enabled);
+    } catch (_) { mockMode = false; }
+
     res.render('status', {
         data,
         totalETHMCap,
         totalETHMCap_s,
         health,
+        mockMode,
         active: 'status',
         formatter: {
             formatNumber: require('../app/util').formatNumber,

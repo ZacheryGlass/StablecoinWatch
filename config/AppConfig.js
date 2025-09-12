@@ -101,7 +101,8 @@ class AppConfig {
 
             // Development Configuration
             development: {
-                debugMode: process.env.DEBUG_MODE === 'true',
+                // Support both DEBUG=true and DEBUG_MODE=true for convenience
+                debugMode: (process.env.DEBUG_MODE === 'true') || (process.env.DEBUG === 'true'),
                 mockApis: process.env.MOCK_APIS === 'true',
                 logRequests: process.env.LOG_REQUESTS === 'true',
                 verbose: process.env.VERBOSE === 'true'

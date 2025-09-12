@@ -8,7 +8,9 @@
 (function setupLogger() {
     const level = (process.env.LOG_LEVEL || '').toLowerCase();
     const verbose = String(process.env.VERBOSE_LOGGING || process.env.VERBOSE || '').toLowerCase() === 'true';
-    const isDebug = verbose || level === 'debug';
+    // Also honor DEBUG=true as a universal debug toggle
+    const envDebug = String(process.env.DEBUG || '').toLowerCase() === 'true';
+    const isDebug = envDebug || verbose || level === 'debug';
 
     const original = {
         debug: console.debug.bind(console),
