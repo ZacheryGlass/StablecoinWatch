@@ -1,4 +1,4 @@
-const Stablecoin = require('../models/stablecoin');
+﻿const Stablecoin = require('../models/stablecoin');
 const IViewModelTransformer = require('../interfaces/IViewModelTransformer');
 const DataFormatter = require('./formatters/DataFormatter');
 const PlatformNormalizer = require('./formatters/PlatformNormalizer');
@@ -203,7 +203,12 @@ class HybridTransformer extends IViewModelTransformer {
         const platformMap = new Map();
         
         for (const sc of this.stablecoins) {
-            if (!sc?.platforms) continue;
+            if (!sc?.platforms || !sc?.main?.circulating_mcap) continue;
+            // Compute total cross-chain supply for this coin across all known platforms
+            const coinSupplyTotal = sc.platforms.reduce((sum, p) => {
+                const ps = p.total_supply || p.circulating_supply || 0;
+                return sum + (typeof ps === 'number' ? ps : 0);
+            }, 0);
             
             for (const platform of sc.platforms) {
                 if (!platformMap.has(platform.name)) {
@@ -219,11 +224,23 @@ class HybridTransformer extends IViewModelTransformer {
                 }
                 
                 const entry = platformMap.get(platform.name);
-                entry.mcap_sum += (sc.main?.circulating_mcap || 0);
+                // Allocate only the proportional share of market cap to this platform
+                const platformSupply = platform.total_supply || platform.circulating_supply || 0;
+                let allocatedMcap = 0;
+                if (coinSupplyTotal > 0 && platformSupply > 0) {
+                    allocatedMcap = sc.main.circulating_mcap * (platformSupply / coinSupplyTotal);
+                } else if (sc.platforms.length === 1) {
+                    // If we only have one platform, attribute full mcap to it
+                    allocatedMcap = sc.main.circulating_mcap;
+                } else {
+                    // No reliable supply split info across multiple platforms - skip to avoid double counting
+                    allocatedMcap = 0;
+                }
+                entry.mcap_sum += allocatedMcap;
                 entry.coin_count += 1;
                 
                 // Enhanced supply aggregation using cross-chain data
-                const platformSupply = platform.total_supply || platform.circulating_supply || 0;
+                // Reuse computed platformSupply
                 if (platformSupply > 0) {
                     entry.total_supply += platformSupply;
                     
