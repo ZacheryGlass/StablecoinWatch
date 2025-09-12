@@ -199,17 +199,7 @@
             font-weight: bold;
         }
 
-        .diversity-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-left: 0.5rem;
-        }
-
-        .diversity-high { background: #28a745; }
-        .diversity-medium { background: #ffc107; }
-        .diversity-low { background: #dc3545; }
+        
 
         .supply-bar {
             background: #f0f0f0;
@@ -338,7 +328,6 @@
                         <h2>Blockchain Rankings</h2>
                         <div class="view-toggle">
                             <button class="toggle-btn active" onclick="showView('supply')">By Total Stablecoin Value</button>
-                            <button class="toggle-btn" onclick="showView('diversity')">By Diversity</button>
                         </div>
                     </div>
 
@@ -350,7 +339,6 @@
                                 <th onclick="sortTable(2)">Total Stablecoin Value</th>
                                 <th onclick="sortTable(3)">% of Market</th>
                                 <th onclick="sortTable(4)">Stablecoins</th>
-                                <th onclick="sortTable(5)">Diversity</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -381,15 +369,7 @@
                                     <td data-sort="<%= platform.coin_count || 0 %>">
                                         <%= h.getPlatformCoinCount(platform) %>
                                     </td>
-                                    <td>
-                                        <%= h.getPlatformDiversity(platform) %>
-                                        <% 
-                                        let diversityClass = 'diversity-low';
-                                        if (platform.coin_count > 5) diversityClass = 'diversity-high';
-                                        else if (platform.coin_count > 2) diversityClass = 'diversity-medium';
-                                        %>
-                                        <span class="diversity-indicator <%= diversityClass %>"></span>
-                                    </td>
+                                    
                                 </tr>
                             <% }); %>
                         </tbody>
@@ -573,9 +553,6 @@
             switch(viewType) {
                 case 'supply':
                     sortTable(2); // Sort by total stablecoin value
-                    break;
-                case 'diversity':
-                    sortTable(4); // Sort by stablecoin count
                     break;
             }
         }

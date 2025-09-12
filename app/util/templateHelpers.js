@@ -449,31 +449,6 @@ function getChainBreakdownDisplay(breakdown, limit = 3) {
     return formatted.join(', ');
 }
 
-/**
- * Get platform diversity score based on stablecoin count and distribution
- * @param {Object} platform - Platform data object
- * @returns {string} Diversity description
- */
-function getPlatformDiversity(platform) {
-    const coinCount = safeGet(platform, 'coin_count', 0);
-    const breakdown = safeGet(platform, 'supply_breakdown', []);
-    
-    if (coinCount === 0) return 'No stablecoins';
-    if (coinCount === 1) return 'Single stablecoin';
-    if (coinCount <= 3) return `${coinCount} stablecoins`;
-    
-    // Calculate distribution concentration
-    const topCoinPercentage = Array.isArray(breakdown) && breakdown.length > 0 ? 
-        breakdown[0].percentage || 0 : 0;
-    
-    if (topCoinPercentage > 80) {
-        return `${coinCount} stablecoins (concentrated)`;
-    } else if (topCoinPercentage > 60) {
-        return `${coinCount} stablecoins (moderate diversity)`;
-    } else {
-        return `${coinCount} stablecoins (diverse)`;
-    }
-}
 
 /**
  * Check if platform has cross-chain supply data
@@ -531,8 +506,6 @@ function getPlatformMetric(platform, metric, formatter) {
             return safeString(safeGet(platform, 'mcap_sum_s'), 'No data');
         case 'coin_count':
             return getPlatformCoinCount(platform);
-        case 'diversity':
-            return getPlatformDiversity(platform);
         default:
             return 'Unknown metric';
     }
@@ -571,7 +544,6 @@ module.exports = {
     getPlatformSupplyPercentage,
     getDominantStablecoin,
     getChainBreakdownDisplay,
-    getPlatformDiversity,
     hasCrossChainData,
     getPlatformCoinCount,
     getPlatformRank,
