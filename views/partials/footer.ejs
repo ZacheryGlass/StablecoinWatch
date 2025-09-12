@@ -1,89 +1,44 @@
 <style>
-    /****************************************
-                    Footer 
-    *****************************************/
-    
-    footer {
-        position: absolute;
-        width: 100%;
-        bottom: 0;
-        min-height: 40px;
-        background: #003c60;
-        color: white;
-        /* margin-top: auto; */
+    .site-footer {
+        margin-top: 2rem;
+        background: #0f172a;
+        color: #cbd5e1;
+        padding: 1rem 1.25rem;
+        border-radius: 10px 10px 0 0;
     }
-
-    /* Create three equal columns that floats next to each other */
-    footer .column {
-        float: left;
-        width: 25%;
-        padding: 10px 0;
+    .footer-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
     }
-
-    footer .column a {
-        padding: 5px 5px;
-        font-size: 16px;
-        color: inherit;
-        text-decoration: none ;
-        color: white;
-        border-radius: 5px;
-        margin-left: 10px;
-        margin-right: 10px;
+    .footer-links {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        align-items: center;
     }
-
-    .c4,
-    .c4 * {
-        text-align: right;
+    .footer-links a {
+        color: #e2e8f0;
+        text-decoration: none;
+        background: rgba(255,255,255,0.06);
+        padding: 0.4rem 0.7rem;
+        border-radius: 6px;
+        transition: background 0.2s ease;
     }
-
-    .c2, .c3 {
-        text-align: center;
-    }
-
-    #btc_img {
-        width: 20px;
-        height: 20px;
-    }
-
-    /****************************************
-                    Footer 
-    *****************************************/
-    @media only screen and (max-width: 968px) {
-        footer {
-            position: fixed;
-        }
-    }
-
-    @media only screen and (max-width: 520px) {
-        footer {
-            min-height: 20px;
-        }
-        footer .column {
-            font-size: 10px;
-            padding: 5px 0;
-        }
-
-        footer .column a {
-            font-size: 13px;
-        }
-    }
-
-
+    .footer-links a:hover { background: rgba(255,255,255,0.12); }
+    .copyright { font-size: 0.85rem; opacity: 0.8; }
+    @media (max-width: 640px) { .copyright { width: 100%; text-align: center; } .footer-links { width: 100%; justify-content: center; } }
 </style>
-<footer>
-    <div class="column c1">
-        <a href="/donate">
-            <!-- <img id="btc_img" src="/btc_logo.png" alt="" />  -->
-            Donate
-        </a>
-    </div>
-    <div class="column c2">
-            <a href="https://twitter.com/Zach_Glass">Twitter</a><br>
-    </div>
-    <div class="column c3">
-        <a href="https://github.com/ZacheryGlass/StablecoinWatch">Github</a>
-    </div>
-    <div class="column c4">
-        <a href="https://docs.google.com/forms/d/1pfUwREIEKaYDjhtzx-1hUFgW-aiDtFHV9FLa-xlcZ2g">Feedback</a>
+<footer class="site-footer">
+    <div class="footer-row">
+        <div class="copyright">© <%= new Date().getFullYear() %> Stablecoin Watch</div>
+        <div class="footer-links">
+            <a href="/donate">Donate</a>
+            <a href="https://twitter.com/Zach_Glass" target="_blank" rel="noopener">Twitter</a>
+            <a href="https://github.com/ZacheryGlass/StablecoinWatch" target="_blank" rel="noopener">GitHub</a>
+            <a href="https://docs.google.com/forms/d/1pfUwREIEKaYDjhtzx-1hUFgW-aiDtFHV9FLa-xlcZ2g" target="_blank" rel="noopener">Feedback</a>
+        </div>
     </div>
 </footer>

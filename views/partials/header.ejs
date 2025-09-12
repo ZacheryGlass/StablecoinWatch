@@ -1,139 +1,97 @@
 <style>
-    /****************************************
-                    Header
-    *****************************************/
-    header {
-        background: #003c60;
-        padding-top: 10px;
+    .site-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        padding: 1rem 1rem 1.25rem 1rem;
+        border-radius: 0 0 10px 10px;
+        margin-bottom: 1rem;
     }
-
-    header img {
-        max-height: 90px;
-        max-width: 75%;
-        border-radius: 10px;
-        margin: 0;
-        padding: 0;
-    }
-
-    header {
-        text-align: center;
-        margin: 0;
-        padding: 5px;
-    }
-
-    /****************************************
-                    buttons
-    *****************************************/
-    .btn:link,
-    .btn:visited {
-        text-decoration: none;
-        padding: 10px 0;
-        margin: 2px;
-        display: inline-block;
-        border-radius: 10px;
-        transition: all 0.2s;
-        user-select: none;
-        width: 40%;
-        min-width: 100px;
-    }
-
-    .btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-    }
-
-    .btn-white {
-        background-color: #fff;
-        color: #777;
-    }
-    .disabled {
-        opacity: 0.6;
-        pointer-events: none;
-        cursor: not-allowed;
-    }
-    /****************************************
-                    bar
-    *****************************************/
-    .bar {
-        margin: 0 auto;
-        padding: 0;
-        background: #007ac1;
-        text-align: center;
-        width: 100%;
-    }
-
-    .grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        grid-template-areas:
-            'a b c'
-            'd b f';
+    .site-header .topbar {
+        display: flex;
         align-items: center;
-        color: white;
-        font-weight: bold;
-        max-width: 960px;
-        margin: auto;
-        padding: 0.25rem 0;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
     }
-
-    .grid > * {
-        margin-left: 5px;
-        margin-right: 5px;
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     }
+    .brand img { width: 40px; height: 40px; border-radius: 8px; }
+    .brand .title { font-size: 1.25rem; font-weight: 700; }
 
-    .grid .a { grid-area: a; }
-    .grid .b { grid-area: b; }
-    .grid .c { grid-area: c; }
-    .grid .d { grid-area: d; }
-    .grid .f { grid-area: f; }
-
-    .left_grid  { text-align: left;  }
-    .right_grid { text-align: right; }
-
-    /****************************************
-                Mobile Support
-    *****************************************/
-    @media only screen and (max-width: 767px) {
-        .grid       { grid-template-columns:
-                      1fr 300px 1fr;        }
-        .left_grid  { text-align: center;   }
-        .right_grid { text-align: center;   }
-        .bar        { font-size: 12px;      }
+    .nav {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
     }
-
-    @media only screen and (max-width: 620px) {
-        .grid       { grid-template-columns:
-                      1fr 1fr 1fr;          }
+    .nav a {
+        text-decoration: none;
+        color: #667eea;
+        background: #fff;
+        padding: 0.5rem 0.9rem;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: background 0.2s ease, transform 0.2s ease;
     }
+    .nav a:hover { background: #f0f0ff; transform: translateY(-1px); }
+    .nav a.active { background: #ffd24d; color: #4a3b00; }
+    .nav a.disabled { opacity: 0.6; pointer-events: none; }
 
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 0.75rem;
+        margin-top: 0.9rem;
+    }
+    .metric-card { background: rgba(255,255,255,0.12); padding: 0.75rem; border-radius: 8px; text-align: center; }
+    .metric-value { font-size: 1.05rem; font-weight: 700; display: block; }
+    .metric-label { font-size: 0.85rem; opacity: 0.9; }
+
+    @media (max-width: 640px) {
+        .brand .title { display: none; }
+    }
 </style>
-<header>
-    <a href="/"><img src="/site_logo.png" alt="Stablecoin Watch" /></a>
-</header>
-<div class="bar">
-    <div class="grid">
-        <section class="a left_grid">
-            Total Market Cap:&nbsp;<%=data.metrics.totalMCap_s%>
-        </section>
-        <section class="b">
-            <% if ( active === 'home' ) { %>
-            <a href="/" class="btn btn-white disabled">Coins</a>
-            <% } else { %>
-            <a href="/" class="btn btn-white">Coins</a>
-            <% } %> <% if ( active === 'chains' ) { %>
-            <a href="/platforms" class="btn btn-white disabled">Platforms</a>
-            <% } else { %>
-            <a href="/platforms" class="btn btn-white">Platforms</a>
-            <% } %>
-        </section>
-        <section class="c right_grid">
-            Total $ on ETH: <%=totalETHMCap_s%>
-        </section>
-        <section class="d left_grid">
-            Total 24h Volume: <%=data.metrics.totalVolume_s%>
-        </section>
-        <section class="f right_grid">
-            Total % on ETH: <%= ((totalETHMCap/data.metrics.totalMCap)*100).toFixed(1)%>%
-        </section>
+
+<div class="site-header">
+    <div class="topbar">
+        <a class="brand" href="/">
+            <img src="/site_logo.png" alt="Stablecoin Watch" />
+            <span class="title">Stablecoin Watch</span>
+        </a>
+        <nav class="nav">
+            <a href="/" class="<%= active === 'home' ? 'active' : '' %>">Coins</a>
+            <a href="/platforms" class="<%= active === 'chains' ? 'active' : '' %>">Platforms</a>
+            <a href="/status" class="<%= active === 'status' ? 'active' : '' %>">Status</a>
+        </nav>
+    </div>
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <span class="metric-value"><%= (data && data.metrics && data.metrics.totalMCap_s) || 'No data' %></span>
+            <span class="metric-label">Total Market Cap</span>
+        </div>
+        <div class="metric-card">
+            <span class="metric-value"><%= (data && data.metrics && data.metrics.totalVolume_s) || 'No data' %></span>
+            <span class="metric-label">24h Volume</span>
+        </div>
+        <% if (typeof totalETHMCap_s !== 'undefined') { %>
+        <div class="metric-card">
+            <span class="metric-value"><%= totalETHMCap_s %></span>
+            <span class="metric-label">Total $ on ETH</span>
+        </div>
+        <% } %>
+        <% if (typeof totalETHMCap !== 'undefined' && data && data.metrics && data.metrics.totalMCap) { %>
+        <div class="metric-card">
+            <span class="metric-value"><%= ((totalETHMCap/data.metrics.totalMCap)*100).toFixed(1) %>%</span>
+            <span class="metric-label">% on ETH</span>
+        </div>
+        <% } %>
+        <% if (data && data.metrics && data.metrics.lastUpdated) { %>
+        <div class="metric-card">
+            <span class="metric-value"><%= new Date(data.metrics.lastUpdated).toLocaleString() %></span>
+            <span class="metric-label">Last Updated</span>
+        </div>
+        <% } %>
     </div>
 </div>
