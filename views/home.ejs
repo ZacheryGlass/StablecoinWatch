@@ -6,200 +6,113 @@
     <link rel="stylesheet" type="text/css" href="/common.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-
-        .row ul.coinstats > li {
-            margin: 0;
-            font-size: 16px;
-            display: inline-block;
-            width: 12%;
-            box-sizing: border-box;
-            padding: 5px 10px;
-            text-align: center;
-            vertical-align: middle;
+        .home-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
         }
 
-        .row ul.coinstats > li.coinrank {
-            width: 5%;
-            text-align: center;
+        .home-header h1 { margin: 0 0 0.75rem 0; font-size: 2.2rem; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+        .summary-card { background: rgba(255,255,255,0.12); padding: 1rem; border-radius: 8px; text-align: center; }
+        .summary-value { font-size: 1.3rem; font-weight: 700; display: block; }
+        .summary-label { opacity: 0.9; font-size: 0.9rem; }
+
+        .content-section { background: #fff; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .section-title { color: #333; border-bottom: 2px solid #667eea; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+
+        .coins-table { width: 100%; border-collapse: collapse; }
+        .coins-table th, .coins-table td { padding: 0.75rem; border-bottom: 1px solid #eaeaea; text-align: left; }
+        .coins-table th { background: #f8f9fa; color: #333; font-weight: 700; }
+        .rank { width: 50px; text-align: center; }
+        .name-cell { display: flex; align-items: center; gap: 0.5rem; }
+        .name-cell img { width: 22px; height: 22px; border-radius: 4px; }
+        .symbol { color: #555; }
+        .platforms { color: #666; font-size: 0.9rem; }
+
+        @media (max-width: 860px) {
+            .hide-sm { display: none; }
         }
-        
-        .row ul.coinstats > li.name {
-            width: 17%;
-            justify-content: left;
-            text-align: left;
-            margin: 0;
-            padding: 0;
-        }
-
-        .row ul.coinstats > li.platform {
-            width: 17%;
-            justify-content: left;
-            text-align: left;
-            margin: 0;
-            padding: 0;
-        }
-
-        .row ul.coinstats > li.symbol {
-            justify-content: left;
-            text-align: left;
-            margin: 0;
-            padding: 0;
-        }
-
-        img.coin_logo {
-            width: 20px;
-            height: 20px;
-            padding-right: 5px;
-        }
-
-        .split * {
-            box-sizing: border-box;
-        }
-
-        .split:after {
-            content: '';
-            display: table;
-            clear: both;
-        }
-
-        /****************************************
-                Platform / Supply List
-        *****************************************/
-        .supply_list li {
-            padding: 0;
-            top: 0;
-            font-size: 14px;
-            list-style: none;
-        }
-
-        .p_grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            grid-template-areas:
-                'a b';
-            align-items: center;
-            margin: auto;
-        }
-
-        .p_grid .a {
-            grid-area: a;
-            text-align: left;
-        }
-
-        .p_grid .b {
-            padding-left: 5px;
-            grid-area: b;
-            text-align: right;
-        }
-
-        /****************************************
-                Mobile Support
-        *****************************************/
-
-        @media only screen and (max-width: 767px) {
-            main {
-                width: 100%;
-                overflow-x: auto;
-            }
-            .tbl_wrapper { 
-                width: 700px;
-            }
-            .supply_list li {
-                font-size: 12px;
-            }
-
-            .row ul.coinstats > li {
-                font-size: 12px;
-            }
-
-            .row ul.coinstats > li.name {
-                width: 13%;
-            }
-            
-            .row ul.coinstats > li.platform {
-                width: 21%;
-            }
-        }
-
     </style>
 </head>
 <body>
     <div id="wrapper">
-
         <!-- Header -->
         <%- include('partials/header') %>
         <!-- Header -->
+
         <main>
-            <% if (data.stablecoins) { %>
-                <section class="tbl_wrapper">
-                    <!-- Row title -->
-                    <main class="row title">
-                        <ul class="coinstats">
-                            <li class="coinrank">#</li>
-                            <li class="name">Name</li>
-                            <li class="symbol">Symbol</li>
-                            <li>Price</li>
-                            <li>Market Cap</li>
-                            <li class='mcap_dom'>MCap Dominance</li>
-                            <li>Volume (24h)</li>
-                            <!-- <li>Volume Dominance</li> -->
-                            <li class="platform">Platform</li>
-                        </ul>
-                    </main>
+            <div class="home-header">
+                <h1>Top Stablecoins</h1>
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <span class="summary-value"><%= data.metrics.totalMCap_s || 'No data' %></span>
+                        <span class="summary-label">Total Market Cap</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-value"><%= data.metrics.totalVolume_s || 'No data' %></span>
+                        <span class="summary-label">24h Volume</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-value"><%= (data.stablecoins && data.stablecoins.length) || 0 %></span>
+                        <span class="summary-label">Coins Tracked</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-value"><%= data.metrics.lastUpdated ? new Date(data.metrics.lastUpdated).toLocaleString() : 'Unknown' %></span>
+                        <span class="summary-label">Last Updated</span>
+                    </div>
+                </div>
+            </div>
 
-                    <!-- for each coin -->
-                    <% let i = 0; %>
-                    <% data.stablecoins.forEach((coin) => {  %>
-
-                        <!-- if no data, skip this coin -->
-                        <% if (!coin.name || !coin.symbol) return; %>
-                        <% i++; %>
-
-                        <!-- Row X -->
-                        <article class="row expand type<%=i%4+1%>">
-
-                            <ul class="coinstats">
-
-                                <!-- rank -->
-                                <li class="coinrank"><%= i %></li>
-
-                                <!-- name -->
-                                <li class="name">
-                                	<strong><a href="/coins/<%= coin.uri %>"><%= coin.name %></a></strong>
-                                </li>
-
-                                <!-- symbol -->
-                                <li class="symbol">
-                                    <img class="coin_logo" src="<%= h.getImage(coin) %>" alt="" />
-                                    <%= coin.symbol %>
-                                </li>
-
-                                <!-- price -->
-                                <li><%= h.getFormattedPrice(coin, 'main', formatter) %></li>
-
-                                <!-- market cap -->
-                                <li><%= h.getMarketCap(coin, 'main') %></li>
-
-                                <!-- market cap dominance -->
-                                <li class='mcap_dom'>
-                                    <%= h.getDominanceDisplay(coin, data.metrics, formatter) %>
-                                </li>
-
-                                <!-- volume -->
-                                <li><%= h.getVolume(coin, 'main') %></li>
-
-                                <!-- platforms -->
-                                <li class="platform">
-                                    <%= h.getPlatformDisplay(coin.platforms) %>
-                                </li> 
-                            </ul>
-                        </article>
-                    <% }) %> <!-- forEach coin -->
-                </section>
+            <% if (data.stablecoins && data.stablecoins.length) { %>
+                <div class="content-section">
+                    <h2 class="section-title">Stablecoins</h2>
+                    <table class="coins-table">
+                        <thead>
+                            <tr>
+                                <th class="rank">#</th>
+                                <th>Name</th>
+                                <th class="hide-sm">Symbol</th>
+                                <th>Price</th>
+                                <th>Market Cap</th>
+                                <th class="hide-sm">MCap Dominance</th>
+                                <th class="hide-sm">Volume (24h)</th>
+                                <th class="hide-sm">Platforms</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% let i = 0; %>
+                            <% data.stablecoins.forEach((coin) => { %>
+                                <% if (!coin.name || !coin.symbol) return; %>
+                                <% i++; %>
+                                <tr>
+                                    <td class="rank"><%= i %></td>
+                                    <td>
+                                        <div class="name-cell">
+                                            <img src="<%= h.getImage(coin) %>" alt="<%= coin.symbol %>" />
+                                            <a href="/coins/<%= coin.uri %>"><strong><%= coin.name %></strong></a>
+                                        </div>
+                                    </td>
+                                    <td class="hide-sm symbol"><%= coin.symbol %></td>
+                                    <td><%= h.getFormattedPrice(coin, 'main', formatter) %></td>
+                                    <td><%= h.getMarketCap(coin, 'main') %></td>
+                                    <td class="hide-sm"><%= h.getDominanceDisplay(coin, data.metrics, formatter) %></td>
+                                    <td class="hide-sm"><%= h.getVolume(coin, 'main') %></td>
+                                    <td class="hide-sm platforms"><%= h.getPlatformDisplay(coin.platforms) %></td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
             <% } else { %>
-                <p>Something went wrong.</p>
+                <div class="content-section">
+                    <p>No stablecoin data available.</p>
+                </div>
             <% } %>
         </main>
+
         <!-- Footer -->
         <%- include('partials/footer') %>
         <!-- Footer -->
