@@ -50,6 +50,11 @@
         margin-top: 0.9rem;
     }
     .metric-card { background: rgba(255,255,255,0.12); padding: 0.75rem; border-radius: 8px; text-align: center; }
+    /* Make metric cards act like interactive links */
+    a.metric-card { display: block; color: inherit; text-decoration: none; cursor: pointer; transition: background 0.2s ease, transform 0.2s ease; }
+    a.metric-card:hover { background: rgba(255,255,255,0.18); transform: translateY(-1px); }
+    a.metric-card:active { background: rgba(255,255,255,0.22); transform: translateY(0); }
+    a.metric-card:focus-visible { outline: 2px solid rgba(255,255,255,0.8); outline-offset: 2px; }
     .metric-value { font-size: 1.05rem; font-weight: 700; display: block; }
     .metric-label { font-size: 0.85rem; opacity: 0.9; }
 
@@ -70,25 +75,25 @@
         </nav>
     </div>
     <div class="metrics-grid">
-        <div class="metric-card">
+        <a class="metric-card" href="/?sort=mcap&dir=desc" aria-label="View market cap details and sort by market cap">
             <span class="metric-value"><%= (data && data.metrics && data.metrics.totalMCap_s) || 'No data' %></span>
             <span class="metric-label">Total Market Cap</span>
-        </div>
-        <div class="metric-card">
+        </a>
+        <a class="metric-card" href="/?sort=volume&dir=desc" aria-label="View 24 hour volume and sort by volume">
             <span class="metric-value"><%= (data && data.metrics && data.metrics.totalVolume_s) || 'No data' %></span>
             <span class="metric-label">24h Volume</span>
-        </div>
+        </a>
         <% if (typeof totalETHMCap_s !== 'undefined') { %>
-        <div class="metric-card">
+        <a class="metric-card" href="/platforms" aria-label="View blockchain platforms; see Ethereum totals">
             <span class="metric-value"><%= totalETHMCap_s %></span>
             <span class="metric-label">Total $ on ETH</span>
-        </div>
+        </a>
         <% } %>
         <% if (typeof totalETHMCap !== 'undefined' && data && data.metrics && data.metrics.totalMCap) { %>
-        <div class="metric-card">
+        <a class="metric-card" href="/platforms" aria-label="Explore blockchain platform distribution; percent on Ethereum">
             <span class="metric-value"><%= ((totalETHMCap/data.metrics.totalMCap)*100).toFixed(1) %>%</span>
             <span class="metric-label">% on ETH</span>
-        </div>
+        </a>
         <% } %>
 
     </div>

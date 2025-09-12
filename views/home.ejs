@@ -147,7 +147,7 @@
         } else if (currentHeader.classList.contains('sort-desc')) {
             isAscending = true;
         } else {
-            const numericCols = new Set([0,3,4,5,6,7]);
+            const numericCols = new Set([0,3,5,6,7,8]);
             isAscending = !numericCols.has(columnIndex);
         }
 
@@ -160,7 +160,7 @@
             let bValue = bCell ? bCell.textContent.trim() : '';
 
             // Numeric columns use data-sort where available
-            if ([0,3,4,5,6,7].includes(columnIndex)) {
+            if ([0,3,5,6,7,8].includes(columnIndex)) {
                 const aSort = aCell?.getAttribute('data-sort');
                 const bSort = bCell?.getAttribute('data-sort');
                 const aNum = aSort != null ? parseFloat(aSort) : (parseFloat(aValue.replace(/[^0-9.-]/g, '')) || 0);
@@ -181,6 +181,23 @@
         // Apply new order
         rows.forEach(row => tbody.appendChild(row));
     }
+
+    // Apply sorting based on URL query parameters
+    (function() {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const sortKey = (params.get('sort') || '').toLowerCase();
+            const dir = (params.get('dir') || '').toLowerCase();
+            const map = { mcap: 5, marketcap: 5, volume: 7, vol: 7, price: 3, blockchains: 8, chains: 8 };
+            if (sortKey in map) {
+                const col = map[sortKey];
+                sortCoinsTable(col);
+                if (dir === 'asc' || dir === 'ascending') {
+                    sortCoinsTable(col);
+                }
+            }
+        } catch (_) {}
+    })();
     </script>
 </body>
 </html>
