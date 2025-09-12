@@ -105,6 +105,37 @@ The application will be available at `http://localhost:3000` (or your configured
 
 Environment-specific overrides: create `.env.<NODE_ENV>` (for example, `.env.production`) to override values from the base `.env`.
 
+## Debug Mode & Mock Data
+
+During development you can run entirely against local mock JSON snapshots without hitting real APIs.
+
+- Enable mock mode by setting either of the following in your environment (base `.env` or `.env.development`):
+  - `DEBUG_MODE=true`
+  - or `MOCK_APIS=true`
+- In this mode, all data sources load from local files and no API keys are required. Sources are treated as enabled even if API keys are missing.
+- Default mock files (at repo root):
+  - CoinMarketCap: `cmc_raw_output.json`
+  - Messari: `messari_raw_output.json`
+  - DeFiLlama: `defillama_raw_output.json`
+  - CoinGecko: `coingecko_raw_output.json`
+- You can override file names per source with env vars if needed:
+  - `CMC_MOCK_FILE`, `MESSARI_MOCK_FILE`, `DEFILLAMA_MOCK_FILE`, `COINGECKO_MOCK_FILE`
+
+Example (Windows PowerShell):
+```
+$env:NODE_ENV="development"; $env:DEBUG_MODE="true"; npm start
+```
+
+Or add to `.env.development`:
+```
+DEBUG_MODE=true
+ENABLED_SOURCES=cmc,messari,defillama,coingecko
+```
+
+Notes:
+- Validation skips API key/base URL checks when mock mode is active.
+- Health monitoring remains active; records successes against mock loads.
+
 ## Project Structure
 
 ### Application Layer
