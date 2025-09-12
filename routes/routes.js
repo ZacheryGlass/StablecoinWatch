@@ -226,30 +226,7 @@ router.get('/platforms/:name', async (req, res) => {
     });
 });
 
-/**
- * Donate page route - displays donation information
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- */
-router.get('/donate', async (req, res) => {
-    const svc = services || req.services || {};
-    const data = svc.dataService.getData();
-    const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
-    const totalETHMCap = eth ? eth.mcap_sum : 0;
-    const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
-    res.render('donate', {
-        data: data,
-        totalETHMCap,
-        totalETHMCap_s,
-        active: 'donate',
-        formatter: {
-            formatNumber: util.formatNumber,
-            formatPrice: util.formatPrice,
-            formatPercentage: util.formatPercentage,
-            formatSupply: util.formatSupply
-        }
-    });
-});
+ 
 
 /*---------------------------------------------------------
     EXPORTS

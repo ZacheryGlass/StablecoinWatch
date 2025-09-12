@@ -176,13 +176,12 @@ This document provides a comprehensive tour of the StablecoinWatch codebase: arc
   - `/status`: app health and system metrics
   - `/platforms`: list of platforms; `/platforms/:name`: platform detail
   - `/coins/:symbol`: stablecoin details
-  - `/donate`: donation page
   - All routes pull `dataService.getData()` and pass formatting helpers
 
 - Views: `views/*.ejs`, partials under `views/partials/`
   - `home.ejs`: ranks by market cap, shows price, mcap, volume, platform
   - `coins.ejs`: coin detail view (hybrid fields rendered)
-  - `chains.ejs`, `platforms.ejs`, `status.ejs`, `donate.ejs`
+  - `chains.ejs`, `platforms.ejs`, `status.ejs`
 
 ## Scripts and Static Assets
 
@@ -233,7 +232,7 @@ This document provides a comprehensive tour of the StablecoinWatch codebase: arc
   - `stablecoin.js`, `platform.js` – view models
 
 - views/
-  - `home.ejs`, `coins.ejs`, `chains.ejs`, `platforms.ejs`, `status.ejs`, `donate.ejs`, partials
+  - `home.ejs`, `coins.ejs`, `chains.ejs`, `platforms.ejs`, `status.ejs`, partials
 
 - docs/
   - Configuration and API integration guides; platform references
