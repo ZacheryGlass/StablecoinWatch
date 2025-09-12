@@ -34,6 +34,21 @@
         .symbol { color: #555; }
         .platforms { color: #666; font-size: 0.9rem; }
 
+        /* Match blockchain page styling */
+        .coin-rank {
+            background: #667eea;
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            min-width: 2rem;
+            text-align: center;
+            display: inline-block;
+        }
+        .coin-name { font-weight: bold; color: #667eea; text-decoration: none; }
+        .coin-name:hover { color: #764ba2; }
+
         .metric-highlight {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
@@ -155,11 +170,11 @@
                                 <% if (!coin.name || !coin.symbol) return; %>
                                 <% i++; %>
                                 <tr>
-                                    <td class="rank"><%= i %></td>
+                                    <td class="rank"><span class="coin-rank"><%= i %></span></td>
                                     <td>
                                         <div class="name-cell">
                                             <img src="<%= h.getImage(coin) %>" alt="<%= coin.symbol %>" />
-                                            <a href="/coins/<%= coin.uri %>"><strong><%= coin.name %></strong></a>
+                                            <a href="/coins/<%= coin.uri %>" class="coin-name"><%= coin.name %></a>
                                         </div>
                                     </td>
                                     <td class="hide-sm symbol"><%= coin.symbol %></td>
