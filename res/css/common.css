@@ -1,4 +1,4 @@
-/****************************************
+﻿/****************************************
                 Common
 *****************************************/
 
@@ -11,17 +11,10 @@ body {
   font-family: 'Open Sans', sans-serif;
 }
 
-#wrapper {
+ param($m) $block = $m.Groups[1].Value; if ($block -notmatch "padding-bottom") { return "#wrapper {
     min-height: 100%;
     position: relative;
-}
-
-.type1 a,
-.type2 a,
-.type3 a,
-.type4 a {
-    text-decoration: none;
-    transition: color 0.2s ease-out;
+    padding-bottom: 120px;
 }
 
 main {
@@ -107,3 +100,6 @@ main.title {
         padding: 5px 0;
     }
 }
+
+
+

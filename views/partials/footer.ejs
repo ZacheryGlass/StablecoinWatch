@@ -1,5 +1,12 @@
 <style>
     .site-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        z-index: 1000;
+
         margin-top: 2rem;
         background: #0f172a;
         color: #cbd5e1;
@@ -33,7 +40,7 @@
 </style>
 <footer class="site-footer">
     <div class="footer-row">
-        <div class="copyright">© <%= new Date().getFullYear() %> Stablecoin Watch</div>
+        <div class="copyright">&copy; <%= new Date().getFullYear() %> Stablecoin Watch</div>
         <div class="footer-links">
             <a href="https://twitter.com/Zach_Glass" target="_blank" rel="noopener">Twitter</a>
             <a href="https://github.com/ZacheryGlass/StablecoinWatch" target="_blank" rel="noopener">GitHub</a>
@@ -41,3 +48,5 @@
         </div>
     </div>
 </footer>
+
+
