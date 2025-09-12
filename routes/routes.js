@@ -177,17 +177,45 @@ router.get('/platforms/:name', async (req, res) => {
         });
     }
 
-    const platformName = platformEntry ? platformEntry.name : String(req.params.name || '').replace(/[-_]+/g, ' ');
+    // Handle platform not found case
+    if (!platformEntry) {
+        const platformName = String(req.params.name || '').replace(/[-_]+/g, ' ');
+        const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
+        const totalETHMCap = eth ? eth.mcap_sum : 0;
+        const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
+        
+        return res.render('platforms', {
+            data: data,
+            totalETHMCap,
+            totalETHMCap_s,
+            platform: { 
+                name: platformName, 
+                stablecoins: [],
+                notFound: true 
+            },
+            platformIndex: -1,
+            active: '',
+            formatter: {
+                formatNumber: util.formatNumber,
+                formatPrice: util.formatPrice,
+                formatPercentage: util.formatPercentage,
+                formatSupply: util.formatSupply
+            }
+        });
+    }
 
-    // For now, platforms functionality is simplified since we don't have blockchain integration
+    // Enhanced platform page with rich data
+    const platformIndex = data.platform_data.findIndex(p => p === platformEntry);
     const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
     const totalETHMCap = eth ? eth.mcap_sum : 0;
     const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
+    
     res.render('platforms', {
         data: data,
         totalETHMCap,
         totalETHMCap_s,
-        platform: { name: platformName, stablecoins: [] },
+        platform: platformEntry,
+        platformIndex: platformIndex,
         active: '',
         formatter: {
             formatNumber: util.formatNumber,

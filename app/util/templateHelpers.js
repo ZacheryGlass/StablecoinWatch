@@ -377,6 +377,168 @@ function getPlatformChartPercentage(platformData, coin, formatter) {
 }
 
 /*---------------------------------------------------------
+    CROSS-CHAIN PLATFORM HELPERS
+---------------------------------------------------------*/
+
+/**
+ * Get formatted platform supply display with fallback
+ * @param {Object} platform - Platform data object
+ * @param {Object} formatter - Formatter functions
+ * @returns {string} Formatted supply or 'No data'
+ */
+function getPlatformSupplyDisplay(platform, formatter) {
+    const supply = safeGet(platform, 'total_supply');
+    if (!supply || supply === 0) return 'No data';
+    
+    const formatted = safeGet(platform, 'total_supply_s');
+    return formatted || (formatter && formatter.formatSupply ? formatter.formatSupply(supply) : safeString(supply, 'No data'));
+}
+
+/**
+ * Get platform supply percentage display
+ * @param {Object} platform - Platform data object
+ * @returns {string} Formatted percentage or 'No data'
+ */
+function getPlatformSupplyPercentage(platform) {
+    const percentage = safeGet(platform, 'supply_percentage');
+    if (percentage === null || percentage === undefined) return 'No data';
+    
+    const formatted = safeGet(platform, 'supply_percentage_s');
+    return formatted || `${percentage.toFixed(2)}%`;
+}
+
+/**
+ * Get dominant stablecoin display for a platform
+ * @param {Object} platform - Platform data object
+ * @param {Object} formatter - Formatter functions
+ * @returns {string} Dominant stablecoin info or 'No data'
+ */
+function getDominantStablecoin(platform, formatter) {
+    const dominant = safeGet(platform, 'dominant_stablecoin');
+    if (!dominant || !dominant.name) return 'No data';
+    
+    const supply = formatter && formatter.formatSupply ? 
+        formatter.formatSupply(dominant.supply) : 
+        safeString(dominant.supply, '');
+        
+    return supply ? `${dominant.symbol} (${supply})` : dominant.symbol;
+}
+
+/**
+ * Format chain supply breakdown for display
+ * @param {Array} breakdown - Supply breakdown array
+ * @param {number} [limit=3] - Maximum number of items to display
+ * @returns {string} Formatted breakdown display
+ */
+function getChainBreakdownDisplay(breakdown, limit = 3) {
+    if (!Array.isArray(breakdown) || breakdown.length === 0) {
+        return 'No breakdown available';
+    }
+    
+    const displayItems = breakdown.slice(0, limit);
+    const formatted = displayItems.map(item => {
+        const percentage = item.percentage ? ` (${item.percentage}%)` : '';
+        return `${item.symbol}${percentage}`;
+    });
+    
+    if (breakdown.length > limit) {
+        const remaining = breakdown.length - limit;
+        formatted.push(`+${remaining} more`);
+    }
+    
+    return formatted.join(', ');
+}
+
+/**
+ * Get platform diversity score based on stablecoin count and distribution
+ * @param {Object} platform - Platform data object
+ * @returns {string} Diversity description
+ */
+function getPlatformDiversity(platform) {
+    const coinCount = safeGet(platform, 'coin_count', 0);
+    const breakdown = safeGet(platform, 'supply_breakdown', []);
+    
+    if (coinCount === 0) return 'No stablecoins';
+    if (coinCount === 1) return 'Single stablecoin';
+    if (coinCount <= 3) return `${coinCount} stablecoins`;
+    
+    // Calculate distribution concentration
+    const topCoinPercentage = Array.isArray(breakdown) && breakdown.length > 0 ? 
+        breakdown[0].percentage || 0 : 0;
+    
+    if (topCoinPercentage > 80) {
+        return `${coinCount} stablecoins (concentrated)`;
+    } else if (topCoinPercentage > 60) {
+        return `${coinCount} stablecoins (moderate diversity)`;
+    } else {
+        return `${coinCount} stablecoins (diverse)`;
+    }
+}
+
+/**
+ * Check if platform has cross-chain supply data
+ * @param {Object} platform - Platform data object
+ * @returns {boolean} True if platform has supply breakdown data
+ */
+function hasCrossChainData(platform) {
+    const breakdown = safeGet(platform, 'supply_breakdown');
+    return Array.isArray(breakdown) && breakdown.length > 0;
+}
+
+/**
+ * Get platform stablecoin count with proper pluralization
+ * @param {Object} platform - Platform data object
+ * @returns {string} Formatted count string
+ */
+function getPlatformCoinCount(platform) {
+    const count = safeGet(platform, 'coin_count', 0);
+    if (count === 0) return 'No stablecoins';
+    if (count === 1) return '1 stablecoin';
+    return `${count} stablecoins`;
+}
+
+/**
+ * Get platform rank indicator based on supply or market cap
+ * @param {number} index - Platform index in sorted list (0-based)
+ * @param {string} [metric='supply'] - Ranking metric ('supply' or 'mcap')
+ * @returns {string} Rank indicator
+ */
+function getPlatformRank(index, metric = 'supply') {
+    const rank = index + 1;
+    const suffix = metric === 'supply' ? ' by supply' : ' by market cap';
+    
+    if (rank === 1) return `#${rank} (Leading${suffix})`;
+    if (rank <= 3) return `#${rank} (Top 3${suffix})`;
+    if (rank <= 5) return `#${rank} (Top 5${suffix})`;
+    if (rank <= 10) return `#${rank} (Top 10${suffix})`;
+    return `#${rank}${suffix}`;
+}
+
+/**
+ * Format platform comparison metric
+ * @param {Object} platform - Platform data object
+ * @param {string} metric - Metric to compare ('supply_percentage', 'mcap_sum', 'coin_count')
+ * @param {Object} formatter - Formatter functions
+ * @returns {string} Formatted comparison metric
+ */
+function getPlatformMetric(platform, metric, formatter) {
+    switch (metric) {
+        case 'supply_percentage':
+            return getPlatformSupplyPercentage(platform);
+        case 'supply':
+            return getPlatformSupplyDisplay(platform, formatter);
+        case 'mcap':
+            return safeString(safeGet(platform, 'mcap_sum_s'), 'No data');
+        case 'coin_count':
+            return getPlatformCoinCount(platform);
+        case 'diversity':
+            return getPlatformDiversity(platform);
+        default:
+            return 'Unknown metric';
+    }
+}
+
+/*---------------------------------------------------------
     EXPORTS
 ---------------------------------------------------------*/
 
@@ -402,5 +564,16 @@ module.exports = {
     hasDescription,
     getContractUrl,
     getPlatformPercentage,
-    getPlatformChartPercentage
+    getPlatformChartPercentage,
+    
+    // Cross-chain platform helpers
+    getPlatformSupplyDisplay,
+    getPlatformSupplyPercentage,
+    getDominantStablecoin,
+    getChainBreakdownDisplay,
+    getPlatformDiversity,
+    hasCrossChainData,
+    getPlatformCoinCount,
+    getPlatformRank,
+    getPlatformMetric
 };

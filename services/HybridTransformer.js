@@ -210,22 +210,97 @@ class HybridTransformer extends IViewModelTransformer {
                     platformMap.set(platform.name, { 
                         name: platform.name, 
                         mcap_sum: 0, 
-                        coin_count: 0 
+                        coin_count: 0,
+                        total_supply: 0,
+                        stablecoins: [],
+                        supply_breakdown: new Map(),
+                        dominant_stablecoin: { name: '', supply: 0 }
                     });
                 }
                 
                 const entry = platformMap.get(platform.name);
                 entry.mcap_sum += sc.main.circulating_mcap;
                 entry.coin_count += 1;
+                
+                // Enhanced supply aggregation using cross-chain data
+                const platformSupply = platform.total_supply || platform.circulating_supply || 0;
+                if (platformSupply > 0) {
+                    entry.total_supply += platformSupply;
+                    
+                    // Track individual stablecoin supplies on this platform
+                    if (!entry.supply_breakdown.has(sc.symbol)) {
+                        entry.supply_breakdown.set(sc.symbol, {
+                            name: sc.name,
+                            symbol: sc.symbol,
+                            supply: 0,
+                            percentage: 0,
+                            uri: sc.uri
+                        });
+                    }
+                    
+                    const coinEntry = entry.supply_breakdown.get(sc.symbol);
+                    coinEntry.supply += platformSupply;
+                    
+                    // Track dominant stablecoin on this platform
+                    if (coinEntry.supply > entry.dominant_stablecoin.supply) {
+                        entry.dominant_stablecoin = {
+                            name: sc.name,
+                            symbol: sc.symbol,
+                            supply: coinEntry.supply,
+                            uri: sc.uri
+                        };
+                    }
+                }
+                
+                // Track unique stablecoins on this platform
+                if (!entry.stablecoins.find(coin => coin.symbol === sc.symbol)) {
+                    entry.stablecoins.push({
+                        name: sc.name,
+                        symbol: sc.symbol,
+                        uri: sc.uri,
+                        price: sc.main?.price || null,
+                        market_cap: sc.main?.circulating_mcap || null,
+                        platform_supply: platformSupply,
+                        platform_percentage: platform.supply_percentage || null
+                    });
+                }
             }
         }
 
+        // Calculate total supply across all platforms for percentage calculations
+        let totalSupplyAllPlatforms = 0;
+        for (const entry of platformMap.values()) {
+            totalSupplyAllPlatforms += entry.total_supply;
+        }
+
         return Array.from(platformMap.values())
-            .map(platform => ({
-                ...platform,
-                uri: DataFormatter.slugify(platform.name),
-                mcap_sum_s: DataFormatter.formatNumber(platform.mcap_sum),
-            }))
+            .map(platform => {
+                // Convert supply breakdown map to array and calculate percentages
+                const supplyBreakdownArray = Array.from(platform.supply_breakdown.values())
+                    .map(coin => ({
+                        ...coin,
+                        percentage: platform.total_supply > 0 ? 
+                            Math.round((coin.supply / platform.total_supply) * 10000) / 100 : 0
+                    }))
+                    .sort((a, b) => b.supply - a.supply);
+
+                return {
+                    name: platform.name,
+                    uri: DataFormatter.slugify(platform.name),
+                    mcap_sum: platform.mcap_sum,
+                    mcap_sum_s: DataFormatter.formatNumber(platform.mcap_sum),
+                    coin_count: platform.coin_count,
+                    total_supply: platform.total_supply,
+                    total_supply_s: DataFormatter.formatNumber(platform.total_supply, false),
+                    supply_percentage: totalSupplyAllPlatforms > 0 ? 
+                        Math.round((platform.total_supply / totalSupplyAllPlatforms) * 10000) / 100 : 0,
+                    supply_percentage_s: totalSupplyAllPlatforms > 0 ?
+                        `${Math.round((platform.total_supply / totalSupplyAllPlatforms) * 10000) / 100}%` : '0%',
+                    stablecoins: platform.stablecoins.sort((a, b) => (b.platform_supply || 0) - (a.platform_supply || 0)),
+                    supply_breakdown: supplyBreakdownArray,
+                    dominant_stablecoin: platform.dominant_stablecoin.name ? platform.dominant_stablecoin : null
+                };
+            })
             .sort((a, b) => b.mcap_sum - a.mcap_sum);
     }
 

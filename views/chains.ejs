@@ -1,191 +1,572 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8" />
-        <title>Stablecoin Watch</title>
-        <link rel="stylesheet" type="text/css" href="/common.css" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <script type="application/javascript" src="/chart.min.js"></script>
-        <style>
-            .row ul.chainstats > li {
-                margin: 0;
-                font-size: 20px;
-                font-weight: normal;
-                list-style: none;
-                display: inline-block;
-                width: 30%;
-                box-sizing: border-box;
-                display: inline-flex;
-                padding: 5px 10px;
+<head>
+    <meta charset="utf-8" />
+    <title>Blockchain Platforms - Stablecoin Watch</title>
+    <link rel="stylesheet" type="text/css" href="/common.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script type="application/javascript" src="/chart.min.js"></script>
+    <style>
+        .platforms-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .platforms-header h1 {
+            margin: 0 0 1rem 0;
+            font-size: 2.5rem;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .summary-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: block;
+        }
+
+        .summary-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .content-section {
+            background: white;
+            margin: 2rem 0;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .toggle-btn {
+            background: #f0f0f0;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .toggle-btn:hover {
+            background: #764ba2;
+            color: white;
+        }
+
+        .platforms-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .platforms-table th,
+        .platforms-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .platforms-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .platforms-table th:hover {
+            background: #e9ecef;
+        }
+
+        .platforms-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .platform-name {
+            font-weight: bold;
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .platform-name:hover {
+            color: #764ba2;
+        }
+
+        .platform-rank {
+            background: #667eea;
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            min-width: 2rem;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .platform-stats {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.2rem;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin: 2rem 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .collapsible {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+            padding: 0.8rem 1.5rem;
+            width: auto;
+            margin: 1rem auto;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .collapsible:hover,
+        .collapsible.active {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .chart-content {
+            display: none;
+            padding: 1rem 0;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .metric-highlight {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .diversity-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 0.5rem;
+        }
+
+        .diversity-high { background: #28a745; }
+        .diversity-medium { background: #ffc107; }
+        .diversity-low { background: #dc3545; }
+
+        .supply-bar {
+            background: #f0f0f0;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.3rem 0;
+        }
+
+        .supply-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        /* Mobile responsiveness */
+        @media only screen and (max-width: 767px) {
+            .platforms-header {
+                padding: 1rem;
             }
-
-            .title ul.chainstats li {
-                font-weight: bold;
+            
+            .platforms-header h1 {
+                font-size: 1.8rem;
             }
-
-            .chainrank {
-                width: 10% !important;
-                text-align: center;
+            
+            .summary-stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
             }
-
-            canvas {
-                width: 80%;
+            
+            .content-section {
+                margin: 1rem 0;
+                padding: 1rem;
             }
-
-            /* collapsable */
-            .collapsible {
-                display: block;
-                background-color: #777;
-                color: white;
-                font-weight: bold;
-                padding: 15px;
-                width: 200px;
-                margin: auto;
-                margin-top: 5px;
-                border: none;
-                border-radius: 10px;
-                font-size: 15px;
-                }
-
-            .active, .collapsible:hover {
-                background-color: #555;
+            
+            .platforms-table {
+                font-size: 0.85rem;
             }
-
-            .content {
-                width: 80%;
-                margin: auto;
-                display: none;
-                overflow: hidden;
+            
+            .platforms-table th,
+            .platforms-table td {
+                padding: 0.5rem 0.3rem;
             }
-
-            @media only screen and (max-width: 767px) {
-                .row ul.chainstats > li {
-                    font-size: 14px;
-                }
+            
+            .view-toggle {
+                flex-direction: column;
+                gap: 0.3rem;
             }
+            
+            .section-title {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+        }
 
-        </style>
-    </head>
-    <body>
-        <div id="wrapper">
+        /* Sorting indicators */
+        .sort-asc::after {
+            content: ' ↑';
+            color: #667eea;
+        }
 
-            <!-- Header -->
-            <%- include('partials/header') %>
-            <!-- Header -->
+        .sort-desc::after {
+            content: ' ↓';
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div id="wrapper">
+        <!-- Header -->
+        <%- include('partials/header') %>
+        <!-- Header -->
 
-            <main>
-                <% if( data.platform_data && data.platform_data.length ) { %>
-                <button type="button" class="collapsible">Toggle Chart</button>
-                <div class="content">
-                    <canvas id="chart" width="40" height="40"></canvas>
+        <main>
+            <!-- Platforms Header -->
+            <div class="platforms-header">
+                <h1>Blockchain Platforms</h1>
+                <p>Comprehensive overview of stablecoin distribution across blockchain networks</p>
+                
+                <div class="summary-stats">
+                    <div class="summary-card">
+                        <span class="summary-value"><%= data.platform_data ? data.platform_data.length : 0 %></span>
+                        <span class="summary-label">Active Platforms</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-value"><%= data.metrics.totalMCap_s || 'No data' %></span>
+                        <span class="summary-label">Total Market Cap</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-value"><%= data.stablecoins ? data.stablecoins.length : 0 %></span>
+                        <span class="summary-label">Total Stablecoins</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-value">
+                            <% 
+                            let totalSupply = 0;
+                            if (data.platform_data) {
+                                data.platform_data.forEach(p => totalSupply += p.total_supply || 0);
+                            }
+                            %>
+                            <%= formatter.formatSupply(totalSupply) %>
+                        </span>
+                        <span class="summary-label">Total Supply Value</span>
+                    </div>
                 </div>
-                    <section class="tbl_wrapper">
-                        <!-- Row title -->
-                        <main class="row title">
-                            <ul class="chainstats">
-                                <li class="chainrank">#</li>
-                                <li>Blockchain</li>
-                                <li>Dollars on Chain (USD)</li>
-                                <li>% of Total</li>
-                            </ul>
-                        </main>
-                        <% for (let i = 0; i < data.platform_data.length; i++) { %>
-                            <% let p = data.platform_data[i] %>
-                            <!-- Row X -->
-                            <article class="row type<%=i%4+1%>">
-                                <ul class="chainstats">
-                                    <li class="chainrank"><%= i+1 %></li>
-                                    <li>
-                                        <strong>
-                                        	<a href="/platforms/<%= p.uri %>"><%= p.name %></a>
-                                        </strong>
-                                    </li>
-                                    <li><%= p.mcap_sum_s %></li>
-                                    <% let pct = ( p.mcap_sum / data.metrics.totalMCap ) * 100; %>
-                                    <li><%= formatter.formatPercentage(pct, 2) %></li>
-                                </ul>
-                            </article>
-                        <% } %><!-- for -->
-                    </section>
-                <% } %><!-- if -->
-            </main>
-            <!-- Footer -->
-            <%- include('partials/footer') %>
-            <!-- Footer -->
-        </div>
-    </body>
+            </div>
+
+            <% if (data.platform_data && data.platform_data.length) { %>
+                <!-- Market Share Chart -->
+                <div class="chart-container">
+                    <button type="button" class="collapsible">📊 View Market Share Chart</button>
+                    <div class="chart-content" id="chartContent">
+                        <canvas id="chart" width="400" height="300"></canvas>
+                        <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+                            Market share distribution across top blockchain platforms
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Platforms Table -->
+                <div class="content-section">
+                    <div class="section-title">
+                        <h2>Platform Rankings</h2>
+                        <div class="view-toggle">
+                            <button class="toggle-btn active" onclick="showView('mcap')">By Market Cap</button>
+                            <button class="toggle-btn" onclick="showView('supply')">By Supply</button>
+                            <button class="toggle-btn" onclick="showView('diversity')">By Diversity</button>
+                        </div>
+                    </div>
+
+                    <table class="platforms-table" id="platformsTable">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0)">Rank</th>
+                                <th onclick="sortTable(1)">Platform</th>
+                                <th onclick="sortTable(2)">Market Cap (USD)</th>
+                                <th onclick="sortTable(3)">Supply Value (USD)</th>
+                                <th onclick="sortTable(4)">% of Market</th>
+                                <th onclick="sortTable(5)">Stablecoins</th>
+                                <th onclick="sortTable(6)">Diversity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% data.platform_data.forEach((platform, index) => { %>
+                                <tr>
+                                    <td>
+                                        <span class="platform-rank"><%= index + 1 %></span>
+                                    </td>
+                                    <td>
+                                        <a href="/platforms/<%= platform.uri %>" class="platform-name">
+                                            <%= platform.name %>
+                                        </a>
+                                        <div class="platform-stats">
+                                            <%= h.getPlatformRank(index, 'mcap') %>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <strong><%= platform.mcap_sum_s %></strong>
+                                        <% let mcapPct = (platform.mcap_sum / data.metrics.totalMCap) * 100; %>
+                                        <div class="supply-bar">
+                                            <div class="supply-fill" style="width: <%= Math.min(mcapPct, 100) %>%"></div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <strong><%= h.getPlatformSupplyDisplay(platform, formatter) %></strong>
+                                        <div class="supply-bar">
+                                            <div class="supply-fill" style="width: <%= Math.min(platform.supply_percentage || 0, 100) %>%"></div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="metric-highlight">
+                                            <%= formatter.formatPercentage(mcapPct, 2) %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <%= h.getPlatformCoinCount(platform) %>
+                                    </td>
+                                    <td>
+                                        <%= h.getPlatformDiversity(platform) %>
+                                        <% 
+                                        let diversityClass = 'diversity-low';
+                                        if (platform.coin_count > 5) diversityClass = 'diversity-high';
+                                        else if (platform.coin_count > 2) diversityClass = 'diversity-medium';
+                                        %>
+                                        <span class="diversity-indicator <%= diversityClass %>"></span>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Top Platform Highlights -->
+                <div class="content-section">
+                    <h2 class="section-title">Platform Highlights</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                        <% data.platform_data.slice(0, 3).forEach((platform, index) => { %>
+                            <div style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 1.5rem; transition: box-shadow 0.2s ease;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='none'">
+                                <h3 style="color: #667eea; margin: 0 0 1rem 0;">
+                                    #<%= index + 1 %> <a href="/platforms/<%= platform.uri %>" style="color: inherit; text-decoration: none;"><%= platform.name %></a>
+                                </h3>
+                                <div style="margin-bottom: 0.5rem;">
+                                    <strong>Market Cap:</strong> <%= platform.mcap_sum_s %>
+                                </div>
+                                <div style="margin-bottom: 0.5rem;">
+                                    <strong>Supply Value:</strong> <%= h.getPlatformSupplyDisplay(platform, formatter) %>
+                                </div>
+                                <div style="margin-bottom: 0.5rem;">
+                                    <strong>Stablecoins:</strong> <%= h.getPlatformCoinCount(platform) %>
+                                </div>
+                                <% if (platform.dominant_stablecoin) { %>
+                                    <div style="margin-top: 1rem; padding: 0.5rem; background: #f8f9fa; border-radius: 5px; font-size: 0.9rem;">
+                                        <strong>Dominant:</strong> <%= platform.dominant_stablecoin.symbol %>
+                                    </div>
+                                <% } %>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+            <% } else { %>
+                <div class="content-section">
+                    <h2>No Platform Data Available</h2>
+                    <p>Platform data is currently being loaded or is unavailable.</p>
+                </div>
+            <% } %>
+        </main>
+
+        <!-- Footer -->
+        <%- include('partials/footer') %>
+        <!-- Footer -->
+    </div>
+
+    <!-- Chart.js Script -->
     <script type="text/javascript">
-        let ctx = document.getElementById('chart').getContext('2d');
-        let chart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: [
-                    <% for (let i = 0; i < data.platform_data.length; i++) { %>
-                        <% if( i < 5 ) { %>
+        <% if (data.platform_data && data.platform_data.length) { %>
+            let ctx = document.getElementById('chart').getContext('2d');
+            let chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [
+                        <% const displayCount = Math.min(data.platform_data.length, 8); %>
+                        <% for (let i = 0; i < displayCount; i++) { %>
                             "<%= data.platform_data[i].name %>",
-                        <% } else { break; } %>
-                    <% } %>  
-                    <% if (data.platform_data.length > 5 ) { %>
-                        'Other'
-                    <% } %>
-                ],
-
-                datasets: [{
-                    label: '% on Platforms',
-                    data: [
-                        <% let top_5_total = 0; %>
-                        <% for (let i = 0; i < data.platform_data.length; i++) { %>
-                            <% if( i < 5 ) { %>
-                                <% let pct = Number(formatter.formatNumber((( data.platform_data[i].mcap_sum / data.metrics.totalMCap ) * 100), 2)) %>
-                                <% top_5_total += pct %>
-                                <%= pct %>,
-                            <% } else { break; } %>
                         <% } %>
-                        <% if (data.platform_data.length > 5 ) { %>
-                            <%= formatter.formatNumber((100-top_5_total), 2) %>,
+                        <% if (data.platform_data.length > displayCount) { %>
+                            'Others'
                         <% } %>
-
                     ],
-                    
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.5)',
-                        'rgba(54, 162, 235, 0.5)',
-                        'rgba(255, 206, 86, 0.5)',
-                        'rgba(75, 192, 192, 0.5)',
-                        'rgba(153, 102, 255, 0.5)',
-                        'rgba(255, 159, 64, 0.5)'
-                    ],
-                    borderColor: [
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)',
-                        'rgba(255, 159, 64, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                legend: {
-                    position: 'left'
-                }
-            }
-        });
-    </script>
-    <script>
-        let coll = document.getElementsByClassName("collapsible");
-        
-        for (let i = 0; i < coll.length; i++) {
-            coll[i].addEventListener("click", function() {
-                this.classList.toggle("active");
-                let content = this.nextElementSibling;
-                if (content.style.display === "block") {
-                    content.style.display = "none";
-                } else {
-                    content.style.display = "block";
+                    datasets: [{
+                        label: 'Market Share (%)',
+                        data: [
+                            <% let totalOther = 0; %>
+                            <% for (let i = 0; i < displayCount; i++) { %>
+                                <% let pct = (data.platform_data[i].mcap_sum / data.metrics.totalMCap) * 100; %>
+                                <%= pct.toFixed(2) %>,
+                            <% } %>
+                            <% if (data.platform_data.length > displayCount) { %>
+                                <% for (let i = displayCount; i < data.platform_data.length; i++) { %>
+                                    <% totalOther += (data.platform_data[i].mcap_sum / data.metrics.totalMCap) * 100; %>
+                                <% } %>
+                                <%= totalOther.toFixed(2) %>
+                            <% } %>
+                        ],
+                        backgroundColor: [
+                            '#667eea', '#764ba2', '#f093fb', '#f5576c',
+                            '#4facfe', '#00f2fe', '#43e97b', '#38f9d7',
+                            '#ffecd2', '#fcb69f', '#a8edea', '#fed6e3'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    }
                 }
             });
+        <% } %>
+
+        // Chart toggle functionality
+        document.querySelector('.collapsible').addEventListener('click', function() {
+            this.classList.toggle('active');
+            let content = document.getElementById('chartContent');
+            if (content.style.display === 'block') {
+                content.style.display = 'none';
+            } else {
+                content.style.display = 'block';
+                // Trigger chart resize after showing
+                setTimeout(() => {
+                    if (typeof chart !== 'undefined') {
+                        chart.resize();
+                    }
+                }, 300);
+            }
+        });
+
+        // Table sorting functionality
+        function sortTable(columnIndex) {
+            const table = document.getElementById('platformsTable');
+            const tbody = table.getElementsByTagName('tbody')[0];
+            const rows = Array.from(tbody.getElementsByTagName('tr'));
+            
+            // Remove existing sort classes
+            const headers = table.getElementsByTagName('th');
+            for (let header of headers) {
+                header.classList.remove('sort-asc', 'sort-desc');
+            }
+            
+            // Determine sort direction
+            const currentHeader = headers[columnIndex];
+            const isAscending = !currentHeader.classList.contains('sort-desc');
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                let aValue = a.getElementsByTagName('td')[columnIndex].textContent.trim();
+                let bValue = b.getElementsByTagName('td')[columnIndex].textContent.trim();
+                
+                // Handle numeric values
+                if (columnIndex === 0 || columnIndex === 2 || columnIndex === 3 || columnIndex === 4) {
+                    aValue = parseFloat(aValue.replace(/[^0-9.-]/g, '')) || 0;
+                    bValue = parseFloat(bValue.replace(/[^0-9.-]/g, '')) || 0;
+                    return isAscending ? aValue - bValue : bValue - aValue;
+                }
+                
+                // Handle text values
+                return isAscending ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+            });
+            
+            // Add sort class
+            currentHeader.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+            
+            // Reorder rows in table
+            rows.forEach(row => tbody.appendChild(row));
         }
-        </script>
+
+        // View toggle functionality
+        function showView(viewType) {
+            // Update button states
+            const buttons = document.querySelectorAll('.toggle-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Sort table based on view type
+            switch(viewType) {
+                case 'mcap':
+                    sortTable(2); // Sort by market cap
+                    break;
+                case 'supply':
+                    sortTable(3); // Sort by supply
+                    break;
+                case 'diversity':
+                    sortTable(5); // Sort by stablecoin count
+                    break;
+            }
+        }
+    </script>
+</body>
 </html>
