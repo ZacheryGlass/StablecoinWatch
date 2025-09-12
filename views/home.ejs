@@ -129,7 +129,7 @@
                                 <div id="volEmptyState" style="display:none; color:#666;">No 24h volume data available to chart.</div>
                             </section>
                         </div>
-                        <div id="sharedLegend" style="margin-top:1rem; display:flex; flex-wrap:wrap; gap:0.6rem; justify-content:center;"></div>
+                        <!-- Legend removed: labels are rendered directly on chart slices -->
                     </div>
                 </div>
 
@@ -304,6 +304,39 @@
                 return { order, map };
             }
 
+            // Plugin: draw labels on arc segments
+            const segmentLabelPlugin = {
+                id: 'segmentLabel',
+                afterDatasetsDraw(chart, args, opts) {
+                    const { ctx } = chart;
+                    const threshold = (opts && typeof opts.minPercentage === 'number') ? opts.minPercentage : 5;
+                    const font = (opts && opts.font) || '12px sans-serif';
+                    const color = (opts && opts.color) || '#333';
+                    const formatter = (opts && opts.formatter) || ((lbl, v) => `${lbl} ${v.toFixed(1)}%`);
+                    chart.data.datasets.forEach((dataset, i) => {
+                        const meta = chart.getDatasetMeta(i);
+                        meta.data.forEach((arc, idx) => {
+                            const val = dataset.data[idx];
+                            if (typeof val !== 'number' || !isFinite(val) || val < threshold) return;
+                            const pos = arc.tooltipPosition();
+                            const label = chart.data.labels[idx] || '';
+                            const text = formatter(label, val, idx);
+                            ctx.save();
+                            ctx.font = font;
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+                            ctx.lineWidth = 3;
+                            ctx.strokeText(text, pos.x, pos.y);
+                            ctx.fillStyle = color;
+                            ctx.fillText(text, pos.x, pos.y);
+                            ctx.restore();
+                        });
+                    });
+                }
+            };
+            if (window.Chart && Chart.register) { Chart.register(segmentLabelPlugin); }
+
             function makeDoughnutChart(canvasId, label, slices, colorMap) {
                 const el = document.getElementById(canvasId);
                 if (!el) return null;
@@ -333,7 +366,8 @@
                                         return `${lbl}: ${v.toFixed(2)}%`;
                                     }
                                 }
-                            }
+                            },
+                            segmentLabel: { minPercentage: 5, font: '12px sans-serif', color: '#333' }
                         }
                     }
                 });
