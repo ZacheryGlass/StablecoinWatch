@@ -2,9 +2,22 @@
  * API-specific configuration for different data sources
  * Designed for easy addition of new APIs (CoinGecko, DeFiLlama, etc.)
  */
+const AppConfig = require('./AppConfig');
+
 class ApiConfig {
     constructor() {
         this._apiConfigs = this._loadApiConfigs();
+        // In debug or mockApis mode, force mock data usage for all sources
+        try {
+            const debugMode = !!(AppConfig?.development?.debugMode);
+            const mockApis = !!(AppConfig?.development?.mockApis);
+            if (debugMode || mockApis) {
+                for (const [key, cfg] of Object.entries(this._apiConfigs)) {
+                    if (!cfg.mockData) cfg.mockData = {};
+                    cfg.mockData.enabled = true;
+                }
+            }
+        } catch (_) { /* best-effort */ }
     }
 
     /**
@@ -294,9 +307,11 @@ class ApiConfig {
      * @returns {Array<string>} Array of enabled source IDs
      */
     getEnabledSources() {
-        return Object.keys(this._apiConfigs).filter(sourceId => 
-            this._apiConfigs[sourceId].enabled
-        );
+        return Object.keys(this._apiConfigs).filter(sourceId => {
+            const cfg = this._apiConfigs[sourceId];
+            // Consider a source enabled if explicitly enabled or if mock mode is enabled
+            return !!(cfg.enabled || (cfg.mockData && cfg.mockData.enabled));
+        });
     }
 
     /**
@@ -316,13 +331,18 @@ class ApiConfig {
      */
     isSourceReady(sourceId) {
         const config = this._apiConfigs[sourceId];
-        if (!config || !config.enabled) return false;
-        
+        if (!config) return false;
+
+        // If mock mode is enabled for this source, consider it ready even without API keys
+        if (config.mockData && config.mockData.enabled) return true;
+
+        if (!config.enabled) return false;
+
         // Check if API key is required and present
         if (sourceId === 'cmc' || sourceId === 'messari') {
             return !!config.apiKey;
         }
-        
+
         return true;
     }
 
@@ -382,21 +402,24 @@ class ApiConfig {
         };
 
         for (const [sourceId, config] of Object.entries(this._apiConfigs)) {
-            if (config.enabled) {
+            const usingMock = !!(config.mockData && config.mockData.enabled);
+            if (config.enabled || usingMock) {
                 results.enabledSources++;
                 
                 // Validate required API keys
-                if ((sourceId === 'cmc' || sourceId === 'messari') && !config.apiKey) {
+                if (!usingMock && (sourceId === 'cmc' || sourceId === 'messari') && !config.apiKey) {
                     results.errors.push(`${config.name} is enabled but missing API key`);
                     results.valid = false;
                 }
                 
                 // Validate URLs
-                try {
-                    new URL(config.baseUrl);
-                } catch (error) {
-                    results.errors.push(`${config.name} has invalid base URL: ${config.baseUrl}`);
-                    results.valid = false;
+                if (!usingMock) {
+                    try {
+                        new URL(config.baseUrl);
+                    } catch (error) {
+                        results.errors.push(`${config.name} has invalid base URL: ${config.baseUrl}`);
+                        results.valid = false;
+                    }
                 }
                 
                 // Check rate limits

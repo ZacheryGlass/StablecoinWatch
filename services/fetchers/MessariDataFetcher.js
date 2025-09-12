@@ -77,6 +77,8 @@ class MessariDataFetcher extends IDataFetcher {
      * @memberof MessariDataFetcher
      */
     isConfigured() {
+        // Allow operation when mock data mode is enabled even without API key
+        if (this.config?.mockData?.enabled) return true;
         if (!this.config?.enabled || !this.config?.apiKey) {
             return false;
         }

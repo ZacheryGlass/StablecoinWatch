@@ -58,6 +58,8 @@ class CmcDataFetcher extends IDataFetcher {
      * @memberof CmcDataFetcher
      */
     isConfigured() {
+        // Allow operation when mock data mode is enabled even without API key
+        if (this.config?.mockData?.enabled) return true;
         return !!(this.config?.enabled && this.config?.apiKey);
     }
 

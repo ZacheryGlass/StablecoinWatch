@@ -50,6 +50,8 @@ class CoinGeckoDataFetcher extends IDataFetcher {
      * @memberof CoinGeckoDataFetcher
      */
     isConfigured() {
+        // If mock data mode is enabled, allow without live API access
+        if (this.config?.mockData?.enabled) return true;
         // CoinGecko can operate without API key (lower rate limits)
         return !!this.config?.enabled;
     }
@@ -98,35 +100,50 @@ class CoinGeckoDataFetcher extends IDataFetcher {
         const sourceId = this.sourceId;
 
         try {
-            // Basic free endpoint; API key optional. Respect config for base URL.
-            const baseUrl = this.config?.baseUrl || 'https://api.coingecko.com/api/v3';
-            const url = `${baseUrl}/coins/markets`;
-            const params = {
-                vs_currency: (this.config?.processing?.currency || 'usd'),
-                category: (this.config?.processing?.category || 'stablecoins'),
-                per_page: 250,
-                page: 1,
-                sparkline: this.config?.processing?.includeSparkline ? true : false,
-                price_change_percentage: (this.config?.processing?.priceChangePercentage || '24h')
-            };
-            const headers = { ...(this.config?.request?.headers || {}) };
-            if (this.config?.apiKey) headers['x-cg-pro-api-key'] = this.config.apiKey;
+            let data;
+            if (this.config?.mockData?.enabled) {
+                // Load from mock file if enabled
+                try {
+                    const fs = require('fs');
+                    const path = require('path');
+                    const mockFilePath = this.config?.mockData?.filePath || 'coingecko_raw_output.json';
+                    const fullPath = path.resolve(mockFilePath);
+                    const raw = fs.readFileSync(fullPath, 'utf8');
+                    data = JSON.parse(raw);
+                } catch (e) {
+                    data = [];
+                }
+            } else {
+                // Basic free endpoint; API key optional. Respect config for base URL.
+                const baseUrl = this.config?.baseUrl || 'https://api.coingecko.com/api/v3';
+                const url = `${baseUrl}/coins/markets`;
+                const params = {
+                    vs_currency: (this.config?.processing?.currency || 'usd'),
+                    category: (this.config?.processing?.category || 'stablecoins'),
+                    per_page: 250,
+                    page: 1,
+                    sparkline: this.config?.processing?.includeSparkline ? true : false,
+                    price_change_percentage: (this.config?.processing?.priceChangePercentage || '24h')
+                };
+                const headers = { ...(this.config?.request?.headers || {}) };
+                if (this.config?.apiKey) headers['x-cg-pro-api-key'] = this.config.apiKey;
 
-            const resp = await axios.get(url, { params, headers, timeout: this.config?.request?.timeout || 10000 });
-            const data = Array.isArray(resp?.data) ? resp.data : [];
+                const resp = await axios.get(url, { params, headers, timeout: this.config?.request?.timeout || 10000 });
+                data = Array.isArray(resp?.data) ? resp.data : [];
+            }
 
             // Optional: record health success
             if (this.healthMonitor) {
                 await this.healthMonitor.recordSuccess(sourceId, {
                     operation: 'fetchStablecoins',
                     duration: Date.now() - startTime,
-                    recordCount: data.length,
+                    recordCount: Array.isArray(data) ? data.length : 0,
                     timestamp: Date.now()
                 });
             }
 
             // Filter and transform
-            const filtered = this._filterStablecoins(data);
+            const filtered = this._filterStablecoins(Array.isArray(data) ? data : []);
             return filtered;
         } catch (error) {
             if (this.healthMonitor) {
