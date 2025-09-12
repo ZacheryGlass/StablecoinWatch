@@ -31,6 +31,15 @@ class Stablecoin {
         this.cmc = {};
         /** @type {Object} CoinGecko-specific data */
         this.cgko = {};
+        
+        /** @type {Object} Enhanced cross-chain supply breakdown */
+        this.chainSupplyBreakdown = {};
+        /** @type {number|null} Total supply across all chains */
+        this.totalCrossChainSupply = null;
+        /** @type {string|null} Chain with highest supply percentage */
+        this.dominantChain = null;
+        /** @type {Object} DeFiLlama-specific raw data for platform distribution */
+        this.defillamaData = {};
     }
 }
 

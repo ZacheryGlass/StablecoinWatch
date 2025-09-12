@@ -6,9 +6,11 @@ StablecoinWatch v2 is a Node.js web application that aggregates stablecoin data 
 ## What's New in v2
 
 ### Multi-API Data Aggregation
-- **Multi-Source**: CoinMarketCap (market data), Messari (supply/platform data), CoinGecko (market data), DeFiLlama (TVL/protocol data)
-- **Source-aware Merging**: Intelligently merges data with priority-based selection and fallback mechanisms
-- **Platform Normalization**: Converts raw ecosystem IDs to readable blockchain names
+- **Multi-Source**: CoinMarketCap (market data), Messari (supply/platform data), CoinGecko (market data), DeFiLlama (cross-chain supply data)
+- **Priority-Based Merging**: Intelligently merges data with configurable SOURCE_PRIORITY override system
+- **Cross-Chain Supply Integration**: DeFiLlama takes absolute priority for platform/chain breakdown data
+- **Enhanced Platform Coverage**: Supports 134+ blockchain platforms and networks with normalized naming
+- **Rich Cross-Chain Analytics**: Detailed supply breakdowns, percentages, and dominant chain identification across 90+ networks
 
 
 ### Reliability
@@ -32,9 +34,9 @@ StablecoinWatch v2 is a Node.js web application that aggregates stablecoin data 
 
 ### Data Sources
 - **CoinMarketCap API** - Primary for market data (price, volume, market cap, rankings)
-- **Messari API** - Primary for supply data and cross-chain platform breakdown
-- **CoinGecko API** - Secondary market data source with additional coin metadata
-- **DeFiLlama API** - Protocol TVL data and cross-chain analytics  
+- **Messari API** - Supply data and basic platform information
+- **CoinGecko API** - Secondary market data source with additional coin metadata and logo fallback
+- **DeFiLlama API** - **PRIMARY** for cross-chain supply analytics across 90+ blockchain networks with detailed breakdown, percentages, and historical data  
 
 ## Quick Start
 
@@ -57,7 +59,9 @@ MESSARI_API_KEY=your_messari_key_here
 # COINGECKO_API_KEY=your_coingecko_key_here
 
 # Data Sources Configuration
-ENABLED_SOURCES=cmc,messari,defillama
+ENABLED_SOURCES=cmc,messari,defillama,coingecko
+# Optional: Override source priority for data merging (higher numbers win)
+# SOURCE_PRIORITY={"cmc":10,"messari":9,"coingecko":6,"defillama":4}
 
 # Server
 PORT=3000
@@ -162,25 +166,29 @@ docs/
 
 1. **Multi-Source Data Fetching**:
    - **CoinMarketCap**: Fetches market data filtered by stablecoin tags and price range ($0.50-$2.00)
-   - **Messari**: Fetches supply data and cross-chain platform breakdown via stablecoin metrics endpoint
-   - **CoinGecko**: Provides additional market data and coin metadata
-   - **DeFiLlama**: Supplies protocol TVL and cross-chain analytics
+   - **Messari**: Fetches supply data and basic platform information via stablecoin metrics endpoint
+   - **CoinGecko**: Provides additional market data, coin metadata, and logo fallback
+   - **DeFiLlama**: **PRIMARY** source for cross-chain supply analytics across 90+ blockchain networks
    - **Performance Optimization**: Large datasets (>1000 records) use async batching with 500-1000 record batches
    - **Non-blocking Processing**: `setImmediate` yields between batches to maintain application responsiveness
    - **Pre-compiled Patterns**: Regex patterns and Sets are pre-compiled in constructors for optimal performance
    - **Health Monitoring**: Tracks API performance, error rates, and response times
 
-2. **Intelligent Data Merging** (interval via `UPDATE_INTERVAL_MINUTES`):
+2. **Enhanced Priority-Based Data Merging** (interval via `UPDATE_INTERVAL_MINUTES`):
    - Exact symbol matching between data sources
    - Name similarity matching for unmatched coins
-   - Priority-based data selection (CMC for market data, Messari for supply data)
-   - Platform name normalization (converts ecosystem IDs to readable names)
+   - **Configurable SOURCE_PRIORITY**: Environment-based priority override system for flexible data source selection
+   - **DeFiLlama Cross-Chain Priority**: Absolute priority for platform/chain supply breakdowns
+   - **Metadata Field Priority**: Priority-aware selection for description, website, logo, and dateAdded fields
+   - Platform name normalization supporting 70+ platform name variations
 
-3. **Data Processing Pipeline**:
-   - Shape stablecoin data for UI consumption (`coin.main`, `coin.msri`, `coin.scw`)
-   - Extract and normalize platform information
+3. **Enhanced Data Processing Pipeline**:
+   - Shape stablecoin data for UI consumption (`coin.main`, `coin.msri`, `coin.scw`, `coin.cmc`, `coin.cgko`)
+   - **Cross-Chain Data Enrichment**: Populate `chainSupplyBreakdown`, `totalCrossChainSupply`, `dominantChain`
+   - Extract and normalize platform information across 134 supported platforms
+   - **Enhanced Platform Model**: Supply amounts, percentages, and historical data (prev day/week/month)
    - Compute aggregate totals and platform rollups
-   - Apply data quality checks and validation
+   - Apply data quality checks and validation with confidence scoring
 
 4. **Health & Reliability**:
    - Circuit breaker pattern prevents cascade failures
@@ -226,16 +234,75 @@ docs/
 
 ### Data Source Control
 - `ENABLED_SOURCES` — Comma-separated list of sources to use (e.g., `cmc,messari,coingecko,defillama`).
-- `SOURCE_PRIORITY` — Optional JSON to override per-source priority in merge selection. Higher wins. If a source isn’t present in the JSON, its built-in priority from `ApiConfig` is used. Example:
+- `SOURCE_PRIORITY` — Optional JSON to override per-source priority in merge selection. Higher wins. If a source isn't present in the JSON, its built-in priority from `ApiConfig` is used. Example:
   - `SOURCE_PRIORITY={"cmc":10,"messari":9,"coingecko":6,"defillama":4}`
+
+## Enhanced Data Structures
+
+### Cross-Chain Supply Data
+The application now provides comprehensive cross-chain supply breakdowns:
+
+```javascript
+{
+  chainSupplyBreakdown: {
+    "Ethereum": {
+      supply: 45000000000,
+      percentage: 61.7,
+      historical: {
+        prevDay: 44900000000,
+        prevWeek: 44500000000,
+        prevMonth: 43000000000
+      }
+    },
+    "Tron": {
+      supply: 33500000000,
+      percentage: 46.0,
+      historical: { /* ... */ }
+    }
+    // ... additional chains
+  },
+  totalCrossChainSupply: 72900000000,
+  dominantChain: "Ethereum"
+}
+```
+
+### Enhanced Platform Model
+Platform instances now include rich supply data:
+
+```javascript
+{
+  name: "Ethereum",
+  contract_address: "0x...",
+  total_supply: 45000000000,
+  circulating_supply: 45000000000,
+  supply_percentage: 61.7,
+  historical_data: {
+    prevDay: 44900000000,
+    prevWeek: 44500000000,
+    prevMonth: 43000000000
+  }
+}
+```
+
+### Supported Blockchain Networks
+The application supports 90+ blockchain networks including:
+- **Major Chains**: Ethereum, Tron, BSC, Polygon, Solana, Avalanche
+- **Layer 2s**: Arbitrum, Optimism, Base, Linea, Scroll, Blast, zkSync Era
+- **Emerging Chains**: Sui, Aptos, Manta, TON, Mantle, ThunderCore
+- **Specialized**: Bitcoin (Omni), Stellar, Algorand, NEAR, Flow, Hedera
+- **Additional**: Fantom, Celo, Harmony, Moonbeam, Kava, Osmosis, Terra, Injective, Cosmos Hub, and many more
 
 ## Current Capabilities & Limitations
 
 ### What's Working
 - **Multi-API Integration**: 4-source data aggregation (CMC, Messari, CoinGecko, DeFiLlama)
-- **Platform Normalization**: Readable blockchain names (Ethereum, Tron, etc.)
-- **Health Monitoring**: Real-time API performance tracking
-- **Circuit Breakers**: Automatic failure prevention
+- **Cross-Chain Supply Analytics**: Comprehensive supply breakdown across 90+ blockchain networks
+- **Priority-Based Data Merging**: Configurable SOURCE_PRIORITY system with metadata field priority-awareness
+- **Enhanced Platform Coverage**: 134 supported platforms with normalized naming and rich supply data
+- **DeFiLlama Integration**: Primary source for cross-chain data with detailed breakdowns and historical tracking
+- **Platform Normalization**: 70+ platform name variations mapped to consistent display names
+- **Health Monitoring**: Real-time API performance tracking with confidence scoring
+- **Circuit Breakers**: Automatic failure prevention with degraded mode fallback
 - **Enhanced Error Handling**: Improved fallback mechanisms and retry logic
 
 ### Known Limitations

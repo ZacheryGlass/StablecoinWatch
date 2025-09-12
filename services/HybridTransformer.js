@@ -61,6 +61,7 @@ class HybridTransformer extends IViewModelTransformer {
 
     /**
      * Creates a Stablecoin model instance from hybrid data using formatters.
+     * Enhanced to populate DeFiLlama cross-chain supply data and calculate dominant chains.
      * 
      * @param {Object} hybrid - Hybrid stablecoin data object
      * @returns {Stablecoin|null} Processed Stablecoin instance or null if invalid
@@ -80,8 +81,11 @@ class HybridTransformer extends IViewModelTransformer {
         sc.uri = (hybrid.slug || hybrid.symbol || '').toLowerCase();
         sc.img_url = this.sourceDataPopulator.getCoinImageUrl(hybrid);
 
-        // Platform extraction
+        // Platform extraction (now prioritizes DeFiLlama data)
         sc.platforms = this.platformNormalizer.extractPlatformsFromHybrid(hybrid);
+
+        // Enhanced cross-chain supply breakdown
+        this._populateCrossChainData(sc, hybrid);
 
         // Source-specific containers
         const containers = this.sourceDataPopulator.getAllSourceContainers(hybrid);
@@ -92,6 +96,76 @@ class HybridTransformer extends IViewModelTransformer {
         sc.cgko = containers.cgko;
 
         return sc;
+    }
+
+    /**
+     * Populates cross-chain supply breakdown data from DeFiLlama source.
+     * Calculates total cross-chain supply, dominant chain, and detailed breakdown.
+     * 
+     * @param {Stablecoin} stablecoin - Stablecoin instance to populate
+     * @param {Object} hybrid - Hybrid data object with potential DeFiLlama data
+     * @private
+     * @memberof HybridTransformer
+     */
+    _populateCrossChainData(stablecoin, hybrid) {
+        const defillamaData = hybrid.defillamaData || hybrid.metadata?.defillamaData;
+        
+        if (!defillamaData?.rawChainCirculating) {
+            return; // No DeFiLlama data available
+        }
+
+        // Store raw DeFiLlama data
+        stablecoin.defillamaData = defillamaData;
+
+        // Calculate total cross-chain supply
+        const chainCirculating = defillamaData.rawChainCirculating;
+        let totalSupply = 0;
+        let dominantChainSupply = 0;
+        let dominantChainName = null;
+        const breakdown = {};
+
+        for (const [chainName, chainData] of Object.entries(chainCirculating)) {
+            if (!chainData?.current) continue;
+
+            const chainSupply = chainData.current.peggedUSD || 
+                              chainData.current.peggedEUR || 
+                              Object.values(chainData.current)[0] || 
+                              null;
+
+            if (!chainSupply || chainSupply <= 0) continue;
+
+            const normalizedChainName = this.platformNormalizer.normalizePlatformName(chainName);
+            
+            breakdown[normalizedChainName] = {
+                supply: chainSupply,
+                percentage: 0, // Will be calculated after totalSupply is known
+                historical: {
+                    prevDay: chainData.circulatingPrevDay || null,
+                    prevWeek: chainData.circulatingPrevWeek || null,
+                    prevMonth: chainData.circulatingPrevMonth || null
+                }
+            };
+
+            totalSupply += chainSupply;
+
+            // Track dominant chain
+            if (chainSupply > dominantChainSupply) {
+                dominantChainSupply = chainSupply;
+                dominantChainName = normalizedChainName;
+            }
+        }
+
+        // Calculate percentages
+        if (totalSupply > 0) {
+            for (const chainData of Object.values(breakdown)) {
+                chainData.percentage = (chainData.supply / totalSupply) * 100;
+            }
+        }
+
+        // Populate stablecoin fields
+        stablecoin.chainSupplyBreakdown = breakdown;
+        stablecoin.totalCrossChainSupply = totalSupply;
+        stablecoin.dominantChain = dominantChainName;
     }
 
     /**

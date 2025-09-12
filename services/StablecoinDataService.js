@@ -1,6 +1,7 @@
 const IStablecoinDataService = require('../interfaces/IStablecoinDataService');
 const DataFetcherRegistry = require('./DataFetcherRegistry');
 const AppConfig = require('../config/AppConfig');
+const DataFormatter = require('./formatters/DataFormatter');
 const DEBUG = AppConfig.development.debugMode || AppConfig.development.verbose;
 
 /**
@@ -208,32 +209,42 @@ class StablecoinDataService extends IStablecoinDataService {
             const supplyTotal = pickBy(d => d.supplyData?.total);
             const supplyMax = pickBy(d => d.supplyData?.max);
 
-            // Network breakdown merge (union by network+contract), include top-level platforms as fallback
-            const breakdown = [];
-            const seenNet = new Set();
-            for (const { data } of entries) {
-                const fromSupply = Array.isArray(data?.supplyData?.networkBreakdown) ? data.supplyData.networkBreakdown : [];
-                const fromPlatforms = Array.isArray(data?.platforms)
-                    ? data.platforms.map(p => ({
-                        name: p.name,
-                        network: p.network || p.name,
-                        contractAddress: p.contractAddress || null,
-                        supply: p.supply ?? null,
-                        percentage: p.percentage ?? null,
-                    }))
-                    : [];
-                const arr = [...fromSupply, ...fromPlatforms];
-                for (const n of arr) {
-                    const k = `${(n.network || n.name || '').toString().toLowerCase()}:${(n.contractAddress || '').toString().toLowerCase()}`;
-                    if (!seenNet.has(k)) {
-                        seenNet.add(k);
-                        breakdown.push({
-                            platform: n.name || n.network || 'Unknown',
-                            network: n.network || n.name || null,
-                            supply: n.supply ?? null,
-                            percentage: n.percentage ?? null,
-                            contractAddress: n.contractAddress || null,
-                        });
+            // PRIORITY OVERRIDE: Always use DeFiLlama for platform/chain data when available
+            const defillamaEntry = entries.find(e => e.sourceId === 'defillama');
+            let breakdown = [];
+            let defillamaData = null;
+            
+            if (defillamaEntry?.data?.metadata?.defillamaData?.rawChainCirculating) {
+                // Use DeFiLlama chain data exclusively
+                defillamaData = defillamaEntry.data.metadata.defillamaData;
+                breakdown = this._extractDeFiLlamaChainBreakdown(defillamaData);
+            } else {
+                // Fallback to standard network breakdown merge (union by network+contract)
+                const seenNet = new Set();
+                for (const { data } of entries) {
+                    const fromSupply = Array.isArray(data?.supplyData?.networkBreakdown) ? data.supplyData.networkBreakdown : [];
+                    const fromPlatforms = Array.isArray(data?.platforms)
+                        ? data.platforms.map(p => ({
+                            name: p.name,
+                            network: p.network || p.name,
+                            contractAddress: p.contractAddress || null,
+                            supply: p.supply ?? null,
+                            percentage: p.percentage ?? null,
+                        }))
+                        : [];
+                    const arr = [...fromSupply, ...fromPlatforms];
+                    for (const n of arr) {
+                        const k = `${(n.network || n.name || '').toString().toLowerCase()}:${(n.contractAddress || '').toString().toLowerCase()}`;
+                        if (!seenNet.has(k)) {
+                            seenNet.add(k);
+                            breakdown.push({
+                                platform: n.name || n.network || 'Unknown',
+                                network: n.network || n.name || null,
+                                supply: n.supply ?? null,
+                                percentage: n.percentage ?? null,
+                                contractAddress: n.contractAddress || null,
+                            });
+                        }
                     }
                 }
             }
@@ -307,7 +318,9 @@ class StablecoinDataService extends IStablecoinDataService {
                     description: descriptionPick?.value || null,
                     website: websitePick?.value || null,
                     logoUrl: logoPick?.value || null,
-                    dateAdded: dateAddedPick?.value || null
+                    dateAdded: dateAddedPick?.value || null,
+                    // Include DeFiLlama data for cross-chain analysis
+                    defillamaData: defillamaData
                 },
                 confidence: {
                     overall: confidence.overall,
@@ -351,9 +364,9 @@ class StablecoinDataService extends IStablecoinDataService {
         this._platformData = platformData;
         this._metrics = {
             totalMarketCap: this._aggregated.reduce((s, c) => s + (c.marketData.marketCap || 0), 0),
-            totalMarketCapFormatted: this.dataFormatter.formatNumber(this._aggregated.reduce((s, c) => s + (c.marketData.marketCap || 0), 0)),
+            totalMarketCapFormatted: DataFormatter.formatNumber(this._aggregated.reduce((s, c) => s + (c.marketData.marketCap || 0), 0)),
             totalVolume: this._aggregated.reduce((s, c) => s + (c.marketData.volume24h || 0), 0),
-            totalVolumeFormatted: this.dataFormatter.formatNumber(this._aggregated.reduce((s, c) => s + (c.marketData.volume24h || 0), 0)),
+            totalVolumeFormatted: DataFormatter.formatNumber(this._aggregated.reduce((s, c) => s + (c.marketData.volume24h || 0), 0)),
             stablecoinCount: this._aggregated.length,
             platformCount: platformData.length,
             lastUpdated: Date.now(),
@@ -365,9 +378,9 @@ class StablecoinDataService extends IStablecoinDataService {
             stablecoins: viewStablecoins,
             metrics: {
                 totalMCap: this._metrics.totalMarketCap,
-                totalMCap_s: this.dataFormatter.formatNumber(this._metrics.totalMarketCap),
+                totalMCap_s: DataFormatter.formatNumber(this._metrics.totalMarketCap),
                 totalVolume: this._metrics.totalVolume,
-                totalVolume_s: this.dataFormatter.formatNumber(this._metrics.totalVolume),
+                totalVolume_s: DataFormatter.formatNumber(this._metrics.totalVolume),
                 lastUpdated: new Date(this._metrics.lastUpdated || Date.now()).toISOString()
             },
             platform_data: platformData
@@ -531,6 +544,87 @@ class StablecoinDataService extends IStablecoinDataService {
         const s = [...arr].sort((a, b) => a - b);
         const m = Math.floor(s.length / 2);
         return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+    }
+
+    /**
+     * Extracts network breakdown data from DeFiLlama chainCirculating structure.
+     * Processes DeFiLlama's detailed cross-chain supply data and converts it to
+     * the standard network breakdown format used throughout the application.
+     * 
+     * @param {Object} defillamaData - DeFiLlama data object with rawChainCirculating
+     * @returns {Array} Array of network breakdown objects with platform, supply, percentage data
+     * @private
+     * @memberof StablecoinDataService
+     */
+    _extractDeFiLlamaChainBreakdown(defillamaData) {
+        const breakdown = [];
+        if (!defillamaData?.rawChainCirculating) return breakdown;
+
+        const chainCirculating = defillamaData.rawChainCirculating;
+        const totalSupply = defillamaData.rawCirculating?.peggedUSD || 
+                           defillamaData.rawCirculating?.peggedEUR || 
+                           Object.values(defillamaData.rawCirculating || {})[0] || 
+                           null;
+
+        for (const [chainName, chainData] of Object.entries(chainCirculating)) {
+            if (!chainData?.current) continue;
+
+            const chainSupply = chainData.current.peggedUSD || 
+                              chainData.current.peggedEUR || 
+                              Object.values(chainData.current)[0] || 
+                              null;
+
+            if (!chainSupply || chainSupply <= 0) continue;
+
+            // Normalize chain name using the same logic as PlatformNormalizer
+            const normalizedName = this._normalizeChainName(chainName);
+            const percentage = totalSupply ? (chainSupply / totalSupply) * 100 : null;
+
+            breakdown.push({
+                platform: normalizedName,
+                network: chainName.toLowerCase(),
+                supply: chainSupply,
+                percentage: percentage,
+                contractAddress: null, // DeFiLlama doesn't provide contract addresses
+                // Include historical data for potential future use
+                historical: {
+                    prevDay: chainData.circulatingPrevDay || null,
+                    prevWeek: chainData.circulatingPrevWeek || null,
+                    prevMonth: chainData.circulatingPrevMonth || null
+                }
+            });
+        }
+
+        // Sort by supply descending to show largest chains first
+        return breakdown.sort((a, b) => (b.supply || 0) - (a.supply || 0));
+    }
+
+    /**
+     * Normalizes DeFiLlama chain names to consistent display names.
+     * Uses similar logic to PlatformNormalizer for consistency.
+     * 
+     * @param {string} chainName - Raw chain name from DeFiLlama
+     * @returns {string} Normalized chain name for display
+     * @private
+     * @memberof StablecoinDataService
+     */
+    _normalizeChainName(chainName) {
+        if (!chainName || typeof chainName !== 'string') return 'Unknown';
+        
+        const name = chainName.toLowerCase().trim();
+        const chainMap = {
+            'ethereum': 'Ethereum', 'tron': 'Tron', 'binance': 'BSC', 'bsc': 'BSC',
+            'polygon': 'Polygon', 'solana': 'Solana', 'avalanche': 'Avalanche',
+            'arbitrum': 'Arbitrum', 'optimism': 'Optimism', 'base': 'Base',
+            'bitcoin': 'Bitcoin', 'stellar': 'Stellar', 'algorand': 'Algorand',
+            'cardano': 'Cardano', 'near': 'NEAR', 'flow': 'Flow', 'hedera': 'Hedera',
+            'sui': 'Sui', 'aptos': 'Aptos', 'manta': 'Manta', 'thundercore': 'ThunderCore',
+            'ton': 'TON', 'cronos': 'Cronos', 'mantle': 'Mantle', 'linea': 'Linea',
+            'scroll': 'Scroll', 'blast': 'Blast', 'zksync': 'zkSync Era',
+            'fantom': 'Fantom', 'celo': 'Celo', 'harmony': 'Harmony'
+        };
+
+        return chainMap[name] || (chainName.charAt(0).toUpperCase() + chainName.slice(1).toLowerCase());
     }
 
 }
