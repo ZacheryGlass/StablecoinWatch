@@ -6,105 +6,109 @@
     <title>System Status - Stablecoin Watch</title>
     <link rel="stylesheet" href="/style.css" />
     <style>
-        main { max-width: 960px; margin: 20px auto; padding: 0 10px; }
-        .status-header { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .card { background: #0b2a3c; border-radius: 10px; padding: 16px; color: #fff; }
-        .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-weight: bold; }
-        .healthy { background: #1b5e20; }
-        .degraded { background: #f9a825; color: #222; }
-        .critical { background: #c62828; }
-        .down { background: #6d4c41; }
-        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #1e4158; color: #fff; }
-        th { background: #0b2a3c; position: sticky; top: 0; }
+        main { max-width: 1100px; margin: 20px auto; padding: 0 10px; }
+        .page-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:#fff; padding: 1.5rem; border-radius:10px; margin-bottom: 1rem; }
+        .page-header h1 { margin: 0 0 0.5rem 0; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; }
+        .summary-card { background: rgba(255,255,255,0.12); padding: 0.9rem; border-radius: 8px; text-align:center; }
+        .summary-value { font-weight: 700; font-size: 1.1rem; display: block; }
+        .summary-label { font-size: 0.9rem; opacity: 0.9; }
+
+        .content-section { background: #fff; padding: 1.25rem 1.25rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin: 1rem 0; }
+        .section-title { color:#333; border-bottom: 2px solid #667eea; padding-bottom: 0.5rem; margin-bottom: 1rem; }
+
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-weight: bold; color: #fff; }
+        .healthy { background: #16a34a; }
+        .degraded { background: #fbbf24; color: #222; }
+        .critical, .down { background: #dc2626; }
+
+        .source-table { width: 100%; border-collapse: collapse; }
+        .source-table th, .source-table td { padding: 0.75rem; border-bottom: 1px solid #eaeaea; text-align: left; }
+        .source-table th { background: #f8f9fa; font-weight: 700; color: #333; }
         .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-        .note { color: #9fb6c3; font-size: 0.9em; }
-        @media (max-width: 700px) {
-            .status-header { grid-template-columns: 1fr; }
-            table { font-size: 14px; }
-        }
+        .note { color: #6b7280; font-size: 0.9em; }
+
+        @media (max-width: 700px) { .source-table { font-size: 14px; } }
     </style>
-</head>
+    </head>
 <body>
 <div id="wrapper">
     <%- include('partials/header') %>
 
     <main>
-        <% function badgeClass(s) { 
-            const map = { healthy: 'healthy', degraded: 'degraded', critical: 'critical', down: 'down' };
-            return map[s] || 'degraded';
-        } %>
-        <section class="status-header">
-            <div class="card">
-                <h2>System Status</h2>
-                <% if (health && !health.error) { %>
-                    <div>
-                        <span class="badge <%= badgeClass(health.status) %>"><%= health.status.toUpperCase() %></span>
-                    </div>
-                    <p class="note">Overall score: <strong><%= health.overallScore %></strong> • Healthy sources: <strong><%= health.metrics.healthySourceCount %></strong>/<%= health.metrics.sourceCount %> • Uptime: <%= health.uptime %></p>
-                <% } else { %>
-                    <p class="note">Health data unavailable: <%= (health && health.error) ? health.error : 'no data' %></p>
-                <% } %>
-            </div>
-            <div class="card">
-                <h2>System Metrics</h2>
-                <% if (health && !health.error) { %>
-                <ul>
-                    <li>Total requests: <strong class="mono"><%= health.metrics.totalRequests %></strong></li>
-                    <li>Success rate: <strong><%= (health.metrics.successRate * 100).toFixed(1) %>%</strong></li>
-                    <li>Avg response: <strong><%= Math.round(health.metrics.averageResponseTime) %> ms</strong></li>
-                    <li>Data freshness: <strong><%= (health.metrics.dataFreshness * 100).toFixed(0) %>%</strong></li>
-                </ul>
-                <% } else { %>
-                    <p class="note">No metrics available</p>
-                <% } %>
-            </div>
-        </section>
+        <% function badgeClass(s) { const map = { healthy: 'healthy', degraded: 'degraded', critical: 'critical', down: 'down' }; return map[s] || 'degraded'; } %>
 
-        <section class="card" style="margin-top:16px;">
-            <h2>Data Sources</h2>
+        <div class="page-header">
+            <h1>System Status</h1>
+            <% if (health && !health.error) { %>
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <span class="summary-value"><span class="badge <%= badgeClass(health.status) %>"><%= health.status.toUpperCase() %></span></span>
+                        <span class="summary-label">Overall Status</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-value"><%= health.overallScore %></span>
+                        <span class="summary-label">Overall Score</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-value"><%= health.metrics.healthySourceCount %>/<%= health.metrics.sourceCount %></span>
+                        <span class="summary-label">Healthy Sources</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-value"><%= health.uptime %></span>
+                        <span class="summary-label">Uptime</span>
+                    </div>
+                </div>
+                <p class="note" style="margin-top:0.75rem;">Last updated: <%= new Date(data && data.metrics && data.metrics.lastUpdated || Date.now()).toLocaleString() %></p>
+            <% } else { %>
+                <p class="note">Health data unavailable: <%= (health && health.error) ? health.error : 'no data' %></p>
+            <% } %>
+        </div>
+
+        <section class="content-section">
+            <h2 class="section-title">Data Sources</h2>
             <% if (health && health.sources && health.sources.length) { %>
-            <div style="overflow-x:auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Source</th>
-                        <th>Status</th>
-                        <th>Health</th>
-                        <th>Success Rate</th>
-                        <th>Error Rate</th>
-                        <th>Avg Response</th>
-                        <th>Consec Fail</th>
-                        <th>Last Error</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <% health.sources.forEach(s => { %>
-                    <tr>
-                        <td><strong><%= s.sourceName %></strong> <span class="note mono">(<%= s.sourceId %>)</span></td>
-                        <td><span class="badge <%= badgeClass(s.status) %>"><%= s.status.toUpperCase() %></span></td>
-                        <td><%= s.healthScore %></td>
-                        <td><%= s.errorMetrics && s.errorMetrics.errorRate !== undefined ? (100 - (s.errorMetrics.errorRate * 100)).toFixed(1) : '—' %>%</td>
-                        <td><%= s.errorMetrics && s.errorMetrics.errorRate !== undefined ? (s.errorMetrics.errorRate * 100).toFixed(1) : '—' %>%</td>
-                        <td><%= s.responseTime && s.responseTime.average ? Math.round(s.responseTime.average) : 0 %> ms</td>
-                        <td><%= s.consecutiveFailures || 0 %></td>
-                        <td class="note"><%= s.lastError || '' %></td>
-                    </tr>
-                <% }) %>
-                </tbody>
-            </table>
-            </div>
+                <div style="overflow-x:auto;">
+                    <table class="source-table">
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>Status</th>
+                                <th>Health</th>
+                                <th>Success Rate</th>
+                                <th>Error Rate</th>
+                                <th>Avg Response</th>
+                                <th>Consec Fail</th>
+                                <th>Last Error</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <% health.sources.forEach(s => { %>
+                            <tr>
+                                <td><strong><%= s.sourceName %></strong> <span class="note mono">(<%= s.sourceId %>)</span></td>
+                                <td><span class="badge <%= badgeClass(s.status) %>"><%= s.status.toUpperCase() %></span></td>
+                                <td><%= s.healthScore %></td>
+                                <td><%= s.errorMetrics && s.errorMetrics.errorRate !== undefined ? (100 - (s.errorMetrics.errorRate * 100)).toFixed(1) : '—' %>%</td>
+                                <td><%= s.errorMetrics && s.errorMetrics.errorRate !== undefined ? (s.errorMetrics.errorRate * 100).toFixed(1) : '—' %>%</td>
+                                <td><%= s.responseTime && s.responseTime.average ? Math.round(s.responseTime.average) : 0 %> ms</td>
+                                <td><%= s.consecutiveFailures || 0 %></td>
+                                <td class="note"><%= s.lastError || '' %></td>
+                            </tr>
+                        <% }) %>
+                        </tbody>
+                    </table>
+                </div>
             <% } else { %>
                 <p class="note">No source health data available.</p>
             <% } %>
         </section>
 
         <% if (health && health.activeAlerts && health.activeAlerts.length) { %>
-        <section class="card" style="margin-top:16px;">
-            <h2>Active Alerts</h2>
+        <section class="content-section">
+            <h2 class="section-title">Active Alerts</h2>
             <ul>
                 <% health.activeAlerts.forEach(a => { %>
-                    <li>
+                    <li style="margin-bottom: 0.4rem;">
                         <span class="badge <%= (a.level==='critical')?'critical':(a.level==='error')?'critical':(a.level==='warning')?'degraded':'healthy' %>"><%= a.level.toUpperCase() %></span>
                         <strong><%= a.title %></strong> — <%= a.description %>
                         <span class="note">(<%= new Date(a.timestamp).toLocaleString() %>)</span>
