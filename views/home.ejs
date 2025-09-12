@@ -25,7 +25,8 @@
 
         .coins-table { width: 100%; border-collapse: collapse; }
         .coins-table th, .coins-table td { padding: 0.75rem; border-bottom: 1px solid #eaeaea; text-align: left; }
-        .coins-table th { background: #f8f9fa; color: #333; font-weight: 700; }
+        .coins-table th { background: #f8f9fa; color: #333; font-weight: 700; cursor: pointer; position: relative; }
+        .coins-table th:hover { background: #e9ecef; }
         .rank { width: 50px; text-align: center; }
         .name-cell { display: flex; align-items: center; gap: 0.5rem; }
         .name-cell img { width: 22px; height: 22px; border-radius: 4px; }
@@ -44,6 +45,10 @@
         @media (max-width: 860px) {
             .hide-sm { display: none; }
         }
+
+        /* Sorting indicators */
+        .sort-asc::after { content: ' ▲'; color: #667eea; }
+        .sort-desc::after { content: ' ▼'; color: #667eea; }
     </style>
 </head>
 <body>
@@ -74,18 +79,18 @@
             <% if (data.stablecoins && data.stablecoins.length) { %>
                 <div class="content-section">
                     <h2 class="section-title">Stablecoins</h2>
-                    <table class="coins-table">
+                    <table class="coins-table" id="coinsTable">
                         <thead>
                             <tr>
-                                <th class="rank">#</th>
-                                <th>Name</th>
-                                <th class="hide-sm">Symbol</th>
-                                <th>Price</th>
-                                <th>Pegged Asset</th>
-                                <th>Market Cap</th>
-                                <th class="hide-sm">Dominance</th>
-                                <th class="hide-sm">Volume (24h)</th>
-                                <th class="hide-sm">Blockchains</th>
+                                <th class="rank" onclick="sortCoinsTable(0)">#</th>
+                                <th onclick="sortCoinsTable(1)">Name</th>
+                                <th class="hide-sm" onclick="sortCoinsTable(2)">Symbol</th>
+                                <th onclick="sortCoinsTable(3)">Price</th>
+                                <th onclick="sortCoinsTable(4)">Pegged Asset</th>
+                                <th onclick="sortCoinsTable(5)">Market Cap</th>
+                                <th class="hide-sm" onclick="sortCoinsTable(6)">Dominance</th>
+                                <th class="hide-sm" onclick="sortCoinsTable(7)">Volume (24h)</th>
+                                <th class="hide-sm" onclick="sortCoinsTable(8)">Blockchains</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -102,12 +107,12 @@
                                         </div>
                                     </td>
                                     <td class="hide-sm symbol"><%= coin.symbol %></td>
-                                    <td><%= h.getFormattedPrice(coin, 'main', formatter) %></td>
+                                    <td data-sort="<%= h.safeGet(coin, 'main.price', 0) %>"><%= h.getFormattedPrice(coin, 'main', formatter) %></td>
                                     <td><%= coin.pegged_asset ? coin.pegged_asset : '-' %></td>
-                                    <td><%= h.getMarketCap(coin, 'main') %></td>
-                                    <td class="hide-sm"><span class="metric-highlight"><%= h.getDominanceDisplay(coin, data.metrics, formatter) %></span></td>
-                                    <td class="hide-sm"><%= h.getVolume(coin, 'main') %></td>
-                                    <td class="hide-sm platforms"><%= h.getPlatformDisplay(coin.platforms) %></td>
+                                    <td data-sort="<%= h.safeGet(coin, 'main.circulating_mcap', 0) %>"><%= h.getMarketCap(coin, 'main') %></td>
+                                    <td class="hide-sm" data-sort="<%= (h.calculateDominance(h.safeGet(coin, 'main.circulating_mcap', 0), h.safeGet(data.metrics, 'totalMCap', 0)) || 0) %>"><span class="metric-highlight"><%= h.getDominanceDisplay(coin, data.metrics, formatter) %></span></td>
+                                    <td class="hide-sm" data-sort="<%= h.safeGet(coin, 'main.volume', 0) %>"><%= h.getVolume(coin, 'main') %></td>
+                                    <td class="hide-sm platforms" data-sort="<%= Array.isArray(coin.platforms) ? coin.platforms.length : 0 %>"><%= h.getPlatformDisplay(coin.platforms) %></td>
                                 </tr>
                             <% }); %>
                         </tbody>
@@ -124,5 +129,58 @@
         <%- include('partials/footer') %>
         <!-- Footer -->
     </div>
+    <script>
+        // Table sorting for homepage stablecoins
+        function sortCoinsTable(columnIndex) {
+            const table = document.getElementById('coinsTable');
+            if (!table) return;
+            const tbody = table.getElementsByTagName('tbody')[0];
+        const rows = Array.from(tbody.getElementsByTagName('tr'));
+
+        const headers = table.getElementsByTagName('th');
+        const currentHeader = headers[columnIndex];
+
+        // Determine sort direction (toggle)
+        let isAscending;
+        if (currentHeader.classList.contains('sort-asc')) {
+            isAscending = false;
+        } else if (currentHeader.classList.contains('sort-desc')) {
+            isAscending = true;
+        } else {
+            const numericCols = new Set([0,3,4,5,6,7]);
+            isAscending = !numericCols.has(columnIndex);
+        }
+
+        // Sort rows
+        rows.sort((a, b) => {
+            const aCell = a.getElementsByTagName('td')[columnIndex];
+            const bCell = b.getElementsByTagName('td')[columnIndex];
+
+            let aValue = aCell ? aCell.textContent.trim() : '';
+            let bValue = bCell ? bCell.textContent.trim() : '';
+
+            // Numeric columns use data-sort where available
+            if ([0,3,4,5,6,7].includes(columnIndex)) {
+                const aSort = aCell?.getAttribute('data-sort');
+                const bSort = bCell?.getAttribute('data-sort');
+                const aNum = aSort != null ? parseFloat(aSort) : (parseFloat(aValue.replace(/[^0-9.-]/g, '')) || 0);
+                const bNum = bSort != null ? parseFloat(bSort) : (parseFloat(bValue.replace(/[^0-9.-]/g, '')) || 0);
+                return isAscending ? aNum - bNum : bNum - aNum;
+            }
+
+            // Text columns
+            return isAscending ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+        });
+
+        // Reset header classes and set current
+        for (let header of headers) {
+            header.classList.remove('sort-asc', 'sort-desc');
+        }
+        currentHeader.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+
+        // Apply new order
+        rows.forEach(row => tbody.appendChild(row));
+    }
+    </script>
 </body>
 </html>
