@@ -5,6 +5,7 @@
     <title>Stablecoin Watch</title>
     <link rel="stylesheet" type="text/css" href="/common.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script type="application/javascript" src="/chart.min.js"></script>
     <style>
         .home-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -42,8 +43,38 @@
             font-weight: bold;
         }
 
+        /* Charts (match platforms page styles) */
+        .chart-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin: 2rem 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+        .collapsible {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+            padding: 0.8rem 1.5rem;
+            width: auto;
+            margin: 0.5rem auto 0.5rem auto;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .collapsible:hover, .collapsible.active { background: #764ba2; transform: translateY(-2px); }
+        .chart-content { display: none; padding: 1rem 0; max-width: 1100px; margin: 0 auto; }
+        .chart-wrapper { position: relative; height: 320px; max-width: 800px; margin: 0 auto; }
+        .legend-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; color: #333; }
+        .legend-swatch { width: 12px; height: 12px; border-radius: 50%; display: inline-block; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.1); }
+
         @media (max-width: 860px) {
             .hide-sm { display: none; }
+            .chart-wrapper { height: 280px; }
         }
 
         /* Sorting indicators */
@@ -77,6 +108,31 @@
             </div>
 
             <% if (data.stablecoins && data.stablecoins.length) { %>
+                <!-- Charts: Market Cap and Volume -->
+                <div class="chart-container" aria-live="polite">
+                    <h2 class="section-title">Market Overview</h2>
+                    <button id="chartsToggle" type="button" class="collapsible" aria-expanded="false" aria-controls="chartsContent">📊 View Market Charts</button>
+                    <div class="chart-content" id="chartsContent" role="region" aria-label="Market Charts">
+                        <div class="chart-grid">
+                            <section>
+                                <div class="chart-wrapper">
+                                    <canvas id="mcapChart" aria-label="Market cap share by stablecoin" role="img"></canvas>
+                                </div>
+                                <p style="margin-top: 0.75rem; color: #666; font-size: 0.9rem;">Distribution of market cap across top stablecoins</p>
+                                <div id="mcapEmptyState" style="display:none; color:#666;">No market cap data available to chart.</div>
+                            </section>
+                            <section>
+                                <div class="chart-wrapper">
+                                    <canvas id="volChart" aria-label="24h volume share by stablecoin" role="img"></canvas>
+                                </div>
+                                <p style="margin-top: 0.75rem; color: #666; font-size: 0.9rem;">Distribution of 24h volume across top stablecoins</p>
+                                <div id="volEmptyState" style="display:none; color:#666;">No 24h volume data available to chart.</div>
+                            </section>
+                        </div>
+                        <div id="sharedLegend" style="margin-top:1rem; display:flex; flex-wrap:wrap; gap:0.6rem; justify-content:center;"></div>
+                    </div>
+                </div>
+
                 <div class="content-section">
                     <h2 class="section-title">Stablecoins</h2>
                     <table class="coins-table" id="coinsTable">
@@ -111,7 +167,7 @@
                                     <td><%= coin.pegged_asset ? coin.pegged_asset : '-' %></td>
                                     <td data-sort="<%= h.safeGet(coin, 'main.circulating_mcap', 0) %>"><%= h.getMarketCap(coin, 'main') %></td>
                                     <td class="hide-sm" data-sort="<%= (h.calculateDominance(h.safeGet(coin, 'main.circulating_mcap', 0), h.safeGet(data.metrics, 'totalMCap', 0)) || 0) %>"><span class="metric-highlight"><%= h.getDominanceDisplay(coin, data.metrics, formatter) %></span></td>
-                                    <td class="hide-sm" data-sort="<%= h.safeGet(coin, 'main.volume', 0) %>"><%= h.getVolume(coin, 'main') %></td>
+                                    <td class="hide-sm" data-sort="<%= h.safeGet(coin, 'main.volume_24h', 0) %>"><%= h.getVolume(coin, 'main') %></td>
                                     <td class="hide-sm platforms" data-sort="<%= Array.isArray(coin.platforms) ? coin.platforms.length : 0 %>"><%= h.getPlatformDisplay(coin.platforms) %></td>
                                 </tr>
                             <% }); %>
@@ -135,69 +191,209 @@
             const table = document.getElementById('coinsTable');
             if (!table) return;
             const tbody = table.getElementsByTagName('tbody')[0];
-        const rows = Array.from(tbody.getElementsByTagName('tr'));
+            const rows = Array.from(tbody.getElementsByTagName('tr'));
 
-        const headers = table.getElementsByTagName('th');
-        const currentHeader = headers[columnIndex];
+            const headers = table.getElementsByTagName('th');
+            const currentHeader = headers[columnIndex];
 
-        // Determine sort direction (toggle)
-        let isAscending;
-        if (currentHeader.classList.contains('sort-asc')) {
-            isAscending = false;
-        } else if (currentHeader.classList.contains('sort-desc')) {
-            isAscending = true;
-        } else {
-            const numericCols = new Set([0,3,5,6,7,8]);
-            isAscending = !numericCols.has(columnIndex);
-        }
-
-        // Sort rows
-        rows.sort((a, b) => {
-            const aCell = a.getElementsByTagName('td')[columnIndex];
-            const bCell = b.getElementsByTagName('td')[columnIndex];
-
-            let aValue = aCell ? aCell.textContent.trim() : '';
-            let bValue = bCell ? bCell.textContent.trim() : '';
-
-            // Numeric columns use data-sort where available
-            if ([0,3,5,6,7,8].includes(columnIndex)) {
-                const aSort = aCell?.getAttribute('data-sort');
-                const bSort = bCell?.getAttribute('data-sort');
-                const aNum = aSort != null ? parseFloat(aSort) : (parseFloat(aValue.replace(/[^0-9.-]/g, '')) || 0);
-                const bNum = bSort != null ? parseFloat(bSort) : (parseFloat(bValue.replace(/[^0-9.-]/g, '')) || 0);
-                return isAscending ? aNum - bNum : bNum - aNum;
+            // Determine sort direction (toggle)
+            let isAscending;
+            if (currentHeader.classList.contains('sort-asc')) {
+                isAscending = false;
+            } else if (currentHeader.classList.contains('sort-desc')) {
+                isAscending = true;
+            } else {
+                const numericCols = new Set([0,3,5,6,7,8]);
+                isAscending = !numericCols.has(columnIndex);
             }
 
-            // Text columns
-            return isAscending ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-        });
+            // Sort rows
+            rows.sort((a, b) => {
+                const aCell = a.getElementsByTagName('td')[columnIndex];
+                const bCell = b.getElementsByTagName('td')[columnIndex];
 
-        // Reset header classes and set current
-        for (let header of headers) {
-            header.classList.remove('sort-asc', 'sort-desc');
-        }
-        currentHeader.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+                let aValue = aCell ? aCell.textContent.trim() : '';
+                let bValue = bCell ? bCell.textContent.trim() : '';
 
-        // Apply new order
-        rows.forEach(row => tbody.appendChild(row));
-    }
-
-    // Apply sorting based on URL query parameters
-    (function() {
-        try {
-            const params = new URLSearchParams(window.location.search);
-            const sortKey = (params.get('sort') || '').toLowerCase();
-            const dir = (params.get('dir') || '').toLowerCase();
-            const map = { mcap: 5, marketcap: 5, volume: 7, vol: 7, price: 3, blockchains: 8, chains: 8 };
-            if (sortKey in map) {
-                const col = map[sortKey];
-                sortCoinsTable(col);
-                if (dir === 'asc' || dir === 'ascending') {
-                    sortCoinsTable(col);
+                // Numeric columns use data-sort where available
+                if ([0,3,5,6,7,8].includes(columnIndex)) {
+                    const aSort = aCell?.getAttribute('data-sort');
+                    const bSort = bCell?.getAttribute('data-sort');
+                    const aNum = aSort != null ? parseFloat(aSort) : (parseFloat(aValue.replace(/[^0-9.-]/g, '')) || 0);
+                    const bNum = bSort != null ? parseFloat(bSort) : (parseFloat(bValue.replace(/[^0-9.-]/g, '')) || 0);
+                    return isAscending ? aNum - bNum : bNum - aNum;
                 }
+
+                // Text columns
+                return isAscending ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+            });
+
+            // Reset header classes and set current
+            for (let header of headers) {
+                header.classList.remove('sort-asc', 'sort-desc');
             }
-        } catch (_) {}
-    })();
+            currentHeader.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+
+            // Apply new order
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        // Apply sorting based on URL query parameters
+        (function() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const sortKey = (params.get('sort') || '').toLowerCase();
+                const dir = (params.get('dir') || '').toLowerCase();
+                const map = { mcap: 5, marketcap: 5, volume: 7, vol: 7, price: 3, blockchains: 8, chains: 8 };
+                if (sortKey in map) {
+                    const col = map[sortKey];
+                    sortCoinsTable(col);
+                    if (dir === 'asc' || dir === 'ascending') {
+                        sortCoinsTable(col);
+                    }
+                }
+            } catch (_) {}
+        })();
+    </script>
+
+    <!-- Chart scripts -->
+    <script type="text/javascript">
+        (function(){
+            <% if (data.stablecoins && data.stablecoins.length) { %>
+            // Ensure no per-chart legends are rendered by default (Chart.js v3+)
+            if (window.Chart && Chart.defaults && Chart.defaults.plugins && Chart.defaults.plugins.legend) {
+                Chart.defaults.plugins.legend.display = false;
+            }
+            // Extract numeric arrays for market cap and volume
+            const coinsRaw = [
+                <% data.stablecoins.forEach((coin) => { %>
+                    {
+                        name: "<%= (coin.name || '').replace(/"/g, '\\"') %>",
+                        symbol: "<%= (coin.symbol || '').replace(/"/g, '\\"') %>",
+                        mcap: <%= typeof coin.main?.circulating_mcap === 'number' ? coin.main.circulating_mcap : 'null' %>,
+                        vol: <%= typeof coin.main?.volume_24h === 'number' ? coin.main.volume_24h : 'null' %>
+                    },
+                <% }); %>
+            ];
+
+            function buildTopSlices(items, valueKey, topN) {
+                const valid = items.filter(x => typeof x[valueKey] === 'number' && isFinite(x[valueKey]) && x[valueKey] > 0);
+                const total = valid.reduce((s, x) => s + x[valueKey], 0);
+                if (!total || total <= 0) return { labels: [], data: [], total: 0 };
+                valid.sort((a,b) => b[valueKey] - a[valueKey]);
+                const top = valid.slice(0, Math.min(valid.length, topN));
+                const othersSum = valid.slice(top.length).reduce((s, x) => s + x[valueKey], 0);
+                const labels = top.map(x => x.symbol || x.name);
+                const data = top.map(x => (x[valueKey] / total) * 100);
+                if (othersSum > 0) {
+                    labels.push('Others');
+                    data.push((othersSum / total) * 100);
+                }
+                return { labels, data, total };
+            }
+
+            // Shared color palette and mapping to ensure consistent colors across charts
+            const palette = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7', '#ffecd2', '#fcb69f', '#a8edea', '#fed6e3'];
+
+            function assignColors(mcapLabels, volLabels) {
+                const order = [];
+                (mcapLabels || []).forEach(l => { if (order.indexOf(l) === -1) order.push(l); });
+                (volLabels || []).forEach(l => { if (order.indexOf(l) === -1) order.push(l); });
+                const map = new Map();
+                order.forEach((label, idx) => map.set(label, palette[idx % palette.length]));
+                return { order, map };
+            }
+
+            function makeDoughnutChart(canvasId, label, slices, colorMap) {
+                const el = document.getElementById(canvasId);
+                if (!el) return null;
+                if (!slices || !slices.data || slices.data.length === 0) return null;
+                return new Chart(el.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: slices.labels,
+                        datasets: [{
+                            label: label,
+                            data: slices.data.map(v => Number(v.toFixed(2))),
+                            backgroundColor: slices.labels.map(l => colorMap.get(l) || palette[0]),
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const lbl = context.label || '';
+                                        const v = context.parsed;
+                                        return `${lbl}: ${v.toFixed(2)}%`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Prepare slices (top 8 + Others)
+            const mcapSlices = buildTopSlices(coinsRaw, 'mcap', 8);
+            const volSlices = buildTopSlices(coinsRaw, 'vol', 8);
+            // Consistent colors across both charts and single legend
+            const { order: legendOrder, map: colorMap } = assignColors(mcapSlices.labels, volSlices.labels);
+
+            // Toggle behavior for collapsibles
+            function setupCollapsible(btn, contentId, buildAll) {
+                const content = document.getElementById(contentId);
+                let initialized = false;
+                btn.addEventListener('click', function(){
+                    const expanded = this.getAttribute('aria-expanded') === 'true';
+                    this.setAttribute('aria-expanded', (!expanded).toString());
+                    if (content.style.display === 'block') {
+                        content.style.display = 'none';
+                        this.classList.remove('active');
+                    } else {
+                        content.style.display = 'block';
+                        this.classList.add('active');
+                        // Lazy init charts when first opened
+                        if (!initialized) {
+                            const mcapChart = makeDoughnutChart('mcapChart', 'Market Cap Share (%)', mcapSlices, colorMap);
+                            const volChart = makeDoughnutChart('volChart', 'Volume Share (%)', volSlices, colorMap);
+                            if (!mcapChart) { const e = document.getElementById('mcapEmptyState'); if (e) e.style.display = 'block'; }
+                            if (!volChart) { const e = document.getElementById('volEmptyState'); if (e) e.style.display = 'block'; }
+                            // Build shared legend
+                            const legend = document.getElementById('sharedLegend');
+                            if (legend) {
+                                if (legendOrder.length) {
+                                    legend.innerHTML = legendOrder.map(label => {
+                                        const color = colorMap.get(label) || '#667eea';
+                                        return `<span class="legend-item"><span class="legend-swatch" style="background:${color}"></span>${label}</span>`;
+                                    }).join('');
+                                } else {
+                                    legend.innerHTML = '<span style="color:#666;">No data available.</span>';
+                                }
+                            }
+                            initialized = true;
+                        }
+                    }
+                });
+            }
+
+            function initChartsToggle() {
+                const chartsBtn = document.getElementById('chartsToggle') || document.querySelector('button[aria-controls="chartsContent"]');
+                if (chartsBtn) setupCollapsible(chartsBtn, 'chartsContent');
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initChartsToggle);
+            } else {
+                initChartsToggle();
+            }
+
+            <% } %>
+        })();
     </script>
 </body>
 </html>
