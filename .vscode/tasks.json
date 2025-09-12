@@ -1,0 +1,146 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Update All Mock Data",
+            "type": "shell",
+            "command": "node",
+            "args": ["scripts/update-mock-data.js", "--verbose"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": true
+            },
+            "problemMatcher": [],
+            "detail": "Updates all API mock data files (CMC, Messari, DeFiLlama) with fresh data from live APIs"
+        },
+        {
+            "label": "Update CMC Mock Data",
+            "type": "shell",
+            "command": "node",
+            "args": ["scripts/update-mock-data.js", "--api=cmc", "--verbose"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": true
+            },
+            "problemMatcher": [],
+            "detail": "Updates only CoinMarketCap mock data file with fresh data"
+        },
+        {
+            "label": "Update Messari Mock Data",
+            "type": "shell",
+            "command": "node",
+            "args": ["scripts/update-mock-data.js", "--api=messari", "--verbose"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": true
+            },
+            "problemMatcher": [],
+            "detail": "Updates only Messari mock data file with fresh data"
+        },
+        {
+            "label": "Update DeFiLlama Mock Data",
+            "type": "shell",
+            "command": "node",
+            "args": ["scripts/update-mock-data.js", "--api=defillama", "--verbose"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": true
+            },
+            "problemMatcher": [],
+            "detail": "Updates only DeFiLlama mock data file with fresh data"
+        },
+        {
+            "label": "Start StablecoinWatch",
+            "type": "shell",
+            "command": "node",
+            "args": ["app/app.js"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": true
+            },
+            "problemMatcher": [],
+            "detail": "Starts the StablecoinWatch application"
+        },
+        {
+            "label": "Git: Create Worktree from HEAD",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-Command",
+                "$ErrorActionPreference='Stop'; $branch='${input:worktreeBranch}'; if([string]::IsNullOrWhiteSpace($branch)){ throw 'Branch name is required.' }; $sanitized = ($branch -replace '[\\/:*?\"<>| ]','-'); $parent = Split-Path -Path '${workspaceFolder}' -Parent; $target = Join-Path $parent ('${workspaceFolderBasename}-' + $sanitized); git show-ref --verify --quiet \"refs/heads/$branch\"; $exists = ($LASTEXITCODE -eq 0); if ($exists) { git worktree add \"$target\" \"$branch\" } else { git worktree add \"$target\" -b \"$branch\" HEAD }; Write-Host \"Worktree created at $target\";"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": true
+            },
+            "problemMatcher": [],
+            "detail": "Prompts for a branch name and creates a new git worktree in a sibling folder named <repo>-<branch> from current HEAD"
+        },
+        {
+            "label": "Git: Create Sibling Worktree (HEAD)",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-Command",
+                "& { $ErrorActionPreference=\"Stop\"; $base=\"${workspaceFolderBasename}\"; $parent = Split-Path -Path \"${workspaceFolder}\" -Parent; $i = 2; while (Test-Path -LiteralPath (Join-Path $parent ($base + $i))) { $i++ }; $target = Join-Path $parent ($base + $i); $commit = (git rev-parse --verify HEAD).Trim(); git worktree add \"$target\" --detach \"$commit\"; Write-Host \"Worktree created at $target (commit $commit)\"; }"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": true
+            },
+            "problemMatcher": [],
+            "detail": "Creates a sibling folder like <repo>2/<repo>3, etc., and adds a detached worktree at the current commit (HEAD)"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "worktreeBranch",
+            "type": "promptString",
+            "description": "New branch name for the worktree (created from HEAD)",
+            "default": "feature/"
+        }
+    ]
+}

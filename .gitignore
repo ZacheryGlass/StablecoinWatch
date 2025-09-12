@@ -21,7 +21,6 @@ coverage/
 .env.production.local
 
 # IDE/Editor files
-.vscode/
 .idea/
 *.swp
 *.swo
