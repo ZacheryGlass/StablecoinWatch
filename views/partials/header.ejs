@@ -18,8 +18,8 @@
         align-items: center;
         gap: 0.75rem;
     }
-    .brand img { width: 40px; height: 40px; border-radius: 8px; }
-    .brand .title { font-size: 1.25rem; font-weight: 700; }
+    .brand img { height: 44px; width: auto; border-radius: 0; }
+    .brand .title { display: none; }
 
     .nav {
         display: flex;
@@ -58,7 +58,6 @@
     <div class="topbar">
         <a class="brand" href="/">
             <img src="/site_logo.png" alt="Stablecoin Watch" />
-            <span class="title">Stablecoin Watch</span>
         </a>
         <nav class="nav">
             <a href="/" class="<%= active === 'home' ? 'active' : '' %>">Coins</a>
