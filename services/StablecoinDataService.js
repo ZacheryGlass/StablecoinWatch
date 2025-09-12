@@ -261,6 +261,7 @@ class StablecoinDataService extends IStablecoinDataService {
             const websitePick = pickBy(d => d.metadata?.website);
             const logoPick = pickBy(d => d.metadata?.logoUrl);
             const dateAddedPick = pickBy(d => d.metadata?.dateAdded);
+            const peggedAssetPick = pickBy(d => d.metadata?.peggedAsset);
             if (DEBUG && (key === 'USDT' || key === 'USDC')) {
                 if (logoPick?.value) {
                     console.log(`[Aggregation Debug] ${key}: logo chosen from ${logoPick.sourceId}: ${logoPick.value}`);
@@ -319,6 +320,7 @@ class StablecoinDataService extends IStablecoinDataService {
                     website: websitePick?.value || null,
                     logoUrl: logoPick?.value || null,
                     dateAdded: dateAddedPick?.value || null,
+                    peggedAsset: peggedAssetPick?.value || null,
                     // Include DeFiLlama data for cross-chain analysis
                     defillamaData: defillamaData
                 },

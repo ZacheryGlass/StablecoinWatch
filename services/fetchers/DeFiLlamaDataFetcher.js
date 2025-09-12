@@ -308,6 +308,20 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
     transformToStandardFormat(rawData) {
         const ts = Date.now();
         const out = (rawData || []).map((coin) => {
+            // Normalize pegged asset from pegType
+            const normalizePeggedAsset = (pegType) => {
+                if (!pegType || typeof pegType !== 'string') return null;
+                // Expect values like 'peggedUSD', 'peggedEUR', 'peggedXAU', etc.
+                const match = /^pegged([A-Za-z0-9]+)$/.exec(pegType.trim());
+                if (!match) return null;
+                const code = match[1].toUpperCase();
+                const special = {
+                    XAU: 'Gold',
+                    XAG: 'Silver',
+                };
+                return special[code] || code;
+            };
+
             // Extract circulating supply - DeFiLlama uses different peg types
             const circulatingSupply = coin.circulating?.peggedUSD || 
                                     coin.circulating?.peggedEUR || 
@@ -379,6 +393,7 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
                     website: null,
                     logoUrl: null,
                     dateAdded: null,
+                    peggedAsset: normalizePeggedAsset(coin.pegType),
                     // Store all DeFiLlama-specific fields for future use
                     defillamaData: {
                         pegType: coin.pegType,

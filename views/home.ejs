@@ -81,6 +81,7 @@
                                 <th>Name</th>
                                 <th class="hide-sm">Symbol</th>
                                 <th>Price</th>
+                                <th>Pegged Asset</th>
                                 <th>Market Cap</th>
                                 <th class="hide-sm">Dominance</th>
                                 <th class="hide-sm">Volume (24h)</th>
@@ -102,6 +103,7 @@
                                     </td>
                                     <td class="hide-sm symbol"><%= coin.symbol %></td>
                                     <td><%= h.getFormattedPrice(coin, 'main', formatter) %></td>
+                                    <td><%= coin.pegged_asset ? coin.pegged_asset : '-' %></td>
                                     <td><%= h.getMarketCap(coin, 'main') %></td>
                                     <td class="hide-sm"><span class="metric-highlight"><%= h.getDominanceDisplay(coin, data.metrics, formatter) %></span></td>
                                     <td class="hide-sm"><%= h.getVolume(coin, 'main') %></td>

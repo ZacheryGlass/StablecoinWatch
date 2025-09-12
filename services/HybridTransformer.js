@@ -80,6 +80,8 @@ class HybridTransformer extends IViewModelTransformer {
         sc.symbol = hybrid.symbol || '';
         sc.uri = (hybrid.slug || hybrid.symbol || '').toLowerCase();
         sc.img_url = this.sourceDataPopulator.getCoinImageUrl(hybrid);
+        // Pegged asset (e.g., USD, EUR, Gold)
+        sc.pegged_asset = hybrid.pegged_asset || null;
 
         // Platform extraction (now prioritizes DeFiLlama data)
         sc.platforms = this.platformNormalizer.extractPlatformsFromHybrid(hybrid);

@@ -21,6 +21,8 @@ class Stablecoin {
         this.img_url = null;
         /** @type {Array<Platform>} Array of platforms where this stablecoin exists */
         this.platforms = [];
+        /** @type {string|null} The asset this stablecoin is pegged to (e.g., USD, EUR, Gold) */
+        this.pegged_asset = null;
         /** @type {Object} Main market data (price, market cap, volume, etc.) */
         this.main = {};
         /** @type {Object} Messari-specific data */
