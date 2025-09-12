@@ -1,34 +1,248 @@
 /*---------------------------------------------------------
     GLOBALS SETTINGS
 ---------------------------------------------------------*/
-global.fetch = require('node-fetch');
-global.WebSocket = require('ws');
-global.EXCLUDE_LIST = ['WBTC', 'DGD', 'RSR', 'DPT', 'KBC', '1GOLD', 'BGBP'];
-global.APPROVE_LIST = ['DAI', 'AMPL', 'SUSD', 'XAUT', 'USDT'];
 
 /*---------------------------------------------------------
     IMPORTS
 ---------------------------------------------------------*/
+// Load environment variables from .env and env-specific file
+require('dotenv').config();
+const fs = require('fs');
+const envName = process.env.NODE_ENV || 'development';
+try {
+    const envPath = require('path').resolve(__dirname, '..', `.env.${envName}`);
+    if (fs.existsSync(envPath)) {
+        require('dotenv').config({ path: envPath, override: true });
+        console.info(`Loaded environment overrides from .env.${envName}`);
+    }
+} catch (_) { /* ignore */ }
+// Initialize global logger (respects LOG_LEVEL or VERBOSE_LOGGING)
+require('./logger');
 const express = require('express');
-path = require('path');
-const routes = require('../routes/routes');
-const { start } = require('./core');
+const path = require('path');
+const cron = require('node-cron');
+const createRoutes = require('../routes/routes');
+const ServiceFactory = require('../services/ServiceFactory');
+const HealthMonitor = require('../services/HealthMonitor');
+const AppConfig = require('../config/AppConfig');
+const ApiConfig = require('../config/ApiConfig');
+const templateHelpers = require('./util/templateHelpers');
 
 /*---------------------------------------------------------
     CONSTANTS
 ---------------------------------------------------------*/
-const MINS_BETWEEN_UPDATE = 15;
-const PORT = process.env.PORT || 3000;
+const PORT = AppConfig.server.port;
+
+/*---------------------------------------------------------
+    SERVICE CONTAINER & DEPENDENCY INJECTION
+---------------------------------------------------------*/
+/**
+ * Service container for dependency injection and lifecycle management
+ * Manages application services, timers, and scheduled jobs
+ */
+class ServiceContainer {
+    /**
+     * Creates a new service container
+     */
+    constructor() {
+        this.services = {};
+        this.started = false;
+        this._timers = [];
+        this._jobs = [];
+    }
+
+    /**
+     * Registers a service instance in the container
+     * @param {string} name - The name to register the service under
+     * @param {*} instance - The service instance to register
+     * @returns {ServiceContainer} The container instance for chaining
+     */
+    register(name, instance) {
+        this.services[name] = instance;
+        return this;
+    }
+
+    /**
+     * Retrieves a registered service by name
+     * @param {string} name - The name of the service to retrieve
+     * @returns {*} The registered service instance
+     */
+    get(name) {
+        return this.services[name];
+    }
+
+    /**
+     * Attaches services to Express app for dependency injection
+     * @param {Express} app - The Express application instance
+     */
+    attachToApp(app) {
+        // Expose services to routes/handlers
+        app.locals.services = this.services;
+        app.use((req, _res, next) => { req.services = this.services; next(); });
+    }
+
+    /**
+     * Starts all services and schedules periodic tasks
+     * Initializes data refresh and health monitoring
+     */
+    async start() {
+        if (this.started) return;
+        this.started = true;
+
+        const healthMonitor = this.get('healthMonitor');
+        const dataService = this.get('dataService');
+
+        // Initialize an app-level source for request monitoring
+        try { healthMonitor.initializeSource('app'); } catch (_) {}
+
+        // Initial data refresh
+        dataService.refreshData().catch(err => {
+            console.error('Initial data fetch failed:', err);
+        });
+
+        // Scheduled updates
+        const intervalMins = AppConfig.dataUpdate.intervalMinutes;
+        const job = cron.schedule(`*/${intervalMins} * * * *`, () => {
+            console.log('Running scheduled data update...');
+            dataService.refreshData().catch(error => {
+                console.error('Scheduled data fetch failed:', error);
+            });
+        });
+        this._jobs.push(job);
+
+        // Periodic health summary logging and alert surfacing
+        const healthLogTimer = setInterval(async () => {
+            try {
+                const h = await healthMonitor.getSystemHealth();
+                console.log(`Health: status=${h.status} score=${h.overallScore} healthy=${h.metrics.healthySourceCount}/${h.metrics.sourceCount}`);
+                if (h.activeAlerts && h.activeAlerts.length) {
+                    // De-duplicate alerts by (source,type) and show highest severity per pair
+                    const levelPriority = { info: 0, warning: 1, error: 2, critical: 3 };
+                    const dedup = new Map(); // key: source:type -> alert
+                    for (const a of h.activeAlerts) {
+                        if (!a || !a.active) continue;
+                        const key = `${a.source || 'unknown'}:${a.type || a.title}`;
+                        const prev = dedup.get(key);
+                        if (!prev) {
+                            dedup.set(key, a);
+                        } else {
+                            const prevP = levelPriority[prev.level] ?? 0;
+                            const currP = levelPriority[a.level] ?? 0;
+                            if (currP > prevP) dedup.set(key, a);
+                        }
+                    }
+                    const alerts = Array.from(dedup.values())
+                        .map(a => `${(a.level || 'info').toUpperCase()}: ${a.title} (${a.source || 'unknown'})`)
+                        .join('; ');
+                    if (alerts) console.warn('Health alerts:', alerts);
+                }
+            } catch (e) {
+                console.warn('Failed to get system health for logging:', e.message);
+            }
+        }, 5 * 60 * 1000);
+        this._timers.push(healthLogTimer);
+    }
+
+    /**
+     * Stops all services, timers, and scheduled jobs
+     * Performs graceful shutdown cleanup
+     */
+    async stop() {
+        if (!this.started) return;
+        this.started = false;
+        // Stop scheduled jobs
+        for (const j of this._jobs) {
+            try { j.stop(); } catch (_) {}
+        }
+        this._jobs = [];
+        // Clear timers
+        for (const t of this._timers) {
+            try { clearInterval(t); } catch (_) {}
+        }
+        this._timers = [];
+    }
+}
+
+// Instantiate container and register services
+const container = new ServiceContainer();
+const healthMonitor = new HealthMonitor();
+const dataService = ServiceFactory.createDataService(healthMonitor);
+container.register('healthMonitor', healthMonitor)
+         .register('dataService', dataService);
+
+/**
+ * Health monitoring middleware for Express routes
+ * Records basic request duration and success/failure classification
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
+function healthMiddleware(req, res, next) {
+    const start = Date.now();
+    res.on('finish', async () => {
+        try {
+            const hm = req.services?.healthMonitor || container.get('healthMonitor');
+            const duration = Date.now() - start;
+            const isError = res.statusCode >= 500;
+            if (isError) {
+                await hm.recordFailure('app', {
+                    operation: 'http_request',
+                    errorType: 'server',
+                    message: `${req.method} ${req.originalUrl} -> ${res.statusCode}`,
+                    statusCode: res.statusCode,
+                    retryable: false,
+                    timestamp: Date.now()
+                });
+            } else {
+                await hm.recordSuccess('app', {
+                    operation: 'http_request',
+                    duration,
+                    recordCount: 0,
+                    timestamp: Date.now()
+                });
+            }
+        } catch (err) {
+            // Non-fatal: avoid impacting request lifecycle
+        }
+    });
+    next();
+}
 
 /*---------------------------------------------------------
     APP SETUP
 ---------------------------------------------------------*/
-start(MINS_BETWEEN_UPDATE);
 const app = express();
 app.set('view engine', 'ejs');
 app.use(express.static(path.join(__dirname, '../res/css')));
 app.use(express.static(path.join(__dirname, '../res/img')));
 app.use(express.static(path.join(__dirname, '../res/js')));
-app.use('/', routes);
+app.use(healthMiddleware);
+// Attach services to req/app for DI
+container.attachToApp(app);
+// Register template helpers globally for all EJS templates (after services are attached)
+app.locals.h = templateHelpers;
+// Wire routes with DI
+app.use('/', createRoutes(container.services));
 app.use(express.json());
 app.listen(PORT, () => console.info(`Listening on port ${PORT}`));
+
+// Start services and handle graceful shutdown
+// Validate configuration before full start
+try {
+    const validation = ApiConfig.validate();
+    if (!validation.valid) {
+        console.error('API configuration errors:', validation.errors);
+    }
+    if (validation.warnings?.length) {
+        console.warn('API configuration warnings:', validation.warnings);
+    }
+    if (AppConfig.warnings?.length) {
+        console.warn('App configuration warnings:', AppConfig.warnings);
+    }
+} catch (e) {
+    console.error('Configuration validation failed:', e.message);
+}
+
+container.start();
+process.on('SIGINT', async () => { await container.stop(); process.exit(0); });
+process.on('SIGTERM', async () => { await container.stop(); process.exit(0); });
