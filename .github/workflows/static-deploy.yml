@@ -30,6 +30,8 @@ jobs:
       COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
       # Enable all data sources for better resilience
       ENABLED_SOURCES: cmc,messari,coingecko,defillama
+      # Disable health monitoring for build script to prevent hanging
+      HEALTH_MONITORING: false
       # Optional tuning
       UPDATE_INTERVAL_MINUTES: 60
     steps:
