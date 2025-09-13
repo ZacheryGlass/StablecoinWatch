@@ -41,7 +41,7 @@ async function writeFile(dest, contents) {
 async function renderView(viewName, data) {
   const viewsDir = path.resolve(__dirname, '..', 'views');
   const file = path.join(viewsDir, `${viewName}.ejs`);
-  const html = await ejs.renderFile(file, data, { root: viewsDir, async: true });
+  const html = await ejs.renderFile(file, data, { root: viewsDir });
   return html;
 }
 
