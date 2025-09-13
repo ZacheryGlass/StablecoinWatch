@@ -27,6 +27,9 @@ jobs:
       # API keys are read from GitHub Secrets. Add these in your repo settings as needed.
       CMC_API_KEY: ${{ secrets.CMC_API_KEY }}
       MESSARI_API_KEY: ${{ secrets.MESSARI_API_KEY }}
+      COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+      # Enable all data sources for better resilience
+      ENABLED_SOURCES: cmc,messari,coingecko,defillama
       # Optional tuning
       UPDATE_INTERVAL_MINUTES: 60
     steps:
@@ -44,6 +47,7 @@ jobs:
 
       - name: Build static site
         run: npm run build:static
+        timeout-minutes: 10
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

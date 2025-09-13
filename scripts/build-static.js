@@ -59,7 +59,27 @@ async function main() {
   const dataService = ServiceFactory.createDataService(healthMonitor);
 
   console.log('Refreshing data from APIs...');
-  await dataService.refreshData();
+  console.log(`Enabled sources: ${process.env.ENABLED_SOURCES || 'cmc,messari (default)'}`);
+  console.log(`API timeout: ${process.env.REQUEST_TIMEOUT_MS || 30000}ms`);
+  
+  // Add timeout wrapper to prevent indefinite hanging
+  const DATA_FETCH_TIMEOUT = 8 * 60 * 1000; // 8 minutes
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Data fetch timeout after 8 minutes')), DATA_FETCH_TIMEOUT);
+  });
+  
+  try {
+    console.log('Starting data refresh with 8-minute timeout...');
+    await Promise.race([
+      dataService.refreshData(),
+      timeoutPromise
+    ]);
+    console.log('Data refresh completed successfully');
+  } catch (error) {
+    console.error('Data refresh failed:', error.message);
+    console.log('Continuing with empty/cached data...');
+  }
+  
   const vm = dataService.getData();
 
   // Derive ETH totals similar to routes
