@@ -13,7 +13,8 @@
     },
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "node app/app.js"
+        "start": "node app/app.js",
+        "build:static": "node scripts/build-static.js"
     },
     "author": "",
     "license": "ISC"
