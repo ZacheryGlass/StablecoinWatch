@@ -136,6 +136,36 @@ Notes:
 - Validation skips API key/base URL checks when mock mode is active.
 - Health monitoring remains active; records successes against mock loads.
 
+## Static Site Hosting on Azure
+
+This application supports both **dynamic Express server** and **static HTML generation** modes:
+
+### Static Deployment Features
+- **Hourly Data Refresh**: GitHub Actions automatically rebuilds the site with fresh API data every hour
+- **Zero Runtime Dependencies**: Fully static HTML/CSS/JS with no server required
+- **Azure Static Web Apps Integration**: Automatic deployment with custom domain support
+- **Template Rendering**: EJS templates compile to static HTML with all dynamic data pre-rendered
+
+### Build Process
+- `npm run build:static` generates a complete static site in `/dist`
+- The build script fetches live API data and renders all pages statically
+- GitHub Actions workflow triggers on push and hourly via cron schedule
+- Azure automatically deploys the generated static files
+
+### Key Configuration for Static Builds
+- `HEALTH_MONITORING=false` — **Critical**: Prevents Node.js process hanging during build
+- `ENABLED_SOURCES=cmc,messari,coingecko,defillama` — Use all data sources for comprehensive data
+- API keys configured via GitHub Secrets for secure CI/CD deployment
+
+### Documentation
+- **Setup Guide**: `docs/azure-first-time-setup.md` — Complete Azure + GitHub setup walkthrough
+- **Technical Details**: `docs/static-site-deployment.md` — Build process, CI/CD, and troubleshooting
+- **Environment Variables**: See `CLAUDE.md` for comprehensive configuration reference
+
+### Access
+- **Production Site**: https://stablecoinwatch.com (custom domain)
+- **Azure Default URL**: https://gray-grass-0e64edb0f.1.azurestaticapps.net
+
 ## Project Structure
 
 ### Application Layer

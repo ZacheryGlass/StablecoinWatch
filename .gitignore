@@ -48,5 +48,10 @@ CLAUDE.md
 AGENTS.md
 .claude/
 
-# Ignore ad-hoc GitHub issue/PR body files
+# GitHub issue/PR body folders
 .github/
+# But keep workflows for CI/CD
+!.github/workflows/
+
+# Static build output
+dist/
