@@ -262,6 +262,18 @@ class StablecoinDataService extends IStablecoinDataService {
             const logoPick = pickBy(d => d.metadata?.logoUrl);
             const dateAddedPick = pickBy(d => d.metadata?.dateAdded);
             const peggedAssetPick = pickBy(d => d.metadata?.peggedAsset);
+            // Detect conflicting pegged asset types across sources
+            try {
+                const paValues = entries
+                    .map(e => ({ s: e.sourceId, v: (e.data.metadata?.peggedAsset ? String(e.data.metadata.peggedAsset) : null) }))
+                    .filter(p => p.v);
+                const norm = new Set(paValues.map(p => p.v.toLowerCase()))
+                if (norm.size > 1) {
+                    const details = paValues.map(p => `${p.s}:${p.v}`).join(', ');
+                    // Print conflict in red text
+                    console.error(`\x1b[31m[PeggedAsset Conflict] ${key}: ${details}\x1b[0m`);
+                }
+            } catch (_) { /* best-effort conflict detection */ }
             if (DEBUG && (key === 'USDT' || key === 'USDC')) {
                 if (logoPick?.value) {
                     console.log(`[Aggregation Debug] ${key}: logo chosen from ${logoPick.sourceId}: ${logoPick.value}`);

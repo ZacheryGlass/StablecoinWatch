@@ -33,9 +33,17 @@ class CmcDataFetcher extends IDataFetcher {
         // Pre-compile tag Sets for O(1) lookup performance
         const tagName = this.config?.processing?.stablecoinFilter?.tagName || 'stablecoin';
         this._stablecoinTags = new Set([tagName]);
-        // Gold-backed identifiers
-        this._goldSpecificTags = new Set(['tokenized-gold']);
-        // Broad tag that we gate with name/symbol heuristics
+        // Tokenized assets taxonomy (CMC tags)
+        this._tokenizedAssetsTag = 'tokenized-assets';
+        this._tokenizedSubtags = {
+            'tokenized-gold': 'Gold',
+            'tokenized-silver': 'Silver',
+            'tokenized-etfs': 'ETF',
+            'tokenized-stock': 'Stocks',
+            'tokenized-real-estate': 'Real Estate',
+            'tokenized-treasury-bills': 'Treasury Bills',
+            'tokenized-commodities': 'Commodities'
+        };
         this._assetBackedStablecoinTag = 'asset-backed-stablecoin';
     }
 
@@ -240,18 +248,11 @@ class CmcDataFetcher extends IDataFetcher {
             // Stablecoin tag detection (fiat-pegged)
             const hasStablecoinTag = tagsLower.some(tag => this._stablecoinTags.has(tag));
 
-            // Gold-backed detection via tags and name/symbol with asset-backed tag or known symbols
-            const hasGoldTag = tagsLower.some(tag => this._goldSpecificTags.has(tag));
-            const hasAssetBackedTag = tagsLower.includes(this._assetBackedStablecoinTag);
-            const name = String(crypto.name || '').toLowerCase();
-            const symbol = String(crypto.symbol || '').toLowerCase();
-            const slug = String(crypto.slug || '').toLowerCase();
-            const isKnownGoldSymbol = /^(paxg|xaut)$/.test(symbol);
-            const mentionsGold = name.includes('gold') || slug.includes('gold') || symbol.includes('xau');
-            const looksGold = hasGoldTag || isKnownGoldSymbol || (hasAssetBackedTag && mentionsGold);
+            // Tokenized assets detection (broader RWA category)
+            const hasTokenizedAssets = tagsLower.includes(this._tokenizedAssetsTag);
 
-            // Include if stablecoin OR gold-backed (narrowed to asset-backed tag or known symbols)
-            const include = hasStablecoinTag || looksGold;
+            // Include if it's a fiat-pegged stablecoin OR a tokenized asset
+            const include = hasStablecoinTag || hasTokenizedAssets;
             if (!include) return false;
 
             // Apply USD price sanity only to fiat-pegged stablecoins
@@ -315,14 +316,32 @@ class CmcDataFetcher extends IDataFetcher {
             const nameLower = String(coin.name || '').toLowerCase();
             const symbolLower = String(coin.symbol || '').toLowerCase();
             const slugLower = String(coin.slug || '').toLowerCase();
-            const hasGoldTag = tagsLower.includes('tokenized-gold');
-            const hasAssetBackedTag = tagsLower.includes('asset-backed-stablecoin');
-            const isKnownGoldSymbol = /^(paxg|xaut)$/.test(symbolLower);
-            const mentionsGold = nameLower.includes('gold') || slugLower.includes('gold') || symbolLower.includes('xau');
-            let peggedAsset = null;
-            if (hasGoldTag || isKnownGoldSymbol || (hasAssetBackedTag && mentionsGold)) {
-                peggedAsset = 'Gold';
-            }
+
+            const classifyPeggedAsset = () => {
+                // Specific tokenized subtags first
+                for (const [tag, label] of Object.entries(this._tokenizedSubtags)) {
+                    if (tagsLower.includes(tag)) {
+                        if (label === 'Commodities') {
+                            if (tagsLower.includes('tokenized-gold') || symbolLower.includes('xau') || /^(paxg|xaut)$/.test(symbolLower) || nameLower.includes('gold') || slugLower.includes('gold')) return 'Gold';
+                            if (tagsLower.includes('tokenized-silver') || symbolLower.includes('xag') || nameLower.includes('silver') || slugLower.includes('silver')) return 'Silver';
+                        }
+                        return label;
+                    }
+                }
+                // Generic tokenized-assets fallback: infer from name/symbol
+                if (tagsLower.includes(this._tokenizedAssetsTag)) {
+                    if (symbolLower.includes('xau') || /^(paxg|xaut)$/.test(symbolLower) || nameLower.includes('gold') || slugLower.includes('gold')) return 'Gold';
+                    if (symbolLower.includes('xag') || nameLower.includes('silver') || slugLower.includes('silver')) return 'Silver';
+                    if (nameLower.includes('etf') || slugLower.includes('etf')) return 'ETF';
+                    if (nameLower.includes('treasury') || slugLower.includes('treasury')) return 'Treasury Bills';
+                    if (nameLower.includes('stock') || slugLower.includes('stock')) return 'Stocks';
+                    if (nameLower.includes('real estate') || slugLower.includes('real-estate') || slugLower.includes('estate')) return 'Real Estate';
+                    return 'Tokenized Asset';
+                }
+                return null;
+            };
+
+            const peggedAsset = classifyPeggedAsset();
 
             return {
                 sourceId: this.sourceId,
