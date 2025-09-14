@@ -5,6 +5,8 @@
         padding: 1rem 1.5rem;
         border-radius: 0 0 10px 10px;
         margin-bottom: 1rem;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
     }
     
     .header-bar {
@@ -12,7 +14,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 2rem;
-        flex-wrap: wrap;
+        flex-wrap: nowrap; /* Keep items on one line */
     }
     
     .header-left {
@@ -92,7 +94,7 @@
 
     .nav {
         display: flex;
-        gap: 1.5rem;
+        gap: 0.5rem;
         align-items: center;
         flex-shrink: 0;
     }
@@ -108,6 +110,9 @@
         transition: all 0.2s ease;
         white-space: nowrap;
         position: relative;
+        display: inline-flex;
+        align-items: center;
+        line-height: 1;
     }
     
     .nav a:hover { 
@@ -179,15 +184,18 @@
         }
         
         .header-bar {
-            flex-direction: column;
-            align-items: flex-start;
+            /* Keep horizontal layout and prevent wrapping */
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
             gap: 0.75rem;
+            flex-wrap: nowrap;
         }
         
         .header-left {
-            width: 100%;
-            justify-content: space-between;
-            gap: 1rem;
+            width: auto;
+            justify-content: flex-start;
+            gap: 0.75rem;
         }
         
         .brand img {
@@ -195,9 +203,7 @@
         }
         
         .nav {
-            align-self: stretch;
-            justify-content: center;
-            gap: 2rem;
+            gap: 1.25rem;
         }
         
         .nav a {
@@ -225,7 +231,13 @@
         
         .nav a {
             font-size: 0.9rem;
-            padding: 0.25rem 0.4rem; /* Further reduce button height */
+            display: inline-block; /* ensure exact height control */
+            height: 32px; min-height: 32px; max-height: 32px; /* lock height */
+            line-height: 32px; /* vertically center text */
+            padding: 0 0.5rem; /* horizontal padding only */
+            box-sizing: border-box;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
         }
     }
 
@@ -244,7 +256,11 @@
         
         .nav a {
             font-size: 0.85rem;
-            padding: 0.2rem 0.3rem; /* Minimize button height for very small screens */
+            display: inline-block; /* ensure exact height control */
+            height: 32px; min-height: 32px; max-height: 32px; /* keep fixed */
+            line-height: 32px;
+            padding: 0 0.4rem; /* horizontal only */
+            box-sizing: border-box;
         }
     }
 </style>

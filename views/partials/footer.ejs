@@ -12,18 +12,20 @@
         color: #cbd5e1;
         padding: 0.6rem 1rem;
         border-radius: 10px 10px 0 0;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
     }
     .footer-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        flex-wrap: wrap;
+        flex-wrap: nowrap; /* keep items on one line */
         gap: 0.75rem;
     }
     .footer-links {
         display: flex;
         gap: 0.75rem;
-        flex-wrap: wrap;
+        flex-wrap: nowrap; /* keep links on one line */
         align-items: center;
         margin-right: 1rem;
     }
@@ -34,10 +36,29 @@
         padding: 0.4rem 0.7rem;
         border-radius: 6px;
         transition: background 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        line-height: 1;
+        white-space: nowrap;
     }
     .footer-links a:hover { background: rgba(255,255,255,0.12); }
     .copyright { font-size: 0.85rem; opacity: 0.8; }
-    @media (max-width: 640px) { .copyright { width: 100%; text-align: center; } .footer-links { width: 100%; justify-content: center; } }
+    @media (max-width: 640px) {
+        .footer-row { gap: 0.5rem; }
+        .footer-links { gap: 0.5rem; }
+        .footer-links a { padding: 0.3rem 0.5rem; font-size: 0.95rem; }
+    }
+    @media (max-width: 480px) {
+        .footer-links a {
+            display: inline-block; /* exact height control */
+            height: 32px; min-height: 32px; max-height: 32px; /* lock height */
+            line-height: 32px; /* center text */
+            padding: 0 0.5rem; /* horizontal only */
+            box-sizing: border-box;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+    }
 </style>
 <footer class="site-footer">
     <div class="footer-row">
