@@ -216,8 +216,9 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
     _filterStablecoinsSync(rawData) {
         // Get filtering configuration and pre-compute Sets for O(1) lookups
         const filterCfg = this.config?.processing?.stablecoinFilter || {};
-        const allowedPegTypes = new Set(
-            (filterCfg.allowedPegTypes || ['peggedUSD'])
+        // Allow all peg types by default; optionally exclude specific peg types via config/env
+        const excludedPegTypes = new Set(
+            (filterCfg.excludedPegTypes || [])
                 .map(t => String(t).trim())
                 .filter(Boolean)
         );
@@ -234,8 +235,8 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
                 return false;
             }
 
-            // 1) Peg type filter (primary guardrail to avoid BTC/EUR-pegged assets)
-            if (coin.pegType && !allowedPegTypes.has(coin.pegType)) {
+            // 1) Peg type exclusions (allow all by default, block configured ones like peggedBTC)
+            if (coin.pegType && excludedPegTypes.has(String(coin.pegType).trim())) {
                 return false;
             }
 

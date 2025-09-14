@@ -30,9 +30,13 @@ class CmcDataFetcher extends IDataFetcher {
         this.config = ApiConfig.getApiConfig('cmc') || {};
         this.sourceId = 'cmc';
         
-        // Pre-compile stablecoin tags Set for O(1) lookup performance
+        // Pre-compile tag Sets for O(1) lookup performance
         const tagName = this.config?.processing?.stablecoinFilter?.tagName || 'stablecoin';
         this._stablecoinTags = new Set([tagName]);
+        // Gold-backed identifiers
+        this._goldSpecificTags = new Set(['tokenized-gold']);
+        // Broad tag that we gate with name/symbol heuristics
+        this._assetBackedStablecoinTag = 'asset-backed-stablecoin';
     }
 
     /**
@@ -230,18 +234,37 @@ class CmcDataFetcher extends IDataFetcher {
         const priceRange = this.config?.processing?.stablecoinFilter?.priceRange || { min: 0.5, max: 2.0 };
 
         return rawData.filter((crypto) => {
-            // Check for stablecoin tag presence using O(1) Set lookup
-            const hasStablecoinTag = crypto.tags && 
-                crypto.tags.some(tag => this._stablecoinTags.has(tag));
-            if (!hasStablecoinTag) {
-                return false;
+            const tags = Array.isArray(crypto.tags) ? crypto.tags.map(String) : [];
+            const tagsLower = tags.map(t => t.toLowerCase());
+
+            // Stablecoin tag detection (fiat-pegged)
+            const hasStablecoinTag = tagsLower.some(tag => this._stablecoinTags.has(tag));
+
+            // Gold-backed detection via tags and name/symbol with asset-backed tag or known symbols
+            const hasGoldTag = tagsLower.some(tag => this._goldSpecificTags.has(tag));
+            const hasAssetBackedTag = tagsLower.includes(this._assetBackedStablecoinTag);
+            const name = String(crypto.name || '').toLowerCase();
+            const symbol = String(crypto.symbol || '').toLowerCase();
+            const slug = String(crypto.slug || '').toLowerCase();
+            const isKnownGoldSymbol = /^(paxg|xaut)$/.test(symbol);
+            const mentionsGold = name.includes('gold') || slug.includes('gold') || symbol.includes('xau');
+            const looksGold = hasGoldTag || isKnownGoldSymbol || (hasAssetBackedTag && mentionsGold);
+
+            // Include if stablecoin OR gold-backed (narrowed to asset-backed tag or known symbols)
+            const include = hasStablecoinTag || looksGold;
+            if (!include) return false;
+
+            // Apply USD price sanity only to fiat-pegged stablecoins
+            if (hasStablecoinTag) {
+                const price = crypto.quote?.USD?.price;
+                if (typeof price === 'number' && isFinite(price)) {
+                    if (price < priceRange.min || price > priceRange.max) {
+                        return false;
+                    }
+                }
             }
 
-            // Validate price range for USD-pegged stablecoins
-            const price = crypto.quote?.USD?.price;
-            const isReasonablePrice = !price || (price >= priceRange.min && price <= priceRange.max);
-            
-            return isReasonablePrice;
+            return true;
         });
     }
 
@@ -286,50 +309,67 @@ class CmcDataFetcher extends IDataFetcher {
             }
         }
         
-        const out = (rawData || []).map((coin) => ({
-            sourceId: this.sourceId,
-            id: coin.id,
-            name: coin.name,
-            symbol: coin.symbol ? String(coin.symbol).toUpperCase() : coin.symbol,
-            slug: (coin.slug || coin.symbol || '').toLowerCase(),
-            marketData: {
-                price: coin.quote?.USD?.price ?? null,
-                marketCap: coin.quote?.USD?.market_cap ?? null,
-                volume24h: coin.quote?.USD?.volume_24h ?? null,
-                percentChange24h: coin.quote?.USD?.percent_change_24h ?? null,
-                rank: coin.cmc_rank ?? null,
-            },
-            supplyData: {
-                circulating: (coin.quote?.USD?.market_cap && coin.quote?.USD?.price)
-                    ? coin.quote.USD.market_cap / coin.quote.USD.price
-                    : coin.circulating_supply ?? null,
-                total: coin.total_supply ?? null,
-                max: coin.max_supply ?? null,
-                networkBreakdown: coin.platform ? [{
+        const out = (rawData || []).map((coin) => {
+            const tags = Array.isArray(coin.tags) ? coin.tags.map(String) : [];
+            const tagsLower = tags.map(t => t.toLowerCase());
+            const nameLower = String(coin.name || '').toLowerCase();
+            const symbolLower = String(coin.symbol || '').toLowerCase();
+            const slugLower = String(coin.slug || '').toLowerCase();
+            const hasGoldTag = tagsLower.includes('tokenized-gold');
+            const hasAssetBackedTag = tagsLower.includes('asset-backed-stablecoin');
+            const isKnownGoldSymbol = /^(paxg|xaut)$/.test(symbolLower);
+            const mentionsGold = nameLower.includes('gold') || slugLower.includes('gold') || symbolLower.includes('xau');
+            let peggedAsset = null;
+            if (hasGoldTag || isKnownGoldSymbol || (hasAssetBackedTag && mentionsGold)) {
+                peggedAsset = 'Gold';
+            }
+
+            return {
+                sourceId: this.sourceId,
+                id: coin.id,
+                name: coin.name,
+                symbol: coin.symbol ? String(coin.symbol).toUpperCase() : coin.symbol,
+                slug: (coin.slug || coin.symbol || '').toLowerCase(),
+                marketData: {
+                    price: coin.quote?.USD?.price ?? null,
+                    marketCap: coin.quote?.USD?.market_cap ?? null,
+                    volume24h: coin.quote?.USD?.volume_24h ?? null,
+                    percentChange24h: coin.quote?.USD?.percent_change_24h ?? null,
+                    rank: coin.cmc_rank ?? null,
+                },
+                supplyData: {
+                    circulating: (coin.quote?.USD?.market_cap && coin.quote?.USD?.price)
+                        ? coin.quote.USD.market_cap / coin.quote.USD.price
+                        : coin.circulating_supply ?? null,
+                    total: coin.total_supply ?? null,
+                    max: coin.max_supply ?? null,
+                    networkBreakdown: coin.platform ? [{
+                        name: coin.platform.name || 'Unknown',
+                        network: (coin.platform.slug || coin.platform.symbol || null) ? String(coin.platform.slug || coin.platform.symbol).toLowerCase() : null,
+                        contractAddress: coin.platform.token_address || null,
+                        supply: null,
+                        percentage: null,
+                    }] : [],
+                },
+                platforms: coin.platform ? [{
                     name: coin.platform.name || 'Unknown',
                     network: (coin.platform.slug || coin.platform.symbol || null) ? String(coin.platform.slug || coin.platform.symbol).toLowerCase() : null,
                     contractAddress: coin.platform.token_address || null,
                     supply: null,
                     percentage: null,
                 }] : [],
-            },
-            platforms: coin.platform ? [{
-                name: coin.platform.name || 'Unknown',
-                network: (coin.platform.slug || coin.platform.symbol || null) ? String(coin.platform.slug || coin.platform.symbol).toLowerCase() : null,
-                contractAddress: coin.platform.token_address || null,
-                supply: null,
-                percentage: null,
-            }] : [],
-            metadata: {
-                tags: coin.tags || [],
-                description: null,
-                website: null,
-                logoUrl: `https://s2.coinmarketcap.com/static/img/coins/64x64/${coin.id}.png`,
-                dateAdded: coin.date_added || null,
-            },
-            confidence: 0.9,
-            timestamp: ts,
-        }));
+                metadata: {
+                    tags: coin.tags || [],
+                    description: null,
+                    website: null,
+                    logoUrl: `https://s2.coinmarketcap.com/static/img/coins/64x64/${coin.id}.png`,
+                    dateAdded: coin.date_added || null,
+                    peggedAsset: peggedAsset,
+                },
+                confidence: 0.9,
+                timestamp: ts,
+            };
+        });
         return out;
     }
 
