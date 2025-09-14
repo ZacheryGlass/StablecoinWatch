@@ -29,6 +29,7 @@ Every transformer returns an array of `StandardizedStablecoin` objects with the 
   - website: string|null — Official website when provided.
   - logoUrl: string|null — Logo URL when provided/derivable.
   - dateAdded: string|null — When the asset was added (source-native format).
+  - peggedAsset: string|null — Human-readable peg type when known (e.g., USD, EUR, Gold, Silver, Stocks, Real Estate, Treasury Bills, ETF, Commodities, Tokenized Asset).
   - ...source-specific fields may be present for debugging or future features.
 - confidence: number — Heuristic confidence score (0–1) assigned by the fetcher.
 - timestamp: number — Unix ms when the record was transformed.
@@ -45,7 +46,7 @@ Where applicable, `platforms` are kept in sync with `supplyData.networkBreakdown
 
 ## Source Transformers
 
-### CoinMarketCap (services/fetchers/CMCDataFetcher.js)
+### CoinMarketCap (services/fetchers/CmcDataFetcher.js)
 
 - symbol: Uppercased (standardized).
 - slug: Uses CMC `slug` when available, else lowercased `symbol`.
@@ -53,7 +54,7 @@ Where applicable, `platforms` are kept in sync with `supplyData.networkBreakdown
 - supplyData:
   - circulating derived from `market_cap / price` when both present; else falls back to `circulating_supply`.
   - networkBreakdown/platforms derived from `platform` when present (single network with token address).
-- metadata: tags from CMC, logo from `s2.coinmarketcap.com` using the CMC `id`, `dateAdded` from CMC when present.
+- metadata: tags from CMC, logo from `s2.coinmarketcap.com` using the CMC `id`, `dateAdded` from CMC when present, and `peggedAsset` when the asset is part of CMC’s tokenization taxonomy (`tokenized-assets`, `tokenized-gold`, `tokenized-silver`, `tokenized-stock`, `tokenized-real-estate`, `tokenized-treasury-bills`, `tokenized-etfs`, `tokenized-commodities`). Fallback heuristics refine Commodities to Gold/Silver where possible.
 - confidence: 0.9.
 
 ### Messari (services/fetchers/MessariDataFetcher.js)
@@ -77,7 +78,7 @@ Notes: The `1.0` default price is a pragmatic fallback when Messari does not pro
   - circulating extracted from `circulating.peggedUSD` (or other pegs as fallback).
   - networkBreakdown constructed from `chainCirculating` with per-chain supply and percentage.
 - platforms: derived from `chains` list when available.
-- metadata: tags include `stablecoin`; defillama-specific raw fields are nested under `metadata.defillamaData` for future use.
+- metadata: tags include `stablecoin`; `peggedAsset` is derived by normalizing `pegType` (e.g., `peggedXAU` → Gold, `peggedXAG` → Silver). DeFiLlama-specific raw fields are nested under `metadata.defillamaData` for future use.
 - confidence: 0.8 (high for supply/platform coverage).
 
 ### CoinGecko (services/fetchers/CoinGeckoDataFetcher.js)
@@ -96,3 +97,9 @@ Notes: The `1.0` default price is a pragmatic fallback when Messari does not pro
 The aggregator prioritizes sources using `getCapabilities().priority` (higher wins) per field group, with consensus checks. For example, CMC generally provides price/market cap, Messari provides supply/network breakdown, and DeFiLlama supplements cross-chain supply. When only Messari is active, the default price of `1.0` ensures stablecoins still render with approximate market caps.
 
 If you add a new data source, implement `transformToStandardFormat(rawData)` to match the shape above and set a sensible `confidence` value. Include a `networkBreakdown` when possible, and mirror essential network info into `platforms` to improve cross-source merging.
+
+### Pegged Asset Consistency and Conflicts
+
+- Sources that provide a peg classification (currently CMC and DeFiLlama) contribute `metadata.peggedAsset`.
+- During aggregation, when multiple sources provide a non-null `peggedAsset`, the service checks for mismatches. If values differ (case-insensitive), a red console error is printed with per-source values: `[PeggedAsset Conflict] SYMBOL: cmc:Gold, defillama:USD`.
+- The chosen `peggedAsset` in the aggregated record follows source priority. Conflicts are logged for investigation but do not stop rendering.

@@ -146,7 +146,11 @@ This document provides a comprehensive tour of the StablecoinWatch codebase: arc
 
 - `services/fetchers/CmcDataFetcher.js`
   - Fetches `/v1/cryptocurrency/listings/latest` (or mock file)
-  - Filters to tag `stablecoin` and budget price range; maps to standard format
+  - Includes traditional fiat-pegged stablecoins (tag `stablecoin`) and tokenized real-world assets (tag `tokenized-assets`)
+  - Applies USD price sanity checks only to fiat-pegged stablecoins, not tokenized assets
+  - Classifies tokenized assets to `metadata.peggedAsset` via CMC tags:
+    - `tokenized-gold` → Gold; `tokenized-silver` → Silver; `tokenized-stock` → Stocks; `tokenized-real-estate` → Real Estate; `tokenized-treasury-bills` → Treasury Bills; `tokenized-etfs` → ETF; `tokenized-commodities` → Commodities (further refined when possible)
+  - Provides `metadata.peggedAsset` for downstream merging and UI
 
 - `services/fetchers/MessariDataFetcher.js`
   - Uses Messari SDK with Axios fallback (auth required)
@@ -154,9 +158,10 @@ This document provides a comprehensive tour of the StablecoinWatch codebase: arc
 
 - `services/fetchers/DeFiLlamaDataFetcher.js`
   - Calls `https://stablecoins.llama.fi/stablecoins?includePrices=true`
-  - Logs unique peg types (debug) and filters by allowed `pegType`
+  - Logs unique peg types (debug) and allows all `pegType` values by default; optionally excludes via `DEFILLAMA_EXCLUDED_PEG_TYPES` (CSV, default `peggedBTC`)
   - Applies USD price sanity checks only to `peggedUSD`
   - Builds cross-chain network breakdown from `chainCirculating`
+  - Normalizes peg types to human-readable `metadata.peggedAsset` (e.g., `peggedXAU` → Gold, `peggedXAG` → Silver)
 
 - `services/fetchers/CoinGeckoDataFetcher.js`
   - Stub scaffold; ready for future integration
