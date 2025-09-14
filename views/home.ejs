@@ -278,12 +278,10 @@
                             <span class="summary-value"><%= data.metrics.totalVolume_s || 'No data' %></span>
                             <span class="summary-label">24h Volume</span>
                         </div>
-                        <% if (data.platform_data) { %>
                         <div class="summary-card">
-                            <span class="summary-value"><%= data.platform_data.length || 0 %></span>
+                            <span class="summary-value"><%= (Array.isArray(data.platform_data) ? data.platform_data.length : 0) %></span>
                             <span class="summary-label">Active Blockchains</span>
                         </div>
-                        <% } %>
                     </div>
                 </div>
 
