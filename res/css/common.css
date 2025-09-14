@@ -11,14 +11,14 @@ body {
   font-family: 'Open Sans', sans-serif;
 }
 
- param($m) $block = $m.Groups[1].Value; if ($block -notmatch "padding-bottom") { return "#wrapper {
+#wrapper {
     min-height: 100%;
     position: relative;
     padding-bottom: 120px;
 }
 
 main {
-    max-width: 960px;
+    max-width: 80%;
     margin: auto;
     padding: 0 1rem 40px 1rem;
 }

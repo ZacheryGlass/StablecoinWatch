@@ -96,6 +96,13 @@
         .metric-highlight.peg-btc { background: linear-gradient(135deg, #f97316, #fb923c); }
         .metric-highlight.peg-gold, .metric-highlight.peg-xau { background: linear-gradient(135deg, #d97706, #f59e0b); }
         .metric-highlight.peg-silver, .metric-highlight.peg-xag { background: linear-gradient(135deg, #6b7280, #9ca3af); }
+        /* New tokenized asset categories */
+        .metric-highlight.peg-etf { background: linear-gradient(135deg, #0891b2, #06b6d4); }
+        .metric-highlight.peg-stocks { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+        .metric-highlight.peg-realestate { background: linear-gradient(135deg, #8b5e34, #d7a86e); }
+        .metric-highlight.peg-treasurybills { background: linear-gradient(135deg, #0f766e, #14b8a6); }
+        .metric-highlight.peg-commodities { background: linear-gradient(135deg, #b45309, #fbbf24); }
+        .metric-highlight.peg-tokenizedasset { background: linear-gradient(135deg, #1f2937, #6b7280); }
         .metric-highlight.peg-other { background: linear-gradient(135deg, #64748b, #94a3b8); }
         /* Pegged Asset color variants (reuse metric-highlight chip style) */
         .metric-highlight.peg-usd { background: linear-gradient(135deg, #16a34a, #22c55e); }
@@ -106,6 +113,13 @@
         .metric-highlight.peg-btc { background: linear-gradient(135deg, #f97316, #fb923c); }
         .metric-highlight.peg-gold, .metric-highlight.peg-xau { background: linear-gradient(135deg, #d97706, #f59e0b); }
         .metric-highlight.peg-silver, .metric-highlight.peg-xag { background: linear-gradient(135deg, #6b7280, #9ca3af); }
+        /* New tokenized asset categories */
+        .metric-highlight.peg-etf { background: linear-gradient(135deg, #0891b2, #06b6d4); }
+        .metric-highlight.peg-stocks { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+        .metric-highlight.peg-realestate { background: linear-gradient(135deg, #8b5e34, #d7a86e); }
+        .metric-highlight.peg-treasurybills { background: linear-gradient(135deg, #0f766e, #14b8a6); }
+        .metric-highlight.peg-commodities { background: linear-gradient(135deg, #b45309, #fbbf24); }
+        .metric-highlight.peg-tokenizedasset { background: linear-gradient(135deg, #1f2937, #6b7280); }
         .metric-highlight.peg-other { background: linear-gradient(135deg, #64748b, #94a3b8); }
 
         /* Enhanced mobile responsiveness */
@@ -333,7 +347,8 @@
                                     <td class="hide-md">
                                         <% if (coin.pegged_asset) { 
                                             const pegKey = String(coin.pegged_asset).toLowerCase().replace(/[^a-z0-9]+/g, '');
-                                            const cls = ['usd','eur','gbp','jpy','cny','btc','gold','xau','silver','xag'].includes(pegKey) ? pegKey : 'other';
+                                            const known = ['usd','eur','gbp','jpy','cny','btc','gold','xau','silver','xag','etf','stocks','realestate','treasurybills','commodities','tokenizedasset'];
+                                            const cls = known.includes(pegKey) ? pegKey : 'other';
                                         %>
                                             <span class="metric-highlight peg-<%= cls %>"><%= coin.pegged_asset %></span>
                                         <% } else { %>
