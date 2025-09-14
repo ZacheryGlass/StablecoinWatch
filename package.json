@@ -14,8 +14,23 @@
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "node app/app.js",
-        "build:static": "node scripts/build-static.js"
+        "build:static": "node scripts/build-static.js",
+        "screenshot": "node scripts/take-screenshot.js",
+        "screenshot:single": "node scripts/take-screenshot.js --single",
+        "screenshot:home": "node scripts/take-screenshot.js --page=home",
+        "screenshot:platforms": "node scripts/take-screenshot.js --page=platforms",
+        "screenshot:status": "node scripts/take-screenshot.js --page=status",
+        "screenshot:mobile": "node scripts/take-screenshot.js --device=mobile",
+        "screenshot:tablet": "node scripts/take-screenshot.js --device=tablet",
+        "screenshot:desktop": "node scripts/take-screenshot.js --device=desktop",
+        "screenshot:mobile:single": "node scripts/take-screenshot.js --device=mobile --single",
+        "screenshot:tablet:single": "node scripts/take-screenshot.js --device=tablet --single",
+        "screenshot:home:mobile": "node scripts/take-screenshot.js --device=mobile --page=home",
+        "screenshot:home:tablet": "node scripts/take-screenshot.js --device=tablet --page=home"
     },
     "author": "",
-    "license": "ISC"
+    "license": "ISC",
+    "devDependencies": {
+        "puppeteer": "^24.20.0"
+    }
 }
