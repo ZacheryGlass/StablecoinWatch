@@ -108,9 +108,128 @@
         .metric-highlight.peg-silver, .metric-highlight.peg-xag { background: linear-gradient(135deg, #6b7280, #9ca3af); }
         .metric-highlight.peg-other { background: linear-gradient(135deg, #64748b, #94a3b8); }
 
+        /* Enhanced mobile responsiveness */
+        @media (max-width: 1024px) {
+            .home-header { padding: 1.5rem; margin-bottom: 1.5rem; }
+            .summary-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+            .chart-grid { grid-template-columns: 1fr; }
+        }
+        
         @media (max-width: 860px) {
             .hide-sm { display: none; }
             .chart-wrapper { height: 280px; }
+            .coins-table th, .coins-table td { padding: 0.5rem 0.25rem; }
+        }
+        
+        @media (max-width: 640px) {
+            .home-header { 
+                padding: 1rem; 
+                margin-bottom: 1rem; 
+            }
+            .home-header h1 { 
+                font-size: 1.8rem; 
+                margin: 0 0 0.5rem 0; 
+            }
+            .summary-grid { 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 0.75rem; 
+            }
+            .summary-card { 
+                padding: 0.75rem; 
+            }
+            .summary-value { 
+                font-size: 1.1rem; 
+            }
+            .chart-wrapper { 
+                height: 250px; 
+            }
+            .coins-table th, .coins-table td { 
+                padding: 0.4rem 0.2rem; 
+                font-size: 0.9rem;
+            }
+            .name-cell img { 
+                width: 18px; 
+                height: 18px; 
+            }
+            .coin-rank {
+                padding: 0.15rem 0.4rem;
+                font-size: 0.75rem;
+                min-width: 1.5rem;
+            }
+            .metric-highlight {
+                padding: 0.15rem 0.4rem;
+                font-size: 0.8rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .hide-md { display: none; }
+            .home-header { 
+                padding: 0.75rem; 
+                margin-bottom: 0.75rem; 
+            }
+            .home-header h1 { 
+                font-size: 1.6rem; 
+            }
+            .summary-grid { 
+                gap: 0.5rem; 
+            }
+            .summary-card { 
+                padding: 0.5rem; 
+            }
+            .summary-value { 
+                font-size: 1rem; 
+            }
+            .summary-label { 
+                font-size: 0.8rem; 
+            }
+            .chart-wrapper { 
+                height: 220px; 
+            }
+            .coins-table th, .coins-table td { 
+                padding: 0.3rem 0.15rem; 
+                font-size: 0.85rem;
+            }
+            .name-cell { 
+                gap: 0.3rem; 
+            }
+            .name-cell img { 
+                width: 16px; 
+                height: 16px; 
+            }
+            .collapsible {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.95rem;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .hide-xs { display: none; }
+            .home-header h1 { 
+                font-size: 1.4rem; 
+            }
+            .summary-value { 
+                font-size: 0.9rem; 
+            }
+            .summary-label { 
+                font-size: 0.75rem; 
+            }
+            .chart-wrapper { 
+                height: 200px; 
+            }
+            .coins-table th, .coins-table td { 
+                padding: 0.25rem 0.1rem; 
+                font-size: 0.8rem;
+            }
+            .coin-rank {
+                padding: 0.1rem 0.3rem;
+                font-size: 0.7rem;
+                min-width: 1.2rem;
+            }
+            .metric-highlight {
+                padding: 0.1rem 0.3rem;
+                font-size: 0.75rem;
+            }
         }
 
         /* Sorting indicators */
@@ -125,25 +244,35 @@
         <!-- Header -->
 
         <main>
-            <div class="home-header">
-                <h1>Top Stablecoins</h1>
-                <div class="summary-grid">
-                    <div class="summary-card">
-                        <span class="summary-value"><%= data.metrics.totalMCap_s || 'No data' %></span>
-                        <span class="summary-label">Total Market Cap</span>
-                    </div>
-                    <div class="summary-card">
-                        <span class="summary-value"><%= data.metrics.totalVolume_s || 'No data' %></span>
-                        <span class="summary-label">24h Volume</span>
-                    </div>
-                    <div class="summary-card">
-                        <span class="summary-value"><%= (data.stablecoins && data.stablecoins.length) || 0 %></span>
-                        <span class="summary-label">Stablecoins Tracked</span>
-                    </div>
-                </div>
-            </div>
 
             <% if (data.stablecoins && data.stablecoins.length) { %>
+                <!-- Home Header with Summary Stats -->
+                <div class="home-header">
+                    <h1>Stablecoins</h1>
+                    <p>Real-time overview of the global stablecoin ecosystem</p>
+                    
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <span class="summary-value"><%= data.stablecoins ? data.stablecoins.length : 0 %></span>
+                            <span class="summary-label">Total Stablecoins</span>
+                        </div>
+                        <div class="summary-card">
+                            <span class="summary-value"><%= data.metrics.totalMCap_s || 'No data' %></span>
+                            <span class="summary-label">Total Market Cap</span>
+                        </div>
+                        <div class="summary-card">
+                            <span class="summary-value"><%= data.metrics.totalVolume_s || 'No data' %></span>
+                            <span class="summary-label">24h Volume</span>
+                        </div>
+                        <% if (data.platform_data) { %>
+                        <div class="summary-card">
+                            <span class="summary-value"><%= data.platform_data.length || 0 %></span>
+                            <span class="summary-label">Active Blockchains</span>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+
                 <!-- Charts: Market Cap and Volume -->
                 <div class="chart-container" aria-live="polite">
                     <h2 class="section-title">Market Overview</h2>
@@ -170,15 +299,16 @@
                 </div>
 
                 <div class="content-section">
-                    <h2 class="section-title">Stablecoins</h2>
-                    <table class="coins-table" id="coinsTable">
+                    <h2 class="section-title">Top Stablecoins</h2>
+                    <div class="table-container">
+                        <table class="coins-table" id="coinsTable">
                         <thead>
                             <tr>
                                 <th class="rank" onclick="sortCoinsTable(0)">#</th>
                                 <th onclick="sortCoinsTable(1)">Name</th>
                                 <th class="hide-sm" onclick="sortCoinsTable(2)">Symbol</th>
                                 <th onclick="sortCoinsTable(3)">Price</th>
-                                <th onclick="sortCoinsTable(4)">Pegged Asset</th>
+                                <th class="hide-md" onclick="sortCoinsTable(4)">Pegged Asset</th>
                                 <th onclick="sortCoinsTable(5)">Market Cap</th>
                                 <th class="hide-sm" onclick="sortCoinsTable(6)">Dominance</th>
                                 <th class="hide-sm" onclick="sortCoinsTable(7)">Volume (24h)</th>
@@ -200,7 +330,7 @@
                                     </td>
                                     <td class="hide-sm symbol"><%= coin.symbol %></td>
                                     <td data-sort="<%= h.safeGet(coin, 'main.price', 0) %>"><%= h.getFormattedPrice(coin, 'main', formatter) %></td>
-                                    <td>
+                                    <td class="hide-md">
                                         <% if (coin.pegged_asset) { 
                                             const pegKey = String(coin.pegged_asset).toLowerCase().replace(/[^a-z0-9]+/g, '');
                                             const cls = ['usd','eur','gbp','jpy','cny','btc','gold','xau','silver','xag'].includes(pegKey) ? pegKey : 'other';
@@ -217,7 +347,8 @@
                                 </tr>
                             <% }); %>
                         </tbody>
-                    </table>
+                        </table>
+                    </div>
                 </div>
             <% } else { %>
                 <div class="content-section">

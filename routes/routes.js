@@ -5,6 +5,23 @@ const express = require('express');
 const util = require('../app/util');
 const ApiConfig = require('../config/ApiConfig');
 
+// Helper function to calculate data completeness for chain metrics
+function calculateChainDataCompleteness(data) {
+    const stablecoins = data.stablecoins || [];
+    const coinsWithChainData = stablecoins.filter(coin => 
+        coin.platforms && coin.platforms.length > 0 && 
+        coin.platforms.some(p => p.circulating_supply > 0 || p.total_supply > 0)
+    ).length;
+    const totalCoins = stablecoins.length;
+    const dataCompleteness = totalCoins > 0 ? coinsWithChainData / totalCoins : 0;
+    const showChainMetrics = dataCompleteness > 0.75;
+    
+    return {
+        dataCompleteness: Math.round(dataCompleteness * 100),
+        showChainMetrics
+    };
+}
+
 /**
  * Factory to create router with injected services
  * @param {Object} services - The services container with dataService and healthMonitor
@@ -25,14 +42,21 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     const svc = services || req.services || {};
     const data = svc.dataService.getData();
-    // compute ETH totals from platform_data
+    
+    // Calculate data completeness for chain metrics
+    const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
+    
+    // compute ETH totals from platform_data only if data is sufficiently complete
     const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
-    const totalETHMCap = eth ? eth.mcap_sum : 0;
-    const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
+    const totalETHMCap = (showChainMetrics && eth) ? eth.mcap_sum : 0;
+    const totalETHMCap_s = (showChainMetrics && eth) ? eth.mcap_sum_s : '$0';
+    
     res.render('home', {
         data: data,
-        totalETHMCap,
-        totalETHMCap_s,
+        totalETHMCap: showChainMetrics ? totalETHMCap : undefined,
+        totalETHMCap_s: showChainMetrics ? totalETHMCap_s : undefined,
+        dataCompleteness,
+        showChainMetrics,
         active: 'home',
         formatter: {
             formatNumber: util.formatNumber,
@@ -51,9 +75,13 @@ router.get('/', async (req, res) => {
 router.get('/status', async (req, res) => {
     const svc = services || req.services || {};
     const data = svc.dataService.getData();
+    
+    // Calculate data completeness for chain metrics
+    const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
+    
     const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
-    const totalETHMCap = eth ? eth.mcap_sum : 0;
-    const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
+    const totalETHMCap = (showChainMetrics && eth) ? eth.mcap_sum : 0;
+    const totalETHMCap_s = (showChainMetrics && eth) ? eth.mcap_sum_s : '$0';
 
     let health = null;
     try {
@@ -71,8 +99,10 @@ router.get('/status', async (req, res) => {
 
     res.render('status', {
         data,
-        totalETHMCap,
-        totalETHMCap_s,
+        totalETHMCap: showChainMetrics ? totalETHMCap : undefined,
+        totalETHMCap_s: showChainMetrics ? totalETHMCap_s : undefined,
+        dataCompleteness,
+        showChainMetrics,
         health,
         mockMode,
         active: 'status',
@@ -111,13 +141,20 @@ router.get('/api/health', async (req, res) => {
 router.get('/platforms', async (req, res) => {
     const svc = services || req.services || {};
     const data = svc.dataService.getData();
+    
+    // Calculate data completeness for chain metrics
+    const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
+    
     const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
-    const totalETHMCap = eth ? eth.mcap_sum : 0;
-    const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
+    const totalETHMCap = (showChainMetrics && eth) ? eth.mcap_sum : 0;
+    const totalETHMCap_s = (showChainMetrics && eth) ? eth.mcap_sum_s : '$0';
+    
     res.render('chains', {
         data: data,
-        totalETHMCap,
-        totalETHMCap_s,
+        totalETHMCap: showChainMetrics ? totalETHMCap : undefined,
+        totalETHMCap_s: showChainMetrics ? totalETHMCap_s : undefined,
+        dataCompleteness,
+        showChainMetrics,
         active: 'chains',
         formatter: {
             formatNumber: util.formatNumber,
@@ -139,13 +176,20 @@ router.get('/coins/:symbol', async (req, res) => {
     const data = svc.dataService.getData();
     const symbol = req.params.symbol;
     const coin = data.stablecoins.find((p) => p.uri === symbol || p.symbol.toLowerCase() === symbol.toLowerCase());
+    
+    // Calculate data completeness for chain metrics
+    const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
+    
     const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
-    const totalETHMCap = eth ? eth.mcap_sum : 0;
-    const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
+    const totalETHMCap = (showChainMetrics && eth) ? eth.mcap_sum : 0;
+    const totalETHMCap_s = (showChainMetrics && eth) ? eth.mcap_sum_s : '$0';
+    
     res.render('coins', {
         data: data,
-        totalETHMCap,
-        totalETHMCap_s,
+        totalETHMCap: showChainMetrics ? totalETHMCap : undefined,
+        totalETHMCap_s: showChainMetrics ? totalETHMCap_s : undefined,
+        dataCompleteness,
+        showChainMetrics,
         coin: coin,
         active: '',
         formatter: {
@@ -186,17 +230,22 @@ router.get('/platforms/:name', async (req, res) => {
         });
     }
 
+    // Calculate data completeness for chain metrics
+    const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
+    
     // Handle platform not found case
     if (!platformEntry) {
         const platformName = String(req.params.name || '').replace(/[-_]+/g, ' ');
         const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
-        const totalETHMCap = eth ? eth.mcap_sum : 0;
-        const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
+        const totalETHMCap = (showChainMetrics && eth) ? eth.mcap_sum : 0;
+        const totalETHMCap_s = (showChainMetrics && eth) ? eth.mcap_sum_s : '$0';
         
         return res.render('platforms', {
             data: data,
-            totalETHMCap,
-            totalETHMCap_s,
+            totalETHMCap: showChainMetrics ? totalETHMCap : undefined,
+            totalETHMCap_s: showChainMetrics ? totalETHMCap_s : undefined,
+            dataCompleteness,
+            showChainMetrics,
             platform: { 
                 name: platformName, 
                 stablecoins: [],
@@ -216,13 +265,15 @@ router.get('/platforms/:name', async (req, res) => {
     // Enhanced platform page with rich data
     const platformIndex = data.platform_data.findIndex(p => p === platformEntry);
     const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
-    const totalETHMCap = eth ? eth.mcap_sum : 0;
-    const totalETHMCap_s = eth ? eth.mcap_sum_s : '$0';
+    const totalETHMCap = (showChainMetrics && eth) ? eth.mcap_sum : 0;
+    const totalETHMCap_s = (showChainMetrics && eth) ? eth.mcap_sum_s : '$0';
     
     res.render('platforms', {
         data: data,
-        totalETHMCap,
-        totalETHMCap_s,
+        totalETHMCap: showChainMetrics ? totalETHMCap : undefined,
+        totalETHMCap_s: showChainMetrics ? totalETHMCap_s : undefined,
+        dataCompleteness,
+        showChainMetrics,
         platform: platformEntry,
         platformIndex: platformIndex,
         active: '',
