@@ -46,15 +46,15 @@ router.get('/', async (req, res) => {
     // Calculate data completeness for chain metrics
     const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
     
-    // compute ETH totals from platform_data only if data is sufficiently complete
+    // Compute ETH totals from platform_data unconditionally; UI may still reflect completeness separately
     const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
-    const totalETHMCap = (showChainMetrics && eth) ? eth.mcap_sum : 0;
-    const totalETHMCap_s = (showChainMetrics && eth) ? eth.mcap_sum_s : '$0';
+    const totalETHMCap = eth ? (eth.mcap_sum || 0) : 0;
+    const totalETHMCap_s = eth ? (eth.mcap_sum_s || '$0') : '$0';
     
     res.render('home', {
         data: data,
-        totalETHMCap: showChainMetrics ? totalETHMCap : undefined,
-        totalETHMCap_s: showChainMetrics ? totalETHMCap_s : undefined,
+        totalETHMCap,
+        totalETHMCap_s,
         dataCompleteness,
         showChainMetrics,
         active: 'home',
@@ -80,8 +80,8 @@ router.get('/status', async (req, res) => {
     const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
     
     const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
-    const totalETHMCap = (showChainMetrics && eth) ? eth.mcap_sum : 0;
-    const totalETHMCap_s = (showChainMetrics && eth) ? eth.mcap_sum_s : '$0';
+    const totalETHMCap = eth ? (eth.mcap_sum || 0) : 0;
+    const totalETHMCap_s = eth ? (eth.mcap_sum_s || '$0') : '$0';
 
     let health = null;
     try {
@@ -99,8 +99,8 @@ router.get('/status', async (req, res) => {
 
     res.render('status', {
         data,
-        totalETHMCap: showChainMetrics ? totalETHMCap : undefined,
-        totalETHMCap_s: showChainMetrics ? totalETHMCap_s : undefined,
+        totalETHMCap,
+        totalETHMCap_s,
         dataCompleteness,
         showChainMetrics,
         health,

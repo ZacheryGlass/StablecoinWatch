@@ -285,7 +285,7 @@
                     <span class="metric-value-inline"><%= (data && data.metrics && data.metrics.totalVolume_s) || 'No data' %></span>
                 </a>
                 
-                <% if (typeof totalETHMCap_s !== 'undefined' && showChainMetrics) { %>
+                <% if (typeof totalETHMCap_s !== 'undefined') { %>
                 <div class="metric-divider"></div>
                 <a class="metric-inline" href="/platforms" aria-label="View blockchain platforms; see Ethereum totals">
                     <span class="metric-label-inline">ETH Total:</span>
@@ -293,7 +293,7 @@
                 </a>
                 <% } %>
                 
-                <% if (typeof totalETHMCap !== 'undefined' && data && data.metrics && data.metrics.totalMCap && showChainMetrics) { %>
+                <% if (typeof totalETHMCap !== 'undefined' && data && data.metrics && data.metrics.totalMCap) { %>
                 <div class="metric-divider"></div>
                 <a class="metric-inline" href="/platforms" aria-label="Explore blockchain platform distribution; percent on Ethereum">
                     <span class="metric-label-inline">% on ETH:</span>
@@ -301,7 +301,7 @@
                 </a>
                 <% } %>
                 
-                <% if (typeof showChainMetrics !== 'undefined' && !showChainMetrics && typeof dataCompleteness !== 'undefined') { %>
+                <% if ((typeof totalETHMCap === 'undefined' || !totalETHMCap) && typeof dataCompleteness !== 'undefined') { %>
                 <div class="metric-divider"></div>
                 <span class="metric-inline" title="Chain distribution data incomplete (<%= dataCompleteness %>% coverage). Visit individual coin pages for available per-chain data.">
                     <span class="metric-label-inline">Chain Data:</span>
