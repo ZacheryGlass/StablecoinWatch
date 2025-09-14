@@ -1,5 +1,5 @@
 ﻿# StablecoinWatch v2
-https://www.StablecoinWatch.com
+https://StablecoinWatch.com
 
 StablecoinWatch v2 is a Node.js web application that aggregates stablecoin data from multiple sources: CoinMarketCap, Messari, CoinGecko, and DeFiLlama. It merges market and supply/platform data from these APIs and includes health monitoring with circuit-breaker protections.
 
