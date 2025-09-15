@@ -46,15 +46,8 @@ router.get('/', async (req, res) => {
     // Calculate data completeness for chain metrics
     const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
     
-    // Compute ETH totals from platform_data unconditionally; UI may still reflect completeness separately
-    const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
-    const totalETHMCap = eth ? (eth.mcap_sum || 0) : 0;
-    const totalETHMCap_s = eth ? (eth.mcap_sum_s || '$0') : '$0';
-    
     res.render('home', {
         data: data,
-        totalETHMCap,
-        totalETHMCap_s,
         dataCompleteness,
         showChainMetrics,
         active: 'home',
@@ -79,10 +72,6 @@ router.get('/status', async (req, res) => {
     // Calculate data completeness for chain metrics
     const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
     
-    const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
-    const totalETHMCap = eth ? (eth.mcap_sum || 0) : 0;
-    const totalETHMCap_s = eth ? (eth.mcap_sum_s || '$0') : '$0';
-
     let health = null;
     try {
         health = svc.healthMonitor ? await svc.healthMonitor.getSystemHealth() : null;
@@ -99,8 +88,6 @@ router.get('/status', async (req, res) => {
 
     res.render('status', {
         data,
-        totalETHMCap,
-        totalETHMCap_s,
         dataCompleteness,
         showChainMetrics,
         health,
@@ -145,14 +132,8 @@ router.get('/platforms', async (req, res) => {
     // Calculate data completeness for chain metrics
     const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
     
-    const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
-    const totalETHMCap = eth ? (eth.mcap_sum || 0) : 0;
-    const totalETHMCap_s = eth ? (eth.mcap_sum_s || '$0') : '$0';
-    
     res.render('chains', {
         data: data,
-        totalETHMCap,
-        totalETHMCap_s,
         dataCompleteness,
         showChainMetrics,
         active: 'chains',
@@ -180,14 +161,8 @@ router.get('/coins/:symbol', async (req, res) => {
     // Calculate data completeness for chain metrics
     const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
     
-    const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
-    const totalETHMCap = eth ? (eth.mcap_sum || 0) : 0;
-    const totalETHMCap_s = eth ? (eth.mcap_sum_s || '$0') : '$0';
-    
     res.render('coins', {
         data: data,
-        totalETHMCap,
-        totalETHMCap_s,
         dataCompleteness,
         showChainMetrics,
         coin: coin,
@@ -236,14 +211,9 @@ router.get('/platforms/:name', async (req, res) => {
     // Handle platform not found case
     if (!platformEntry) {
         const platformName = String(req.params.name || '').replace(/[-_]+/g, ' ');
-        const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
-        const totalETHMCap = eth ? (eth.mcap_sum || 0) : 0;
-        const totalETHMCap_s = eth ? (eth.mcap_sum_s || '$0') : '$0';
         
         return res.render('platforms', {
             data: data,
-            totalETHMCap,
-            totalETHMCap_s,
             dataCompleteness,
             showChainMetrics,
             platform: { 
@@ -264,14 +234,9 @@ router.get('/platforms/:name', async (req, res) => {
 
     // Enhanced platform page with rich data
     const platformIndex = data.platform_data.findIndex(p => p === platformEntry);
-    const eth = Array.isArray(data.platform_data) ? data.platform_data.find(p => (p.name || '').toLowerCase() === 'ethereum') : null;
-    const totalETHMCap = eth ? (eth.mcap_sum || 0) : 0;
-    const totalETHMCap_s = eth ? (eth.mcap_sum_s || '$0') : '$0';
     
     res.render('platforms', {
         data: data,
-        totalETHMCap,
-        totalETHMCap_s,
         dataCompleteness,
         showChainMetrics,
         platform: platformEntry,

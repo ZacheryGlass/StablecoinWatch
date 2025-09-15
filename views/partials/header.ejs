@@ -279,19 +279,6 @@
                     <span class="metric-value-inline"><%= (data && data.metrics && data.metrics.totalVolume_s) || 'No data' %></span>
                 </a>
                 
-                <% if (typeof totalETHMCap_s !== 'undefined') { %>
-                <div class="metric-divider"></div>
-                <a class="metric-inline" href="/platforms" aria-label="View blockchain platforms; see Ethereum totals">
-                    <span class="metric-label-inline">ETH Total:</span>
-                    <span class="metric-value-inline"><%= totalETHMCap_s %></span>
-                </a>
-                <% } %>
-                
-                <div class="metric-divider"></div>
-                <a class="metric-inline" href="/platforms" aria-label="Explore blockchain platform distribution; percent on Ethereum">
-                    <span class="metric-label-inline">% on ETH:</span>
-                    <span class="metric-value-inline"><%= (data && data.metrics && data.metrics.totalMCap && totalETHMCap) ? ((totalETHMCap/data.metrics.totalMCap)*100).toFixed(1) + '%' : '0%' %></span>
-                </a>
             </div>
         </div>
         
