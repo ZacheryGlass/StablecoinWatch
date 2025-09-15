@@ -54,6 +54,26 @@
             margin: 0.5rem 0;
         }
 
+        .platform-toggle {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: background 0.2s ease;
+            display: none;
+        }
+        .platform-toggle:hover { background: rgba(255,255,255,0.3); }
+        .platform-toggle:focus { outline: 2px solid white; outline-offset: 2px; }
+
+        .platform-content.collapsed .platform-stats { display: none; }
+        .platform-content.collapsed .platform-rank { display: none; }
+        .platform-content.collapsed .comparison-bar { display: none; }
+        .platform-content.collapsed .platform-header p { display: none; }
+
         .content-section {
             background: white;
             margin: 2rem 0;
@@ -168,11 +188,20 @@
             
             .platform-header h1 {
                 font-size: 1.8rem;
+                margin: 0 0 0.5rem 0;
             }
             
             .platform-stats {
                 grid-template-columns: 1fr 1fr;
                 gap: 0.5rem;
+            }
+            
+            .platform-toggle {
+                display: inline-block;
+            }
+            
+            .platform-content.collapsed {
+                padding-bottom: 0.5rem;
             }
             
             .content-section {
@@ -212,37 +241,43 @@
             <% } else { %>
                 <!-- Platform Header -->
                 <div class="platform-header">
-                    <h1><%= platform.name %></h1>
-                    <% if (platformIndex >= 0) { %>
-                        <div class="platform-rank">
-                            <%= h.getPlatformRank(platformIndex, 'supply') %>
+                    <div class="platform-content" id="platformContent">
+                        <h1><%= platform.name %></h1>
+                        <% if (platformIndex >= 0) { %>
+                            <div class="platform-rank">
+                                <%= h.getPlatformRank(platformIndex, 'supply') %>
+                            </div>
+                        <% } %>
+                        
+                        <div class="platform-stats">
+                            <div class="stat-card">
+                                <span class="stat-value"><%= h.getPlatformSupplyDisplay(platform, formatter) %></span>
+                                <span class="stat-label">Total Stablecoin Value</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-value"><%= h.getPlatformSupplyPercentage(platform) %></span>
+                                <span class="stat-label">% of Total Stablecoin Supply</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-value"><%= h.getPlatformCoinCount(platform) %></span>
+                                <span class="stat-label">Stablecoins</span>
+                            </div>
                         </div>
-                    <% } %>
-                    
-                    <div class="platform-stats">
-                        <div class="stat-card">
-                            <span class="stat-value"><%= h.getPlatformSupplyDisplay(platform, formatter) %></span>
-                            <span class="stat-label">Total Stablecoin Value</span>
-                        </div>
-                        <div class="stat-card">
-                            <span class="stat-value"><%= h.getPlatformSupplyPercentage(platform) %></span>
-                            <span class="stat-label">% of Total Stablecoin Supply</span>
-                        </div>
-                        <div class="stat-card">
-                            <span class="stat-value"><%= h.getPlatformCoinCount(platform) %></span>
-                            <span class="stat-label">Stablecoins</span>
-                        </div>
+                        
+                        <!-- Supply percentage visualization -->
+                        <% if (platform.supply_percentage > 0) { %>
+                            <div class="comparison-bar">
+                                <div class="comparison-fill" style="width: <%= Math.min(platform.supply_percentage, 100) %>%"></div>
+                            </div>
+                            <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">
+                                <%= platform.name %> represents <%= h.getPlatformSupplyPercentage(platform) %> of the total stablecoin market
+                            </p>
+                        <% } %>
+                        
+                        <button class="platform-toggle" id="platformToggle" type="button" aria-expanded="true" aria-controls="platformContent">
+                            📊 Show Stats
+                        </button>
                     </div>
-                    
-                    <!-- Supply percentage visualization -->
-                    <% if (platform.supply_percentage > 0) { %>
-                        <div class="comparison-bar">
-                            <div class="comparison-fill" style="width: <%= Math.min(platform.supply_percentage, 100) %>%"></div>
-                        </div>
-                        <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">
-                            <%= platform.name %> represents <%= h.getPlatformSupplyPercentage(platform) %> of the total stablecoin market
-                        </p>
-                    <% } %>
                 </div>
 
                 <!-- Dominant Stablecoin -->
@@ -381,5 +416,45 @@
         <%- include('partials/footer') %>
         <!-- Footer -->
     </div>
+    
+    <script>
+        // Platform header toggle functionality for mobile
+        (function() {
+            const platformToggle = document.getElementById('platformToggle');
+            const platformContent = document.getElementById('platformContent');
+            
+            if (platformToggle && platformContent) {
+                platformToggle.addEventListener('click', function() {
+                    const isCollapsed = platformContent.classList.contains('collapsed');
+                    
+                    if (isCollapsed) {
+                        platformContent.classList.remove('collapsed');
+                        platformToggle.textContent = '📈 Hide Stats';
+                        platformToggle.setAttribute('aria-expanded', 'true');
+                    } else {
+                        platformContent.classList.add('collapsed');
+                        platformToggle.textContent = '📊 Show Stats';
+                        platformToggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+                
+                // Initialize collapsed state on small screens
+                function checkScreenSize() {
+                    if (window.innerWidth <= 767) {
+                        platformContent.classList.add('collapsed');
+                        platformToggle.textContent = '📊 Show Stats';
+                        platformToggle.setAttribute('aria-expanded', 'false');
+                    } else {
+                        platformContent.classList.remove('collapsed');
+                        platformToggle.textContent = '📈 Hide Stats';
+                        platformToggle.setAttribute('aria-expanded', 'true');
+                    }
+                }
+                
+                checkScreenSize();
+                window.addEventListener('resize', checkScreenSize);
+            }
+        })();
+    </script>
 </body>
 </html>
