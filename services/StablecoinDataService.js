@@ -37,6 +37,8 @@ class StablecoinDataService extends IStablecoinDataService {
         this._aggregated = [];
         this._platformData = [];
         this._metrics = { totalMarketCap: 0, totalVolume: 0, lastUpdated: null };
+        this.stablecoinMetrics = { totalMarketCap: 0, totalVolume: 0, count: 0, lastUpdated: null };
+        this.tokenizedAssetMetrics = { totalMarketCap: 0, totalVolume: 0, count: 0, lastUpdated: null };
         this._lastRefresh = 0;
         this._viewModel = { stablecoins: [], metrics: {}, platform_data: [] };
         this._degraded = { active: false, reasons: [] };
@@ -83,6 +85,24 @@ class StablecoinDataService extends IStablecoinDataService {
      * @memberof StablecoinDataService
      */
     async getMarketMetrics() { return this._metrics; }
+    
+    /**
+     * Gets market metrics segmented only for stablecoins.
+     * Excludes tokenized assets from the totals to provide pure stablecoin metrics.
+     * 
+     * @returns {Promise<Object>} Stablecoin-only market metrics
+     * @memberof StablecoinDataService
+     */
+    async getStablecoinMetrics() { return this.stablecoinMetrics; }
+    
+    /**
+     * Gets market metrics segmented only for tokenized assets.
+     * Provides separate metrics for tokenized assets when enabled via feature flags.
+     * 
+     * @returns {Promise<Object>} Tokenized asset market metrics
+     * @memberof StablecoinDataService
+     */
+    async getTokenizedAssetMetrics() { return this.tokenizedAssetMetrics; }
 
     /**
      * Gets comprehensive health status including system health, data freshness, and warnings.
@@ -262,18 +282,18 @@ class StablecoinDataService extends IStablecoinDataService {
             const logoPick = pickBy(d => d.metadata?.logoUrl);
             const dateAddedPick = pickBy(d => d.metadata?.dateAdded);
             const peggedAssetPick = pickBy(d => d.metadata?.peggedAsset);
-            // Detect conflicting pegged asset types across sources
-            try {
-                const paValues = entries
-                    .map(e => ({ s: e.sourceId, v: (e.data.metadata?.peggedAsset ? String(e.data.metadata.peggedAsset) : null) }))
-                    .filter(p => p.v);
-                const norm = new Set(paValues.map(p => p.v.toLowerCase()))
-                if (norm.size > 1) {
-                    const details = paValues.map(p => `${p.s}:${p.v}`).join(', ');
-                    // Print conflict in red text
-                    console.error(`\x1b[31m[PeggedAsset Conflict] ${key}: ${details}\x1b[0m`);
-                }
-            } catch (_) { /* best-effort conflict detection */ }
+            const assetCategoryPick = pickBy(d => d.assetCategory);
+            
+            // Enhanced conflict detection with structured output
+            const conflicts = this._detectConflicts(entries, key);
+            
+            // Backward compatibility: keep existing stderr logging
+            if (conflicts.peggedAsset) {
+                const details = Object.entries(conflicts.peggedAsset.valuesBySource)
+                    .map(([source, value]) => `${source}:${value}`)
+                    .join(', ');
+                console.error(`\x1b[31m[PeggedAsset Conflict] ${key}: ${details}\x1b[0m`);
+            }
             if (DEBUG && (key === 'USDT' || key === 'USDC')) {
                 if (logoPick?.value) {
                     console.log(`[Aggregation Debug] ${key}: logo chosen from ${logoPick.sourceId}: ${logoPick.value}`);
@@ -316,6 +336,7 @@ class StablecoinDataService extends IStablecoinDataService {
                 symbol: symbolPick?.value || key,
                 slug: (slugPick?.value || symbolPick?.value || key).toLowerCase(),
                 imageUrl: logoPick?.value || null,
+                assetCategory: assetCategoryPick?.value || 'Stablecoin', // Default to Stablecoin for backward compatibility
                 marketData,
                 supplyData: {
                     circulating: supplyCirc?.value ?? null,
@@ -334,7 +355,9 @@ class StablecoinDataService extends IStablecoinDataService {
                     dateAdded: dateAddedPick?.value || null,
                     peggedAsset: peggedAssetPick?.value || null,
                     // Include DeFiLlama data for cross-chain analysis
-                    defillamaData: defillamaData
+                    defillamaData: defillamaData,
+                    // Structured conflict information for programmatic access
+                    conflicts: Object.keys(conflicts).length > 0 ? conflicts : null
                 },
                 confidence: {
                     overall: confidence.overall,
@@ -372,10 +395,46 @@ class StablecoinDataService extends IStablecoinDataService {
         const viewStablecoins = this.viewModelTransformer.getTransformedData();
         const platformData = this.viewModelTransformer.calculateAggregations();
 
-        // 6) Store results and metrics
+        // 6) Store results and segment metrics by asset category
         this._aggregated = aggregated.map(x => x.aggregated)
-            .sort((a, b) => (b.marketData.marketCap || 0) - (a.marketData.marketCap || 0));
+            .sort((a, b) => {
+                // Sort by asset category first (Stablecoin before Tokenized Asset), then by market cap
+                if (a.assetCategory !== b.assetCategory) {
+                    if (a.assetCategory === 'Stablecoin') return -1;
+                    if (b.assetCategory === 'Stablecoin') return 1;
+                }
+                return (b.marketData.marketCap || 0) - (a.marketData.marketCap || 0);
+            });
         this._platformData = platformData;
+        
+        // Segment data by asset category
+        const stablecoins = this._aggregated.filter(c => c.assetCategory === 'Stablecoin');
+        const tokenizedAssets = this._aggregated.filter(c => c.assetCategory === 'Tokenized Asset');
+        
+        // Create separate metrics for each category
+        const stablecoinMetrics = {
+            totalMarketCap: stablecoins.reduce((s, c) => s + (c.marketData.marketCap || 0), 0),
+            totalMarketCapFormatted: DataFormatter.formatNumber(stablecoins.reduce((s, c) => s + (c.marketData.marketCap || 0), 0)),
+            totalVolume: stablecoins.reduce((s, c) => s + (c.marketData.volume24h || 0), 0),
+            totalVolumeFormatted: DataFormatter.formatNumber(stablecoins.reduce((s, c) => s + (c.marketData.volume24h || 0), 0)),
+            count: stablecoins.length,
+            lastUpdated: Date.now(),
+        };
+        
+        const tokenizedAssetMetrics = {
+            totalMarketCap: tokenizedAssets.reduce((s, c) => s + (c.marketData.marketCap || 0), 0),
+            totalMarketCapFormatted: DataFormatter.formatNumber(tokenizedAssets.reduce((s, c) => s + (c.marketData.marketCap || 0), 0)),
+            totalVolume: tokenizedAssets.reduce((s, c) => s + (c.marketData.volume24h || 0), 0),
+            totalVolumeFormatted: DataFormatter.formatNumber(tokenizedAssets.reduce((s, c) => s + (c.marketData.volume24h || 0), 0)),
+            count: tokenizedAssets.length,
+            lastUpdated: Date.now(),
+        };
+        
+        // Store segmented metrics
+        this.stablecoinMetrics = stablecoinMetrics;
+        this.tokenizedAssetMetrics = tokenizedAssetMetrics;
+        
+        // Preserve existing _metrics structure for backward compatibility
         this._metrics = {
             totalMarketCap: this._aggregated.reduce((s, c) => s + (c.marketData.marketCap || 0), 0),
             totalMarketCapFormatted: DataFormatter.formatNumber(this._aggregated.reduce((s, c) => s + (c.marketData.marketCap || 0), 0)),
@@ -384,6 +443,9 @@ class StablecoinDataService extends IStablecoinDataService {
             stablecoinCount: this._aggregated.length,
             platformCount: platformData.length,
             lastUpdated: Date.now(),
+            // Add segmented metrics for easy access
+            stablecoinMetrics: stablecoinMetrics,
+            tokenizedAssetMetrics: tokenizedAssetMetrics
         };
         this._lastRefresh = Date.now();
 
@@ -639,6 +701,145 @@ class StablecoinDataService extends IStablecoinDataService {
         };
 
         return chainMap[name] || (chainName.charAt(0).toUpperCase() + chainName.slice(1).toLowerCase());
+    }
+
+    /**
+     * Detects conflicts between sources for metadata fields and returns structured conflict information.
+     * Provides programmatic access to conflict details while maintaining backward compatibility.
+     * 
+     * @param {Array} entries - Array of source entries for aggregation
+     * @param {string} key - Asset symbol/key for logging context
+     * @returns {Object} Structured conflicts object with field-specific conflict details
+     * @private
+     * @memberof StablecoinDataService
+     */
+    _detectConflicts(entries, key) {
+        const conflicts = {};
+
+        try {
+            // Detect peggedAsset conflicts
+            const peggedAssetConflict = this._detectFieldConflict(
+                entries,
+                e => e.data.metadata?.peggedAsset,
+                'peggedAsset'
+            );
+            if (peggedAssetConflict) {
+                conflicts.peggedAsset = peggedAssetConflict;
+            }
+
+            // Track conflict statistics for health monitoring
+            if (Object.keys(conflicts).length > 0) {
+                this._trackConflictMetrics(key, conflicts);
+            }
+
+        } catch (error) {
+            // Best-effort conflict detection - don't fail aggregation on conflict detection errors
+            if (process.env.NODE_ENV !== 'production') {
+                console.warn(`[Conflict Detection Warning] ${key}: ${error.message}`);
+            }
+        }
+
+        return conflicts;
+    }
+
+    /**
+     * Detects conflicts for a specific field across multiple sources.
+     * 
+     * @param {Array} entries - Source entries to check
+     * @param {Function} fieldExtractor - Function to extract field value from entry
+     * @param {string} fieldName - Name of the field being checked
+     * @returns {Object|null} Conflict information or null if no conflict
+     * @private
+     * @memberof StablecoinDataService
+     */
+    _detectFieldConflict(entries, fieldExtractor, fieldName) {
+        const values = entries
+            .map(e => ({ 
+                source: e.sourceId, 
+                value: fieldExtractor(e) 
+            }))
+            .filter(v => v.value != null && v.value !== '');
+
+        if (values.length < 2) return null;
+
+        // Normalize values for comparison (case-insensitive)
+        const normalizedValues = new Set(
+            values.map(v => String(v.value).toLowerCase())
+        );
+
+        if (normalizedValues.size <= 1) return null;
+
+        // Build conflict structure
+        const valuesBySource = {};
+        const normalized = [];
+
+        values.forEach(({ source, value }) => {
+            valuesBySource[source] = value;
+            const normalizedValue = String(value).toLowerCase();
+            if (!normalized.includes(normalizedValue)) {
+                normalized.push(normalizedValue);
+            }
+        });
+
+        return {
+            field: fieldName,
+            valuesBySource,
+            normalized: normalized.sort(),
+            conflictCount: normalizedValues.size,
+            timestamp: Date.now()
+        };
+    }
+
+    /**
+     * Tracks conflict metrics for health monitoring purposes.
+     * 
+     * @param {string} assetKey - Asset symbol/key
+     * @param {Object} conflicts - Detected conflicts
+     * @private
+     * @memberof StablecoinDataService
+     */
+    _trackConflictMetrics(assetKey, conflicts) {
+        // Initialize conflict tracking if not exists
+        if (!this.conflictMetrics) {
+            this.conflictMetrics = {
+                totalConflicts: 0,
+                conflictsByField: {},
+                conflictsByAsset: {},
+                lastConflictTime: null
+            };
+        }
+
+        this.conflictMetrics.totalConflicts++;
+        this.conflictMetrics.lastConflictTime = Date.now();
+
+        // Track by asset
+        if (!this.conflictMetrics.conflictsByAsset[assetKey]) {
+            this.conflictMetrics.conflictsByAsset[assetKey] = 0;
+        }
+        this.conflictMetrics.conflictsByAsset[assetKey]++;
+
+        // Track by field
+        Object.keys(conflicts).forEach(field => {
+            if (!this.conflictMetrics.conflictsByField[field]) {
+                this.conflictMetrics.conflictsByField[field] = 0;
+            }
+            this.conflictMetrics.conflictsByField[field]++;
+        });
+    }
+
+    /**
+     * Gets current conflict metrics for health monitoring.
+     * 
+     * @returns {Object} Conflict metrics summary
+     * @memberof StablecoinDataService
+     */
+    getConflictMetrics() {
+        return this.conflictMetrics || {
+            totalConflicts: 0,
+            conflictsByField: {},
+            conflictsByAsset: {},
+            lastConflictTime: null
+        };
     }
 
 }
