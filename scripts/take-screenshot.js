@@ -19,9 +19,10 @@ const CONFIG = {
     },
     DEFAULT_DEVICE: 'desktop',
     PAGES: [
-        { name: 'home', path: '/', waitFor: '.coin-list' },
-        { name: 'platforms', path: '/platforms', waitFor: '.platform-list' },
-        { name: 'status', path: '/status', waitFor: '.health-status' }
+        // Updated selectors to match v2 templates
+        { name: 'home', path: '/', waitFor: '#coinsTable' },
+        { name: 'platforms', path: '/platforms', waitFor: '.summary-card' },
+        { name: 'status', path: '/status', waitFor: '.summary-card' }
     ]
 };
 
@@ -67,7 +68,14 @@ class ScreenshotTaker {
         return new Promise((resolve, reject) => {
             console.log(`🌐 Starting server on port ${CONFIG.PORT}...`);
             
-            const env = { ...process.env, PORT: CONFIG.PORT };
+            // Force mock mode so screenshots render deterministically and fast
+            const env = { 
+                ...process.env, 
+                PORT: CONFIG.PORT,
+                DEBUG_MODE: process.env.DEBUG_MODE || 'true',
+                MOCK_APIS: process.env.MOCK_APIS || 'true',
+                HEALTH_MONITORING: process.env.HEALTH_MONITORING || 'false'
+            };
             this.serverProcess = spawn('node', ['app/app.js'], { 
                 env, 
                 stdio: 'pipe',
