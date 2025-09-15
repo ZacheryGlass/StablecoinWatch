@@ -46,7 +46,8 @@
         gap: 1.5rem;
         flex-wrap: nowrap;
         overflow: hidden;
-        max-width: clamp(200px, calc(100vw - 400px), 600px);
+        flex: 1 1 auto; /* fill available space */
+        max-width: 100%;
         min-width: 0;
     }
     
@@ -59,15 +60,8 @@
         transition: color 0.2s ease;
         white-space: nowrap;
         min-width: 0;
-        flex-shrink: 1;
+        flex: 0 0 auto; /* don't shrink away */
     }
-    
-    /* Priority-based shrinking - higher values disappear first */
-    .metric-inline:nth-child(1) { flex-shrink: 1; } /* Market Cap - most important */
-    .metric-inline:nth-child(3) { flex-shrink: 2; } /* 24h Volume - medium importance */
-    .metric-inline:nth-child(5) { flex-shrink: 4; } /* ETH Total - less important */
-    .metric-inline:nth-child(7) { flex-shrink: 4; } /* % on ETH - less important */
-    .metric-inline:nth-child(9) { flex-shrink: 5; } /* Chain Data - least important */
     
     .metric-inline:hover {
         color: #fff;
@@ -141,7 +135,7 @@
         }
         .metrics-inline {
             gap: 1rem;
-            max-width: clamp(150px, calc(100vw - 450px), 500px);
+            max-width: 100%;
         }
     }
     
@@ -293,21 +287,11 @@
                 </a>
                 <% } %>
                 
-                <% if (typeof totalETHMCap !== 'undefined' && data && data.metrics && data.metrics.totalMCap) { %>
                 <div class="metric-divider"></div>
                 <a class="metric-inline" href="/platforms" aria-label="Explore blockchain platform distribution; percent on Ethereum">
                     <span class="metric-label-inline">% on ETH:</span>
-                    <span class="metric-value-inline"><%= ((totalETHMCap/data.metrics.totalMCap)*100).toFixed(1) %>%</span>
+                    <span class="metric-value-inline"><%= (data && data.metrics && data.metrics.totalMCap && totalETHMCap) ? ((totalETHMCap/data.metrics.totalMCap)*100).toFixed(1) + '%' : '0%' %></span>
                 </a>
-                <% } %>
-                
-                <% if ((typeof totalETHMCap === 'undefined' || !totalETHMCap) && typeof dataCompleteness !== 'undefined') { %>
-                <div class="metric-divider"></div>
-                <span class="metric-inline" title="Chain distribution data incomplete (<%= dataCompleteness %>% coverage). Visit individual coin pages for available per-chain data.">
-                    <span class="metric-label-inline">Chain Data:</span>
-                    <span class="metric-value-inline" style="opacity: 0.7;"><%= dataCompleteness %>% available</span>
-                </span>
-                <% } %>
             </div>
         </div>
         
