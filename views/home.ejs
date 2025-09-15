@@ -547,8 +547,8 @@
             const coinsRaw = [
                 <% data.stablecoins.forEach((coin) => { %>
                     {
-                        name: "<%= (coin.name || '').replace(/"/g, '\\"') %>",
-                        symbol: "<%= (coin.symbol || '').replace(/"/g, '\\"') %>",
+                        name: "<%= (coin.name || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"') %>",
+                        symbol: "<%= (coin.symbol || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"') %>",
                         mcap: <%= typeof coin.main?.circulating_mcap === 'number' ? coin.main.circulating_mcap : 'null' %>,
                         vol: <%= typeof coin.main?.volume_24h === 'number' ? coin.main.volume_24h : 'null' %>
                     },
