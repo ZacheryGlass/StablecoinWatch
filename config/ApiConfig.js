@@ -271,6 +271,66 @@ class ApiConfig {
     }
 
     /**
+     * Get shared asset classification configuration
+     * @returns {Object} Shared taxonomy configuration for AssetClassifier
+     */
+    getAssetClassificationConfig() {
+        return {
+            enabled: process.env.ASSET_CLASSIFICATION_ENABLED !== 'false',
+            taxonomy: {
+                // Stablecoin identification tags
+                stablecoinTags: [
+                    'stablecoin',
+                    ...(this._parseCustomTags(process.env.CUSTOM_STABLECOIN_TAGS))
+                ],
+                
+                // Tokenized asset identification tags
+                tokenizedAssetTags: [
+                    'tokenized-assets',
+                    ...(this._parseCustomTags(process.env.CUSTOM_TOKENIZED_TAGS))
+                ],
+                
+                // Specific tokenized asset subtypes
+                tokenizedSubtypes: {
+                    'tokenized-gold': 'Gold',
+                    'tokenized-silver': 'Silver',
+                    'tokenized-etfs': 'ETF',
+                    'tokenized-stock': 'Stocks',
+                    'tokenized-real-estate': 'Real Estate',
+                    'tokenized-treasury-bills': 'Treasury Bills',
+                    'tokenized-commodities': 'Commodities'
+                },
+                
+                // Asset-backed stablecoin tags
+                assetBackedTags: ['asset-backed-stablecoin'],
+                
+                // Pattern matching rules for name/symbol heuristics
+                patterns: {
+                    goldSymbols: 'xau|paxg|xaut',
+                    goldNames: 'gold',
+                    silverSymbols: 'xag',
+                    silverNames: 'silver',
+                    etf: 'etf',
+                    treasury: 'treasury',
+                    stock: 'stock',
+                    realEstate: 'real estate|real-estate|estate'
+                }
+            }
+        };
+    }
+
+    /**
+     * Parse custom tags from environment variables
+     * @private
+     * @param {string} envValue - Comma-separated tag string
+     * @returns {Array<string>} Array of tags
+     */
+    _parseCustomTags(envValue) {
+        if (!envValue || typeof envValue !== 'string') return [];
+        return envValue.split(',').map(tag => tag.trim().toLowerCase()).filter(Boolean);
+    }
+
+    /**
      * Parse rate limit from environment variable
      * @private
      * @param {string} envValue - Environment variable value

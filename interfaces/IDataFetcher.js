@@ -1,6 +1,27 @@
 /**
  * Interface for pluggable data source fetchers
  * Designed to support multiple APIs: CMC, Messari, CoinGecko, DeFiLlama, etc.
+ * 
+ * ASSET CLASSIFICATION FIELDS:
+ * 
+ * This interface has been extended to support asset classification as part of the
+ * centralized classification system (AssetClassifier domain service).
+ * 
+ * New fields:
+ * - StandardizedStablecoin.assetCategory: Primary category ('Stablecoin', 'Tokenized Asset', 'Other')
+ * - MetadataInfo.peggedAsset: Specific pegged asset type ('Gold', 'Silver', 'ETF', etc.)
+ * - MetadataInfo.assetClassification: Classification metadata (confidence, method, etc.)
+ * 
+ * Usage in data fetchers:
+ * 1. Use AssetClassifier.classify() in transformToStandardFormat()
+ * 2. Set assetCategory from classification result
+ * 3. Set metadata.peggedAsset from classification result
+ * 4. Optionally populate assetClassification metadata
+ * 
+ * Backward compatibility:
+ * - All new fields are optional (| null)
+ * - Existing consumers continue working unchanged
+ * - New consumers can opt-in to classification features
  */
 class IDataFetcher {
     constructor() {
@@ -117,10 +138,11 @@ class IDataFetcher {
  * @property {string} name - Stablecoin name
  * @property {string} symbol - Stablecoin symbol
  * @property {string} slug - URL-safe identifier
+ * @property {string|null} assetCategory - Primary asset category ('Stablecoin', 'Tokenized Asset', 'Other', or null)
  * @property {MarketData} marketData - Price, market cap, volume data
  * @property {SupplyData} supplyData - Supply information
  * @property {Array<PlatformInfo>} platforms - Blockchain platforms
- * @property {MetadataInfo} metadata - Additional info (tags, description, etc.)
+ * @property {MetadataInfo} metadata - Additional info (tags, description, classification, etc.)
  * @property {number} confidence - Confidence score for this data (0-1)
  * @property {number} timestamp - When this data was fetched
  */
@@ -172,6 +194,70 @@ class IDataFetcher {
  * @property {string} website - Official website
  * @property {string} logoUrl - Logo image URL
  * @property {string} dateAdded - When added to tracking
+ * @property {string|null} peggedAsset - Specific pegged asset type ('Gold', 'Silver', 'ETF', 'Stocks', 'Real Estate', 'Treasury Bills', 'Commodities', or null)
+ * @property {AssetClassificationInfo|null} assetClassification - Asset classification metadata (confidence, method, etc.)
+ */
+
+/**
+ * Asset classification metadata
+ * @typedef {Object} AssetClassificationInfo
+ * @property {number} confidence - Classification confidence score (0-1)
+ * @property {string} source - Source of classification ('AssetClassifier', 'manual', etc.)
+ * @property {string} method - Classification method used ('tag', 'pattern', 'heuristic', 'fallback')
+ * @property {number} timestamp - When classification was performed
+ */
+
+/**
+ * ASSET CLASSIFICATION VALUES:
+ * 
+ * assetCategory values:
+ * - 'Stablecoin': Fiat-pegged stablecoins (USDT, USDC, BUSD, etc.)
+ * - 'Tokenized Asset': Real-world asset tokens (PAXG, tokenized stocks, etc.)
+ * - 'Other': Assets that don't fit the above categories
+ * - null: Classification unavailable or disabled
+ * 
+ * peggedAsset values:
+ * - 'Gold': Gold-backed tokens (PAXG, XAUT, etc.)
+ * - 'Silver': Silver-backed tokens
+ * - 'ETF': Exchange-traded fund tokens
+ * - 'Stocks': Equity-backed tokens
+ * - 'Real Estate': Property-backed tokens
+ * - 'Treasury Bills': Government bond tokens
+ * - 'Commodities': General commodity-backed tokens
+ * - 'Tokenized Asset': Generic tokenized asset (fallback)
+ * - null: Not a tokenized/pegged asset or classification unavailable
+ * 
+ * Classification method values:
+ * - 'tag': Detected via API tags (highest confidence)
+ * - 'pattern': Detected via symbol/name pattern matching
+ * - 'heuristic': Detected via name/description heuristics
+ * - 'fallback': Default classification applied
+ * 
+ * Example StandardizedStablecoin with classification:
+ * {
+ *   sourceId: 'cmc',
+ *   id: '1027',
+ *   name: 'PAX Gold',
+ *   symbol: 'PAXG',
+ *   slug: 'pax-gold',
+ *   assetCategory: 'Tokenized Asset',
+ *   marketData: { price: 1800.50, ... },
+ *   supplyData: { circulating: 245000, ... },
+ *   platforms: [...],
+ *   metadata: {
+ *     tags: ['tokenized-gold', 'commodity'],
+ *     description: 'Gold-backed cryptocurrency',
+ *     peggedAsset: 'Gold',
+ *     assetClassification: {
+ *       confidence: 0.95,
+ *       source: 'AssetClassifier',
+ *       method: 'tag',
+ *       timestamp: 1640995200000
+ *     }
+ *   },
+ *   confidence: 0.85,
+ *   timestamp: 1640995200000
+ * }
  */
 
 module.exports = IDataFetcher;

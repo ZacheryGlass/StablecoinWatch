@@ -1,6 +1,28 @@
 /**
  * Interface for the main stablecoin data service
  * Provides high-level API for accessing aggregated stablecoin data
+ * 
+ * ASSET CLASSIFICATION EXTENSIONS:
+ * 
+ * This interface has been extended to support asset classification in aggregated data.
+ * The service aggregates classification data from multiple sources and handles conflicts.
+ * 
+ * Enhanced typedefs:
+ * - AggregatedStablecoin.assetCategory: Consensus asset category across sources
+ * - AggregatedMetadata.peggedAsset: Consensus pegged asset type with source attribution
+ * - AggregatedMetadata.conflicts: Detected classification conflicts between sources
+ * - AggregatedMetadata.assetClassification: Aggregated classification metadata
+ * 
+ * Data aggregation behavior:
+ * - Classification fields follow source priority rules
+ * - Conflicts are detected and stored in metadata.conflicts
+ * - Source attribution tracks which API provided each field
+ * - AssetClassifier results take precedence over raw API data
+ * 
+ * Backward compatibility:
+ * - All new fields are optional (| null) 
+ * - Existing API consumers continue working
+ * - Legacy metadata structure preserved
  */
 class IStablecoinDataService {
     constructor() {
@@ -83,10 +105,11 @@ class IStablecoinDataService {
  * @property {string} symbol - Symbol
  * @property {string} slug - URL-safe identifier
  * @property {string} imageUrl - Logo URL
+ * @property {string|null} assetCategory - Primary asset category ('Stablecoin', 'Tokenized Asset', 'Other', or null)
  * @property {AggregatedMarketData} marketData - Market data (price, mcap, volume)
  * @property {AggregatedSupplyData} supplyData - Supply information
  * @property {Array<NormalizedPlatform>} platforms - Blockchain platforms
- * @property {AggregatedMetadata} metadata - Merged metadata
+ * @property {AggregatedMetadata} metadata - Merged metadata with classification info
  * @property {DataConfidence} confidence - Confidence scores for different data types
  * @property {Array<string>} dataSources - Which sources provided data for this coin
  * @property {number} lastUpdated - When this data was last refreshed
@@ -137,6 +160,35 @@ class IStablecoinDataService {
  * @property {string} slug - URL-safe identifier
  * @property {string} category - Platform category (L1, L2, sidechain, etc.)
  * @property {Array<string>} aliases - Alternative names for this platform
+ */
+
+/**
+ * Aggregated metadata with source attribution and conflict detection
+ * @typedef {Object} AggregatedMetadata
+ * @property {Array<string>} tags - Merged classification tags from all sources
+ * @property {string} tagsSource - Primary source for tags
+ * @property {string|null} description - Merged description text
+ * @property {string} descriptionSource - Primary source for description
+ * @property {string|null} website - Official website URL
+ * @property {string} websiteSource - Primary source for website
+ * @property {string|null} logoUrl - Logo image URL
+ * @property {string} logoUrlSource - Primary source for logo URL
+ * @property {string|null} dateAdded - When added to tracking
+ * @property {string} dateAddedSource - Primary source for date added
+ * @property {string|null} peggedAsset - Specific pegged asset type ('Gold', 'Silver', 'ETF', etc.)
+ * @property {string} peggedAssetSource - Primary source for pegged asset classification
+ * @property {AssetClassificationInfo|null} assetClassification - Asset classification metadata
+ * @property {Object|null} conflicts - Detected conflicts between sources for metadata fields
+ * @property {Array<string>} contributingSources - All sources that provided metadata
+ */
+
+/**
+ * Asset classification metadata (shared with IDataFetcher)
+ * @typedef {Object} AssetClassificationInfo
+ * @property {number} confidence - Classification confidence score (0-1)
+ * @property {string} source - Source of classification ('AssetClassifier', 'manual', etc.)
+ * @property {string} method - Classification method used ('tag', 'pattern', 'heuristic', 'fallback')
+ * @property {number} timestamp - When classification was performed
  */
 
 /**
