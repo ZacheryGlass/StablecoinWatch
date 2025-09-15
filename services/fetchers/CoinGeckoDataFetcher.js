@@ -1,5 +1,6 @@
 const IDataFetcher = require('../../interfaces/IDataFetcher');
 const ApiConfig = require('../../config/ApiConfig');
+const AssetClassifier = require('../domain/AssetClassifier');
 const axios = require('axios');
 
 /**
@@ -24,6 +25,10 @@ class CoinGeckoDataFetcher extends IDataFetcher {
         this.healthMonitor = healthMonitor;
         this.config = ApiConfig.getApiConfig('coingecko') || {};
         this.sourceId = 'coingecko';
+        
+        // Initialize AssetClassifier for centralized classification
+        const classificationConfig = this.config?.classification || {};
+        this.classifier = new AssetClassifier(classificationConfig);
     }
 
     /**
@@ -207,36 +212,48 @@ class CoinGeckoDataFetcher extends IDataFetcher {
      */
     transformToStandardFormat(rawData) {
         const ts = Date.now();
-        const out = (rawData || []).map((coin) => ({
-            sourceId: this.sourceId,
-            id: coin.id,
-            name: coin.name,
-            symbol: coin.symbol ? String(coin.symbol).toUpperCase() : coin.symbol,
-            slug: (coin.id || coin.symbol || '').toLowerCase(),
-            marketData: {
-                price: coin.current_price ?? null,
-                marketCap: coin.market_cap ?? null,
-                volume24h: coin.total_volume ?? null,
-                percentChange24h: coin.price_change_percentage_24h ?? null,
-                rank: coin.market_cap_rank ?? null,
-            },
-            supplyData: {
-                circulating: coin.circulating_supply ?? null,
-                total: coin.total_supply ?? null,
-                max: null,
-                networkBreakdown: []
-            },
-            platforms: [],
-            metadata: {
-                tags: ['coingecko'],
-                description: null,
-                website: null,
-                logoUrl: coin.image || null,
-                dateAdded: null,
-            },
-            confidence: 0.6,
-            timestamp: ts,
-        }));
+        const out = (rawData || []).map((coin) => {
+            // Use AssetClassifier for consistent classification
+            const classification = this.classifier.classify({
+                tags: ['coingecko'], // CoinGecko doesn't provide detailed tags in markets endpoint
+                name: coin.name,
+                symbol: coin.symbol,
+                slug: coin.id
+            });
+            
+            return {
+                sourceId: this.sourceId,
+                id: coin.id,
+                name: coin.name,
+                symbol: coin.symbol ? String(coin.symbol).toUpperCase() : coin.symbol,
+                slug: (coin.id || coin.symbol || '').toLowerCase(),
+                marketData: {
+                    price: coin.current_price ?? null,
+                    marketCap: coin.market_cap ?? null,
+                    volume24h: coin.total_volume ?? null,
+                    percentChange24h: coin.price_change_percentage_24h ?? null,
+                    rank: coin.market_cap_rank ?? null,
+                },
+                supplyData: {
+                    circulating: coin.circulating_supply ?? null,
+                    total: coin.total_supply ?? null,
+                    max: null,
+                    networkBreakdown: []
+                },
+                platforms: [],
+                metadata: {
+                    tags: ['coingecko'],
+                    description: null,
+                    website: null,
+                    logoUrl: coin.image || null,
+                    dateAdded: null,
+                    peggedAsset: classification.peggedAsset,
+                },
+                assetCategory: classification.assetCategory,
+                confidence: 0.6,
+                timestamp: ts,
+            };
+        });
         return out;
     }
 }

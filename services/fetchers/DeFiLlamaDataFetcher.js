@@ -4,6 +4,7 @@ const path = require('path');
 const IDataFetcher = require('../../interfaces/IDataFetcher');
 const ApiConfig = require('../../config/ApiConfig');
 const AppConfig = require('../../config/AppConfig');
+const AssetClassifier = require('../domain/AssetClassifier');
 
 /**
  * DeFiLlama data fetcher implementation.
@@ -28,6 +29,10 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
         this.healthMonitor = healthMonitor;
         this.config = ApiConfig.getApiConfig('defillama') || {};
         this.sourceId = 'defillama';
+        
+        // Initialize AssetClassifier for centralized classification
+        const classificationConfig = this.config?.classification || {};
+        this.classifier = new AssetClassifier(classificationConfig);
         
         // Pre-compile regex patterns for optimal performance
         this._precompiledPatterns = {
@@ -309,7 +314,7 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
     transformToStandardFormat(rawData) {
         const ts = Date.now();
         const out = (rawData || []).map((coin) => {
-            // Normalize pegged asset from pegType
+            // Normalize pegged asset from pegType for DeFiLlama
             const normalizePeggedAsset = (pegType) => {
                 if (!pegType || typeof pegType !== 'string') return null;
                 // Expect values like 'peggedUSD', 'peggedEUR', 'peggedXAU', etc.
@@ -322,6 +327,26 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
                 };
                 return special[code] || code;
             };
+            
+            // Determine tags for classification (DeFiLlama specific)
+            const tags = ['stablecoin']; // All data from this endpoint are stablecoins
+            if (coin.pegType) {
+                tags.push(coin.pegType); // Add pegType as tag for classification
+            }
+            if (coin.pegMechanism) {
+                tags.push(coin.pegMechanism); // Add mechanism info
+            }
+            
+            // Use AssetClassifier for consistent classification
+            const classification = this.classifier.classify({
+                tags: tags,
+                name: coin.name,
+                symbol: coin.symbol,
+                slug: coin.symbol || coin.name
+            });
+            
+            // Prefer DeFiLlama's peggedAsset over classifier if available
+            const peggedAsset = normalizePeggedAsset(coin.pegType) || classification.peggedAsset;
 
             // Extract circulating supply - DeFiLlama uses different peg types
             const circulatingSupply = coin.circulating?.peggedUSD || 
@@ -389,12 +414,12 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
                 },
                 platforms: platforms,
                 metadata: {
-                    tags: ['stablecoin'], // All data from this endpoint are stablecoins
+                    tags: tags,
                     description: coin.name ? `${coin.name} is a ${coin.pegMechanism || 'stablecoin'} that is ${coin.pegType || 'pegged to USD'}.` : null,
                     website: null,
                     logoUrl: null,
                     dateAdded: null,
-                    peggedAsset: normalizePeggedAsset(coin.pegType),
+                    peggedAsset: peggedAsset,
                     // Store all DeFiLlama-specific fields for future use
                     defillamaData: {
                         pegType: coin.pegType,
@@ -404,6 +429,7 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
                         rawCirculating: coin.circulating,
                     }
                 },
+                assetCategory: classification.assetCategory,
                 confidence: 0.8, // High confidence for DeFiLlama supply data
                 timestamp: ts,
             };

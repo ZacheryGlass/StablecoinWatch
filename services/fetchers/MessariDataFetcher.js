@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const IDataFetcher = require('../../interfaces/IDataFetcher');
 const ApiConfig = require('../../config/ApiConfig');
+const AssetClassifier = require('../domain/AssetClassifier');
 
 /**
  * Messari data fetcher implementation.
@@ -28,6 +29,10 @@ class MessariDataFetcher extends IDataFetcher {
         this.healthMonitor = healthMonitor;
         this.config = ApiConfig.getApiConfig('messari') || {};
         this.sourceId = 'messari';
+        
+        // Initialize AssetClassifier for centralized classification
+        const classificationConfig = this.config?.classification || {};
+        this.classifier = new AssetClassifier(classificationConfig);
         this.client = null;
         
         // Pre-compile regex patterns for optimal performance
@@ -372,6 +377,15 @@ class MessariDataFetcher extends IDataFetcher {
             if (!Array.isArray(nbArray) && typeof nbRaw === 'object' && nbRaw) {
                 try { nbArray = Object.values(nbRaw).flat(); } catch (_) { nbArray = []; }
             }
+            
+            // Use AssetClassifier for consistent classification
+            const classification = this.classifier.classify({
+                tags: Array.isArray(m.tags) ? m.tags : [],
+                name: m.name,
+                symbol: m.symbol,
+                slug: m.slug
+            });
+            
             // No tracing logs in production
             const standardized = {
                 sourceId: this.sourceId,
@@ -416,7 +430,9 @@ class MessariDataFetcher extends IDataFetcher {
                     website: m.profile?.general?.overview?.official_links?.[0]?.link || null,
                     logoUrl: m.profile?.images?.logo || null,
                     dateAdded: null,
+                    peggedAsset: classification.peggedAsset,
                 },
+                assetCategory: classification.assetCategory,
                 confidence: 0.85,
                 timestamp: ts,
             };
