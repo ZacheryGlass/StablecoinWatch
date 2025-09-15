@@ -77,6 +77,7 @@ class ApiConfig {
                             max: parseFloat(process.env.CMC_PRICE_MAX) || 2.00
                         }
                     },
+                    includeTokenizedAssets: process.env.CMC_INCLUDE_TOKENIZED_ASSETS === 'true',
                     batchSize: parseInt(process.env.CMC_BATCH_SIZE) || 5000,
                     maxResults: parseInt(process.env.CMC_MAX_RESULTS) || 5000
                 },
@@ -328,6 +329,67 @@ class ApiConfig {
     _parseCustomTags(envValue) {
         if (!envValue || typeof envValue !== 'string') return [];
         return envValue.split(',').map(tag => tag.trim().toLowerCase()).filter(Boolean);
+    }
+
+    /**
+     * Get tokenized assets configuration for a specific source
+     * @param {string} sourceId - Source identifier ('cmc', 'messari', etc.)
+     * @returns {Object} Tokenized assets configuration
+     */
+    getTokenizedAssetsConfig(sourceId) {
+        const config = this.getApiConfig(sourceId);
+        if (!config || !config.processing) {
+            return { 
+                enabled: false, 
+                source: sourceId,
+                reason: 'Source not configured or missing processing section'
+            };
+        }
+
+        const enabled = !!config.processing.includeTokenizedAssets;
+        return {
+            enabled,
+            source: sourceId,
+            environmentVariable: this._getTokenizedAssetsEnvVar(sourceId),
+            reason: enabled ? 'Explicitly enabled via configuration' : 'Disabled by default (backward compatibility)'
+        };
+    }
+
+    /**
+     * Get the environment variable name for tokenized assets config
+     * @private
+     * @param {string} sourceId - Source identifier
+     * @returns {string} Environment variable name
+     */
+    _getTokenizedAssetsEnvVar(sourceId) {
+        const sourceUpper = sourceId.toUpperCase();
+        return `${sourceUpper}_INCLUDE_TOKENIZED_ASSETS`;
+    }
+
+    /**
+     * Get global tokenized assets configuration summary
+     * @returns {Object} Summary of tokenized assets configuration across all sources
+     */
+    getGlobalTokenizedAssetsConfig() {
+        const sources = Object.keys(this._apiConfigs);
+        const summary = {
+            enabledSources: [],
+            disabledSources: [],
+            totalSources: sources.length,
+            globallyEnabled: false
+        };
+
+        sources.forEach(sourceId => {
+            const config = this.getTokenizedAssetsConfig(sourceId);
+            if (config.enabled) {
+                summary.enabledSources.push(sourceId);
+            } else {
+                summary.disabledSources.push(sourceId);
+            }
+        });
+
+        summary.globallyEnabled = summary.enabledSources.length > 0;
+        return summary;
     }
 
     /**
