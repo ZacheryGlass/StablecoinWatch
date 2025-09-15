@@ -389,7 +389,12 @@
                                             <a href="/coins/<%= coin.uri %>" class="coin-name"><%= coin.name %></a>
                                         </div>
                                     </td>
-                                    <td class="hide-sm symbol"><%= coin.symbol %></td>
+                                    <td class="hide-sm symbol">
+                                        <% if (coin.conflicts) { %>
+                                            <span title="Conflicts detected" style="color:#d9534f;font-weight:bold;margin-right:6px;">⚠</span>
+                                        <% } %>
+                                        <%= coin.symbol %>
+                                    </td>
                                     <td data-sort="<%= h.safeGet(coin, 'main.price', 0) %>"><%= h.getFormattedPrice(coin, 'main', formatter) %></td>
                                     <td class="hide-md">
                                         <% if (coin.pegged_asset) { 
@@ -412,6 +417,42 @@
                         </table>
                     </div>
                 </div>
+                <% /* Optional Tokenized Assets section, feature-flag controlled */ %>
+                <% if (featureFlags && featureFlags.showTokenizedAssets && tokenizedAssets && tokenizedAssets.length) { %>
+                    <div class="content-section" style="margin-top:1.5rem;">
+                        <h2 class="section-title">Tokenized Assets</h2>
+                        <p>Assets tokenized on-chain backed by off-chain assets (stocks, real estate, commodities, etc.).</p>
+                        <table class="coins-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Symbol</th>
+                                    <th>Pegged Asset</th>
+                                    <th>Market Cap</th>
+                                    <th>Volume (24h)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <% let ti = 0; tokenizedAssets.forEach((t) => { ti++; %>
+                                <tr>
+                                    <td class="rank"><span class="coin-rank"><%= ti %></span></td>
+                                    <td>
+                                        <div class="name-cell">
+                                            <img src="<%= h.getImage(t) %>" alt="<%= t.symbol %>" />
+                                            <a href="/coins/<%= t.uri %>" class="coin-name"><%= t.name %></a>
+                                        </div>
+                                    </td>
+                                    <td class="hide-sm symbol"><%= t.symbol %></td>
+                                    <td class="hide-md"><%= t.pegged_asset || '-' %></td>
+                                    <td data-sort="<%= h.safeGet(t, 'main.circulating_mcap', 0) %>"><%= h.getMarketCap(t, 'main') %></td>
+                                    <td><%= h.getVolume(t, 'main') %></td>
+                                </tr>
+                            <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } %>
             <% } else { %>
                 <div class="content-section">
                     <p>No stablecoin data available.</p>

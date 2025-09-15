@@ -46,10 +46,19 @@ router.get('/', async (req, res) => {
     // Calculate data completeness for chain metrics
     const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
     
+    // Provide feature flags and tokenized asset segmentation to the view
+    const AppConfig = require('../config/AppConfig');
+    const featureFlags = AppConfig.featureFlags || { showTokenizedAssets: false };
+
+    // Segment tokenized assets for optional display
+    const tokenizedAssets = Array.isArray(data.stablecoins) ? data.stablecoins.filter(c => c.assetCategory && c.assetCategory.toLowerCase().includes('token')) : [];
+
     res.render('home', {
         data: data,
         dataCompleteness,
         showChainMetrics,
+        featureFlags,
+        tokenizedAssets,
         active: 'home',
         formatter: {
             formatNumber: util.formatNumber,
@@ -86,12 +95,16 @@ router.get('/status', async (req, res) => {
         mockMode = Object.values(cfgs).some(c => c?.mockData && c.mockData.enabled);
     } catch (_) { mockMode = false; }
 
+    const AppConfig = require('../config/AppConfig');
+    const featureFlags = AppConfig.featureFlags || { showTokenizedAssets: false };
+
     res.render('status', {
         data,
         dataCompleteness,
         showChainMetrics,
         health,
         mockMode,
+        featureFlags,
         active: 'status',
         formatter: {
             formatNumber: require('../app/util').formatNumber,
@@ -132,10 +145,14 @@ router.get('/platforms', async (req, res) => {
     // Calculate data completeness for chain metrics
     const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
     
+    const AppConfig = require('../config/AppConfig');
+    const featureFlags = AppConfig.featureFlags || { showTokenizedAssets: false };
+
     res.render('chains', {
         data: data,
         dataCompleteness,
         showChainMetrics,
+        featureFlags,
         active: 'chains',
         formatter: {
             formatNumber: util.formatNumber,
@@ -161,10 +178,14 @@ router.get('/coins/:symbol', async (req, res) => {
     // Calculate data completeness for chain metrics
     const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
     
+    const AppConfig = require('../config/AppConfig');
+    const featureFlags = AppConfig.featureFlags || { showTokenizedAssets: false };
+
     res.render('coins', {
         data: data,
         dataCompleteness,
         showChainMetrics,
+        featureFlags,
         coin: coin,
         active: '',
         formatter: {

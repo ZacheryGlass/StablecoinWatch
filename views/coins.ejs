@@ -108,6 +108,9 @@
                     <img class="coin_logo" src="<%= h.getImage(coin) %>" alt="" style="width:48px;height:48px;border-radius:6px;"/>
                     <h1><%= coin.name %></h1>
                     <span class="coin-symbol">(<%= coin.symbol %>)</span>
+                    <% if (coin.assetCategory) { %>
+                        <span class="metric-highlight" style="margin-left:8px; font-size:0.9rem;"> <%= coin.assetCategory %> </span>
+                    <% } %>
                 </div>
                 <div class="coin-stats">
                     <div class="stat-card">
@@ -130,6 +133,13 @@
             </div>
 
             <!-- Chain Distribution -->
+            <% if (coin.conflicts) { %>
+                <div class="content-section" style="border-left:4px solid #d9534f;">
+                    <h3 style="color:#d9534f;">Conflicts Detected</h3>
+                    <p>There are conflicting metadata values across sources for this asset. Details:</p>
+                    <pre style="background:#fff6f6;padding:0.75rem;border-radius:6px;color:#6b2121;"><%= JSON.stringify(coin.conflicts, null, 2) %></pre>
+                </div>
+            <% } %>
             <% if (Array.isArray(coin.platforms) && coin.platforms.length > 0) { %>
                 <div class="content-section">
                     <h2 class="section-title">Supply by Chain</h2>

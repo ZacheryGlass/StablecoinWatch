@@ -107,6 +107,11 @@ class AppConfig {
                 logRequests: process.env.LOG_REQUESTS === 'true',
                 verbose: process.env.VERBOSE === 'true'
             }
+            ,
+            // Feature flags to toggle optional UI behavior
+            featureFlags: {
+                showTokenizedAssets: process.env.SHOW_TOKENIZED_ASSETS === 'true'
+            }
         };
     }
 

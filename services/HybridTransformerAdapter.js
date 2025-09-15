@@ -110,6 +110,10 @@ class HybridTransformerAdapter extends IViewModelTransformer {
             slug: agg.slug || (agg.symbol || '').toLowerCase(),
             imageUrl: agg.imageUrl || (meta.logoUrl || null),
             pegged_asset: meta.peggedAsset || null,
+            // Pass through aggregated asset category and any conflict metadata so
+            // downstream transformer and views can make decisions about display
+            assetCategory: agg.assetCategory || agg.asset_category || (meta.assetCategory || null),
+            conflicts: agg.metadata?.conflicts || null,
             price: md.price ?? null,
             market_cap: md.marketCap ?? (sd.circulating && md.price ? sd.circulating * md.price : null),
             volume_24h: md.volume24h ?? null,

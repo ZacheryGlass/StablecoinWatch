@@ -82,6 +82,8 @@ class HybridTransformer extends IViewModelTransformer {
         sc.img_url = this.sourceDataPopulator.getCoinImageUrl(hybrid);
         // Pegged asset (e.g., USD, EUR, Gold)
         sc.pegged_asset = hybrid.pegged_asset || null;
+    // Asset classification (Stablecoin, Tokenized Asset, etc.)
+    sc.assetCategory = hybrid.assetCategory || hybrid.asset_category || null;
 
         // Platform extraction (now prioritizes DeFiLlama data)
         sc.platforms = this.platformNormalizer.extractPlatformsFromHybrid(hybrid);
@@ -96,6 +98,9 @@ class HybridTransformer extends IViewModelTransformer {
         sc.scw = containers.scw;
         sc.cmc = containers.cmc;
         sc.cgko = containers.cgko;
+
+    // Propagate any structured conflicts detected during aggregation
+    sc.conflicts = hybrid.conflicts || hybrid.metadata?.conflicts || null;
 
         return sc;
     }

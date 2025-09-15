@@ -19,6 +19,8 @@ class Stablecoin {
         this.uri = '';
         /** @type {string|null} The URL to the stablecoin's logo image */
         this.img_url = null;
+    /** @type {string|null} The asset category classification (e.g., 'Stablecoin' or 'Tokenized Asset') */
+    this.assetCategory = null;
         /** @type {Array<Platform>} Array of platforms where this stablecoin exists */
         this.platforms = [];
         /** @type {string|null} The asset this stablecoin is pegged to (e.g., USD, EUR, Gold) */
