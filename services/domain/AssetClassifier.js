@@ -153,8 +153,13 @@ class AssetClassifier {
             return this.ASSET_CATEGORIES.STABLECOIN;
         }
         
-        // Check for tokenized asset tags
+        // Check for tokenized asset tags (generic)
         if (tagsLower.some(tag => this._tokenizedAssetTags.has(tag))) {
+            return this.ASSET_CATEGORIES.TOKENIZED_ASSET;
+        }
+        
+        // Check for specific tokenized asset subtypes
+        if (tagsLower.some(tag => this._tokenizedSubtypes.has(tag))) {
             return this.ASSET_CATEGORIES.TOKENIZED_ASSET;
         }
         

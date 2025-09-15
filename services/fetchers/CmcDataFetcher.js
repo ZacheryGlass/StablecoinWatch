@@ -4,6 +4,7 @@ const path = require('path');
 const IDataFetcher = require('../../interfaces/IDataFetcher');
 const ApiConfig = require('../../config/ApiConfig');
 const AppConfig = require('../../config/AppConfig');
+const AssetClassifier = require('../domain/AssetClassifier');
 const DEBUG = AppConfig.development.debugMode || AppConfig.development.verbose;
 
 /**
@@ -30,21 +31,9 @@ class CmcDataFetcher extends IDataFetcher {
         this.config = ApiConfig.getApiConfig('cmc') || {};
         this.sourceId = 'cmc';
         
-        // Pre-compile tag Sets for O(1) lookup performance
-        const tagName = this.config?.processing?.stablecoinFilter?.tagName || 'stablecoin';
-        this._stablecoinTags = new Set([tagName]);
-        // Tokenized assets taxonomy (CMC tags)
-        this._tokenizedAssetsTag = 'tokenized-assets';
-        this._tokenizedSubtags = {
-            'tokenized-gold': 'Gold',
-            'tokenized-silver': 'Silver',
-            'tokenized-etfs': 'ETF',
-            'tokenized-stock': 'Stocks',
-            'tokenized-real-estate': 'Real Estate',
-            'tokenized-treasury-bills': 'Treasury Bills',
-            'tokenized-commodities': 'Commodities'
-        };
-        this._assetBackedStablecoinTag = 'asset-backed-stablecoin';
+        // Initialize AssetClassifier for centralized classification
+        const classificationConfig = ApiConfig.getAssetClassificationConfig();
+        this.classifier = new AssetClassifier(classificationConfig);
     }
 
     /**
@@ -240,23 +229,26 @@ class CmcDataFetcher extends IDataFetcher {
 
     _filterStablecoinsSync(rawData) {
         const priceRange = this.config?.processing?.stablecoinFilter?.priceRange || { min: 0.5, max: 2.0 };
+        const includeTokenizedAssets = this.config?.processing?.includeTokenizedAssets ?? false;
 
         return rawData.filter((crypto) => {
-            const tags = Array.isArray(crypto.tags) ? crypto.tags.map(String) : [];
-            const tagsLower = tags.map(t => t.toLowerCase());
+            // Use AssetClassifier for consistent classification
+            const classification = this.classifier.classify({
+                tags: crypto.tags || [],
+                name: crypto.name,
+                symbol: crypto.symbol,
+                slug: crypto.slug
+            });
 
-            // Stablecoin tag detection (fiat-pegged)
-            const hasStablecoinTag = tagsLower.some(tag => this._stablecoinTags.has(tag));
+            const isStablecoin = classification.assetCategory === 'Stablecoin';
+            const isTokenizedAsset = classification.assetCategory === 'Tokenized Asset';
 
-            // Tokenized assets detection (broader RWA category)
-            const hasTokenizedAssets = tagsLower.includes(this._tokenizedAssetsTag);
-
-            // Include if it's a fiat-pegged stablecoin OR a tokenized asset
-            const include = hasStablecoinTag || hasTokenizedAssets;
+            // Feature flag gating: include stablecoins always, tokenized assets only if flag is enabled
+            const include = isStablecoin || (includeTokenizedAssets && isTokenizedAsset);
             if (!include) return false;
 
-            // Apply USD price sanity only to fiat-pegged stablecoins
-            if (hasStablecoinTag) {
+            // Apply USD price validation only to fiat-pegged stablecoins
+            if (isStablecoin) {
                 const price = crypto.quote?.USD?.price;
                 if (typeof price === 'number' && isFinite(price)) {
                     if (price < priceRange.min || price > priceRange.max) {
@@ -311,37 +303,13 @@ class CmcDataFetcher extends IDataFetcher {
         }
         
         const out = (rawData || []).map((coin) => {
-            const tags = Array.isArray(coin.tags) ? coin.tags.map(String) : [];
-            const tagsLower = tags.map(t => t.toLowerCase());
-            const nameLower = String(coin.name || '').toLowerCase();
-            const symbolLower = String(coin.symbol || '').toLowerCase();
-            const slugLower = String(coin.slug || '').toLowerCase();
-
-            const classifyPeggedAsset = () => {
-                // Specific tokenized subtags first
-                for (const [tag, label] of Object.entries(this._tokenizedSubtags)) {
-                    if (tagsLower.includes(tag)) {
-                        if (label === 'Commodities') {
-                            if (tagsLower.includes('tokenized-gold') || symbolLower.includes('xau') || /^(paxg|xaut)$/.test(symbolLower) || nameLower.includes('gold') || slugLower.includes('gold')) return 'Gold';
-                            if (tagsLower.includes('tokenized-silver') || symbolLower.includes('xag') || nameLower.includes('silver') || slugLower.includes('silver')) return 'Silver';
-                        }
-                        return label;
-                    }
-                }
-                // Generic tokenized-assets fallback: infer from name/symbol
-                if (tagsLower.includes(this._tokenizedAssetsTag)) {
-                    if (symbolLower.includes('xau') || /^(paxg|xaut)$/.test(symbolLower) || nameLower.includes('gold') || slugLower.includes('gold')) return 'Gold';
-                    if (symbolLower.includes('xag') || nameLower.includes('silver') || slugLower.includes('silver')) return 'Silver';
-                    if (nameLower.includes('etf') || slugLower.includes('etf')) return 'ETF';
-                    if (nameLower.includes('treasury') || slugLower.includes('treasury')) return 'Treasury Bills';
-                    if (nameLower.includes('stock') || slugLower.includes('stock')) return 'Stocks';
-                    if (nameLower.includes('real estate') || slugLower.includes('real-estate') || slugLower.includes('estate')) return 'Real Estate';
-                    return 'Tokenized Asset';
-                }
-                return null;
-            };
-
-            const peggedAsset = classifyPeggedAsset();
+            // Use AssetClassifier for consistent classification
+            const classification = this.classifier.classify({
+                tags: coin.tags || [],
+                name: coin.name,
+                symbol: coin.symbol,
+                slug: coin.slug
+            });
 
             return {
                 sourceId: this.sourceId,
@@ -383,8 +351,9 @@ class CmcDataFetcher extends IDataFetcher {
                     website: null,
                     logoUrl: `https://s2.coinmarketcap.com/static/img/coins/64x64/${coin.id}.png`,
                     dateAdded: coin.date_added || null,
-                    peggedAsset: peggedAsset,
+                    peggedAsset: classification.peggedAsset,
                 },
+                assetCategory: classification.assetCategory,
                 confidence: 0.9,
                 timestamp: ts,
             };
