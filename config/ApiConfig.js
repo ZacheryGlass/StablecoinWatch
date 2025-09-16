@@ -3,6 +3,7 @@
  * Designed for easy addition of new APIs (CoinGecko, DeFiLlama, etc.)
  */
 const AppConfig = require('./AppConfig');
+const SafeUtils = require('../utils/SafeUtils');
 
 class ApiConfig {
     constructor() {
@@ -26,7 +27,7 @@ class ApiConfig {
      * @returns {Object} API configurations by source ID
      */
     _loadApiConfigs() {
-        return {
+        const configs = {
             // CoinMarketCap Configuration
             cmc: {
                 name: 'CoinMarketCap',
@@ -49,9 +50,9 @@ class ApiConfig {
                 },
                 
                 request: {
-                    timeout: parseInt(process.env.CMC_TIMEOUT_MS) || 15000,
-                    retries: parseInt(process.env.CMC_RETRIES) || 3,
-                    retryDelay: parseInt(process.env.CMC_RETRY_DELAY_MS) || 2000,
+                    timeout: SafeUtils.safeParseInt(process.env.CMC_TIMEOUT_MS, 15000),
+                    retries: SafeUtils.safeParseInt(process.env.CMC_RETRIES, 3),
+                    retryDelay: SafeUtils.safeParseInt(process.env.CMC_RETRY_DELAY_MS, 2000),
                     headers: {
                         'Accepts': 'application/json',
                         'Accept-Encoding': 'deflate, gzip'
@@ -73,13 +74,13 @@ class ApiConfig {
                         byTag: true,
                         tagName: 'stablecoin',
                         priceRange: {
-                            min: parseFloat(process.env.CMC_PRICE_MIN) || 0.50,
-                            max: parseFloat(process.env.CMC_PRICE_MAX) || 2.00
+                            min: SafeUtils.safeParseFloat(process.env.CMC_PRICE_MIN, 0.50),
+                            max: SafeUtils.safeParseFloat(process.env.CMC_PRICE_MAX, 2.00)
                         }
                     },
-                    includeTokenizedAssets: process.env[this._getTokenizedAssetsEnvVar('cmc')] === 'true',
-                    batchSize: parseInt(process.env.CMC_BATCH_SIZE) || 5000,
-                    maxResults: parseInt(process.env.CMC_MAX_RESULTS) || 5000
+                    // includeTokenizedAssets set in _setTokenizedAssetsConfig() to avoid context issues
+                    batchSize: SafeUtils.safeParseInt(process.env.CMC_BATCH_SIZE, 5000),
+                    maxResults: SafeUtils.safeParseInt(process.env.CMC_MAX_RESULTS, 5000)
                 },
 
                 mockData: {
@@ -110,9 +111,9 @@ class ApiConfig {
                 },
                 
                 request: {
-                    timeout: parseInt(process.env.MESSARI_TIMEOUT_MS) || 20000,
-                    retries: parseInt(process.env.MESSARI_RETRIES) || 3,
-                    retryDelay: parseInt(process.env.MESSARI_RETRY_DELAY_MS) || 3000,
+                    timeout: SafeUtils.safeParseInt(process.env.MESSARI_TIMEOUT_MS, 20000),
+                    retries: SafeUtils.safeParseInt(process.env.MESSARI_RETRIES, 3),
+                    retryDelay: SafeUtils.safeParseInt(process.env.MESSARI_RETRY_DELAY_MS, 3000),
                     headers: {
                         'Accept': 'application/json'
                     }
@@ -131,8 +132,8 @@ class ApiConfig {
                 processing: {
                     useStablecoinEndpoint: process.env.MESSARI_USE_STABLECOIN_ENDPOINT !== 'false',
                     includeInactive: process.env.MESSARI_INCLUDE_INACTIVE === 'true',
-                    includeTokenizedAssets: process.env[this._getTokenizedAssetsEnvVar('messari')] === 'true',
-                    batchSize: parseInt(process.env.MESSARI_BATCH_SIZE) || 100
+                    // includeTokenizedAssets set in _setTokenizedAssetsConfig() to avoid context issues
+                    batchSize: SafeUtils.safeParseInt(process.env.MESSARI_BATCH_SIZE, 100)
                 },
 
                 mockData: {
@@ -166,9 +167,9 @@ class ApiConfig {
                 },
                 
                 request: {
-                    timeout: parseInt(process.env.COINGECKO_TIMEOUT_MS) || 10000,
-                    retries: parseInt(process.env.COINGECKO_RETRIES) || 2,
-                    retryDelay: parseInt(process.env.COINGECKO_RETRY_DELAY_MS) || 1000,
+                    timeout: SafeUtils.safeParseInt(process.env.COINGECKO_TIMEOUT_MS, 10000),
+                    retries: SafeUtils.safeParseInt(process.env.COINGECKO_RETRIES, 2),
+                    retryDelay: SafeUtils.safeParseInt(process.env.COINGECKO_RETRY_DELAY_MS, 1000),
                     headers: {
                         'Accept': 'application/json'
                     }
@@ -189,7 +190,7 @@ class ApiConfig {
                     currency: 'usd',
                     includeSparkline: false,
                     priceChangePercentage: '24h',
-                    includeTokenizedAssets: process.env[this._getTokenizedAssetsEnvVar('coingecko')] === 'true'
+                    // includeTokenizedAssets set in _setTokenizedAssetsConfig() to avoid context issues
                 },
 
                 mockData: {
@@ -220,9 +221,9 @@ class ApiConfig {
                 },
                 
                 request: {
-                    timeout: parseInt(process.env.DEFILLAMA_TIMEOUT_MS) || 15000,
-                    retries: parseInt(process.env.DEFILLAMA_RETRIES) || 3,
-                    retryDelay: parseInt(process.env.DEFILLAMA_RETRY_DELAY_MS) || 2000,
+                    timeout: SafeUtils.safeParseInt(process.env.DEFILLAMA_TIMEOUT_MS, 15000),
+                    retries: SafeUtils.safeParseInt(process.env.DEFILLAMA_RETRIES, 3),
+                    retryDelay: SafeUtils.safeParseInt(process.env.DEFILLAMA_RETRY_DELAY_MS, 2000),
                     headers: {
                         'Accept': 'application/json'
                     }
@@ -240,12 +241,12 @@ class ApiConfig {
                 
                 processing: {
                     includeBridges: process.env.DEFILLAMA_INCLUDE_BRIDGES === 'true',
-                    minMarketCap: parseInt(process.env.DEFILLAMA_MIN_MCAP) || 1000000,
-                    includeTokenizedAssets: process.env[this._getTokenizedAssetsEnvVar('defillama')] === 'true',
+                    minMarketCap: SafeUtils.safeParseInt(process.env.DEFILLAMA_MIN_MCAP, 1000000),
+                    // includeTokenizedAssets set in _setTokenizedAssetsConfig() to avoid context issues
                     stablecoinFilter: {
                         priceRange: {
-                            min: parseFloat(process.env.DEFILLAMA_PRICE_MIN) || 0.50,
-                            max: parseFloat(process.env.DEFILLAMA_PRICE_MAX) || 2.00
+                            min: SafeUtils.safeParseFloat(process.env.DEFILLAMA_PRICE_MIN, 0.50),
+                            max: SafeUtils.safeParseFloat(process.env.DEFILLAMA_PRICE_MAX, 2.00)
                         },
                         // Allow all peg types by default; optionally exclude specific ones
                         // e.g. to exclude BTC-pegged assets: DEFILLAMA_EXCLUDED_PEG_TYPES=peggedBTC
@@ -253,7 +254,7 @@ class ApiConfig {
                             .split(',')
                             .map(s => s.trim())
                             .filter(Boolean),
-                        minCirculatingSupply: parseInt(process.env.DEFILLAMA_MIN_SUPPLY) || 1000000,
+                        minCirculatingSupply: SafeUtils.safeParseInt(process.env.DEFILLAMA_MIN_SUPPLY, 1000000),
                         excludePatterns: [
                             // Common non-stablecoin patterns
                             /wrapped/i, /liquid/i, /staked/i, /yield/i, /reward/i,
@@ -262,7 +263,7 @@ class ApiConfig {
                         ],
                         excludeSymbols: (process.env.DEFILLAMA_EXCLUDE_SYMBOLS || '').split(',').filter(s => s.trim()),
                         requireStablecoinKeywords: true, // Require 'usd', 'dollar', or common stable patterns
-                        maxExpectedCount: parseInt(process.env.DEFILLAMA_MAX_COINS) || 200 // Circuit breaker
+                        maxExpectedCount: SafeUtils.safeParseInt(process.env.DEFILLAMA_MAX_COINS, 200) // Circuit breaker
                     }
                 },
 
@@ -272,8 +273,93 @@ class ApiConfig {
                 }
             }
         };
+        
+        // Set tokenized assets configuration after object construction to avoid context issues
+        this._setTokenizedAssetsConfig(configs);
+        
+        return configs;
     }
 
+    /**
+     * Set tokenized assets configuration for all API sources
+     * This is called after object construction to avoid context issues with method calls in object literals
+     * @private
+     * @param {Object} configs - API configurations object
+     */
+    _setTokenizedAssetsConfig(configs) {
+        const sources = ['cmc', 'messari', 'coingecko', 'defillama'];
+        sources.forEach(sourceId => {
+            if (configs[sourceId] && configs[sourceId].processing) {
+                configs[sourceId].processing.includeTokenizedAssets = 
+                    process.env[this._getTokenizedAssetsEnvVar(sourceId)] === 'true';
+            }
+        });
+    }
+
+    /**
+     * Validate asset classification configuration
+     * @returns {Object} Validation result with isValid flag and errors array
+     */
+    validateAssetClassificationConfig() {
+        const config = this.getAssetClassificationConfig();
+        const errors = [];
+        
+        // Validate taxonomy exists
+        if (!config.taxonomy) {
+            errors.push('Missing taxonomy configuration');
+        } else {
+            // Validate required taxonomy fields
+            if (!config.taxonomy.stablecoinTags || !Array.isArray(config.taxonomy.stablecoinTags)) {
+                errors.push('Invalid or missing stablecoinTags in taxonomy');
+            }
+            if (!config.taxonomy.tokenizedAssetTags || !Array.isArray(config.taxonomy.tokenizedAssetTags)) {
+                errors.push('Invalid or missing tokenizedAssetTags in taxonomy');
+            }
+            if (!config.taxonomy.currencyAliases || typeof config.taxonomy.currencyAliases !== 'object') {
+                errors.push('Invalid or missing currencyAliases in taxonomy');
+            }
+        }
+        
+        // Validate patterns
+        if (!config.patterns) {
+            errors.push('Missing patterns configuration');
+        } else {
+            // Validate pattern arrays
+            const patternArrays = ['fiatStablecoinPatterns', 'cryptoStablecoinPatterns', 
+                                   'commodityStablecoinPatterns', 'tokenizedFiatPatterns',
+                                   'tokenizedCommodityPatterns'];
+            patternArrays.forEach(field => {
+                if (!config.patterns[field] || !Array.isArray(config.patterns[field])) {
+                    errors.push(`Invalid or missing ${field} in patterns`);
+                } else {
+                    // Validate each pattern is a valid regex string
+                    config.patterns[field].forEach((pattern, idx) => {
+                        if (typeof pattern !== 'string') {
+                            errors.push(`Invalid pattern at ${field}[${idx}]: must be string`);
+                        } else {
+                            try {
+                                new RegExp(pattern);
+                            } catch (e) {
+                                errors.push(`Invalid regex pattern at ${field}[${idx}]: ${e.message}`);
+                            }
+                        }
+                    });
+                }
+            });
+        }
+        
+        // Validate sources configuration
+        if (!config.sources || typeof config.sources !== 'object') {
+            errors.push('Missing or invalid sources configuration');
+        }
+        
+        return {
+            isValid: errors.length === 0,
+            errors,
+            config
+        };
+    }
+    
     /**
      * Get shared asset classification configuration
      * @returns {Object} Shared taxonomy configuration for AssetClassifier
@@ -471,8 +557,55 @@ class ApiConfig {
      */
     _parseRateLimit(envValue, defaultValue) {
         if (!envValue) return defaultValue;
-        const parsed = parseInt(envValue);
-        return isNaN(parsed) ? defaultValue : parsed;
+        const parsed = SafeUtils.safeParseInt(envValue, defaultValue);
+        return parsed;
+    }
+
+    /**
+     * Get headers for API request with sanitized API key
+     * @param {string} sourceId - API source identifier
+     * @returns {Object} Sanitized headers object
+     */
+    getRequestHeaders(sourceId) {
+        const config = this._apiConfigs[sourceId];
+        if (!config) return {};
+        
+        const headers = { ...config.request.headers };
+        
+        // Add API key header if configured
+        if (config.apiKey) {
+            const sanitizedKey = SafeUtils.sanitizeApiKey(config.apiKey);
+            if (!sanitizedKey) {
+                console.error(`Invalid API key format for ${sourceId}`);
+                return headers;
+            }
+            
+            // Different APIs use different header names
+            switch(sourceId) {
+                case 'cmc':
+                    headers['X-CMC_PRO_API_KEY'] = sanitizedKey;
+                    break;
+                case 'messari':
+                    headers['x-messari-api-key'] = sanitizedKey;
+                    break;
+                case 'coingecko':
+                    if (sanitizedKey) {
+                        headers['x-cg-pro-api-key'] = sanitizedKey;
+                    }
+                    break;
+                // DeFiLlama doesn't require API key
+            }
+        }
+        
+        // Validate all header values
+        for (const [key, value] of Object.entries(headers)) {
+            if (!SafeUtils.isValidHeaderValue(value)) {
+                console.error(`Invalid header value for ${key} in ${sourceId}`);
+                delete headers[key];
+            }
+        }
+        
+        return headers;
     }
 
     /**
@@ -482,7 +615,7 @@ class ApiConfig {
      */
     getApiConfig(sourceId) {
         const config = this._apiConfigs[sourceId];
-        return config ? JSON.parse(JSON.stringify(config)) : null;
+        return config ? SafeUtils.deepClone(config) : null;
     }
 
     /**
@@ -490,7 +623,7 @@ class ApiConfig {
      * @returns {Object} All API configurations
      */
     getAllApiConfigs() {
-        return JSON.parse(JSON.stringify(this._apiConfigs));
+        return SafeUtils.deepClone(this._apiConfigs);
     }
 
     /**

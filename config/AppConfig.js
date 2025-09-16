@@ -1,10 +1,13 @@
+const SafeUtils = require('../utils/SafeUtils');
+
 /**
  * Centralized application configuration management
  * Supports multiple APIs and environments with validation and defaults
  */
 class AppConfig {
-    constructor(environment = process.env.NODE_ENV || 'development') {
+    constructor(environment = process.env.NODE_ENV || 'development', logger = null) {
         this.environment = environment;
+        this.logger = logger || console;
         this._config = this._loadConfig();
         this._validateConfig();
     }
@@ -18,7 +21,7 @@ class AppConfig {
         return {
             // Server Configuration
             server: {
-                port: parseInt(process.env.PORT) || 3000,
+                port: SafeUtils.safeParseInt(process.env.PORT, 3000),
                 host: process.env.HOST || 'localhost',
                 environment: this.environment,
                 logLevel: process.env.LOG_LEVEL || 'info'
@@ -26,20 +29,20 @@ class AppConfig {
 
             // Data Update Configuration
             dataUpdate: {
-                intervalMinutes: parseInt(process.env.UPDATE_INTERVAL_MINUTES) || 15,
-                initialDelay: parseInt(process.env.INITIAL_DELAY_MS) || 0,
-                retryAttempts: parseInt(process.env.RETRY_ATTEMPTS) || 3,
-                retryDelayMs: parseInt(process.env.RETRY_DELAY_MS) || 1000,
-                timeoutMs: parseInt(process.env.REQUEST_TIMEOUT_MS) || 30000
+                intervalMinutes: SafeUtils.safeParseInt(process.env.UPDATE_INTERVAL_MINUTES, 15),
+                initialDelay: SafeUtils.safeParseInt(process.env.INITIAL_DELAY_MS, 0),
+                retryAttempts: SafeUtils.safeParseInt(process.env.RETRY_ATTEMPTS, 3),
+                retryDelayMs: SafeUtils.safeParseInt(process.env.RETRY_DELAY_MS, 1000),
+                timeoutMs: SafeUtils.safeParseInt(process.env.REQUEST_TIMEOUT_MS, 30000)
             },
 
             // Data Processing Configuration
             dataProcessing: {
-                matchThreshold: parseFloat(process.env.MATCH_THRESHOLD) || 0.8,
-                batchSize: parseInt(process.env.BATCH_SIZE) || 50,
+                matchThreshold: SafeUtils.safeParseFloat(process.env.MATCH_THRESHOLD, 0.8),
+                batchSize: SafeUtils.safeParseInt(process.env.BATCH_SIZE, 50),
                 priceRange: {
-                    min: parseFloat(process.env.MIN_STABLECOIN_PRICE) || 0.50,
-                    max: parseFloat(process.env.MAX_STABLECOIN_PRICE) || 2.00
+                    min: SafeUtils.safeParseFloat(process.env.MIN_STABLECOIN_PRICE, 0.50),
+                    max: SafeUtils.safeParseFloat(process.env.MAX_STABLECOIN_PRICE, 2.00)
                 },
                 platformNameNormalization: {
                     enabled: process.env.NORMALIZE_PLATFORMS !== 'false',
@@ -50,35 +53,35 @@ class AppConfig {
             // Health Monitoring Configuration
             health: {
                 enabled: process.env.HEALTH_MONITORING !== 'false',
-                checkIntervalMs: parseInt(process.env.HEALTH_CHECK_INTERVAL_MS) || 60000,
-                degradedModeThreshold: parseFloat(process.env.DEGRADED_MODE_THRESHOLD) || 0.7,
-                errorRateThreshold: parseFloat(process.env.ERROR_RATE_THRESHOLD) || 0.3,
-                responseTimeThreshold: parseInt(process.env.RESPONSE_TIME_THRESHOLD_MS) || 10000,
-                minimumHealthySources: parseInt(process.env.MIN_HEALTHY_SOURCES) || 1,
-                retentionDays: parseInt(process.env.HEALTH_RETENTION_DAYS) || 7
+                checkIntervalMs: SafeUtils.safeParseInt(process.env.HEALTH_CHECK_INTERVAL_MS, 60000),
+                degradedModeThreshold: SafeUtils.safeParseFloat(process.env.DEGRADED_MODE_THRESHOLD, 0.7),
+                errorRateThreshold: SafeUtils.safeParseFloat(process.env.ERROR_RATE_THRESHOLD, 0.3),
+                responseTimeThreshold: SafeUtils.safeParseInt(process.env.RESPONSE_TIME_THRESHOLD_MS, 10000),
+                minimumHealthySources: SafeUtils.safeParseInt(process.env.MIN_HEALTHY_SOURCES, 1),
+                retentionDays: SafeUtils.safeParseInt(process.env.HEALTH_RETENTION_DAYS, 7)
             },
 
             // Circuit Breaker Configuration
             circuitBreaker: {
                 enabled: process.env.CIRCUIT_BREAKER !== 'false',
-                failureThreshold: parseInt(process.env.CIRCUIT_BREAKER_FAILURES) || 6,
-                timeout: parseInt(process.env.CIRCUIT_BREAKER_TIMEOUT_MS) || 60000,
-                resetTimeout: parseInt(process.env.CIRCUIT_BREAKER_RESET_MS) || 300000
+                failureThreshold: SafeUtils.safeParseInt(process.env.CIRCUIT_BREAKER_FAILURES, 6),
+                timeout: SafeUtils.safeParseInt(process.env.CIRCUIT_BREAKER_TIMEOUT_MS, 60000),
+                resetTimeout: SafeUtils.safeParseInt(process.env.CIRCUIT_BREAKER_RESET_MS, 300000)
             },
 
             // Memory Management Configuration
             memory: {
                 cleanupEnabled: process.env.MEMORY_CLEANUP !== 'false',
-                cleanupIntervalMs: parseInt(process.env.MEMORY_CLEANUP_INTERVAL_MS) || 300000,
+                cleanupIntervalMs: SafeUtils.safeParseInt(process.env.MEMORY_CLEANUP_INTERVAL_MS, 300000),
                 retainDebugObjects: process.env.RETAIN_DEBUG_OBJECTS === 'true',
-                maxMemoryMB: parseInt(process.env.MAX_MEMORY_MB) || 512
+                maxMemoryMB: SafeUtils.safeParseInt(process.env.MAX_MEMORY_MB, 512)
             },
 
             // Caching Configuration
             cache: {
                 enabled: process.env.CACHING !== 'false',
-                defaultTtlMs: parseInt(process.env.CACHE_DEFAULT_TTL_MS) || 300000,
-                maxSize: parseInt(process.env.CACHE_MAX_SIZE) || 1000,
+                defaultTtlMs: SafeUtils.safeParseInt(process.env.CACHE_DEFAULT_TTL_MS, 300000),
+                maxSize: SafeUtils.safeParseInt(process.env.CACHE_MAX_SIZE, 1000),
                 type: process.env.CACHE_TYPE || 'memory' // memory, redis
             },
 
@@ -93,10 +96,10 @@ class AppConfig {
             // API Common Configuration
             api: {
                 userAgent: process.env.USER_AGENT || 'StablecoinWatch/2.0',
-                defaultTimeout: parseInt(process.env.API_DEFAULT_TIMEOUT_MS) || 15000,
-                maxRetries: parseInt(process.env.API_MAX_RETRIES) || 3,
-                retryDelay: parseInt(process.env.API_RETRY_DELAY_MS) || 2000,
-                rateLimitBuffer: parseFloat(process.env.RATE_LIMIT_BUFFER) || 0.8
+                defaultTimeout: SafeUtils.safeParseInt(process.env.API_DEFAULT_TIMEOUT_MS, 15000),
+                maxRetries: SafeUtils.safeParseInt(process.env.API_MAX_RETRIES, 3),
+                retryDelay: SafeUtils.safeParseInt(process.env.API_RETRY_DELAY_MS, 2000),
+                rateLimitBuffer: SafeUtils.safeParseFloat(process.env.RATE_LIMIT_BUFFER, 0.8)
             },
 
             // Development Configuration
@@ -145,12 +148,18 @@ class AppConfig {
         const envPriority = process.env.SOURCE_PRIORITY;
         if (!envPriority) return defaultPriority;
 
-        try {
-            return JSON.parse(envPriority);
-        } catch (error) {
-            console.warn('Invalid SOURCE_PRIORITY JSON, using defaults:', error.message);
-            return defaultPriority;
-        }
+        // Use SafeUtils for JSON parsing with proper logging
+        const parsed = SafeUtils.safeParseJSON(
+            envPriority, 
+            defaultPriority,
+            (msg) => {
+                if (this.logger && this.logger.warn) {
+                    this.logger.warn('Invalid SOURCE_PRIORITY JSON: ' + msg);
+                }
+            }
+        );
+        
+        return parsed;
     }
 
     /**

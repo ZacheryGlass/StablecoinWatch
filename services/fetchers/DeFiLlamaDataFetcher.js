@@ -30,9 +30,14 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
         this.config = ApiConfig.getApiConfig('defillama') || {};
         this.sourceId = 'defillama';
         
-        // Initialize AssetClassifier for centralized classification
-        const classificationConfig = this.config?.classification || {};
-        this.classifier = new AssetClassifier(classificationConfig);
+        // Initialize AssetClassifier for centralized classification with validation
+        const classificationConfig = ApiConfig.getAssetClassificationConfig();
+        const validation = ApiConfig.validateAssetClassificationConfig();
+        
+        if (!validation.isValid) {
+            console.error(`Invalid asset classification config for ${this.sourceId}:`, validation.errors);
+        }
+        this.classifier = new AssetClassifier(classificationConfig, this.healthMonitor?.logger);
         
         // Pre-compile regex patterns for optimal performance
         this._precompiledPatterns = {

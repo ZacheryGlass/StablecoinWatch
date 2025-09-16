@@ -31,9 +31,17 @@ class CmcDataFetcher extends IDataFetcher {
         this.config = ApiConfig.getApiConfig('cmc') || {};
         this.sourceId = 'cmc';
         
-        // Initialize AssetClassifier for centralized classification
+        // Initialize AssetClassifier for centralized classification with validation
         const classificationConfig = ApiConfig.getAssetClassificationConfig();
-        this.classifier = new AssetClassifier(classificationConfig);
+        const validation = ApiConfig.validateAssetClassificationConfig();
+        
+        if (!validation.isValid) {
+            console.error(`Invalid asset classification config for ${this.sourceId}:`, validation.errors);
+            // Use default config or throw based on requirements
+            this.classifier = new AssetClassifier(classificationConfig, this.logger);
+        } else {
+            this.classifier = new AssetClassifier(classificationConfig, this.logger);
+        }
     }
 
     /**

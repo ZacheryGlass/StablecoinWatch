@@ -1,4 +1,5 @@
 const performance = require('perf_hooks').performance;
+const SafeUtils = require('../../utils/SafeUtils');
 
 /**
  * AssetClassifier - Centralized asset classification service
@@ -24,12 +25,12 @@ class AssetClassifier {
             debug: () => {},
         };
         
-        // Performance and success rate tracking
+        // Performance and success rate tracking with atomic counters
         this._metrics = {
             classifications: {
-                total: 0,
-                successful: 0,
-                failed: 0,
+                total: SafeUtils.createAtomicCounter(0),
+                successful: SafeUtils.createAtomicCounter(0),
+                failed: SafeUtils.createAtomicCounter(0),
                 averageDurationMs: 0,
                 totalDurationMs: 0,
                 bySource: new Map(),
@@ -38,33 +39,35 @@ class AssetClassifier {
                 lastReset: Date.now()
             },
             errors: {
-                validationErrors: 0,
-                patternErrors: 0,
-                configErrors: 0,
-                unknownErrors: 0
+                validationErrors: SafeUtils.createAtomicCounter(0),
+                patternErrors: SafeUtils.createAtomicCounter(0),
+                configErrors: SafeUtils.createAtomicCounter(0),
+                unknownErrors: SafeUtils.createAtomicCounter(0)
             }
         };
 
-        // Conflict detection and resolution tracking
+        // Conflict detection and resolution tracking with bounded memory
         this._conflictTracking = {
-            classifications: new Map(), // assetKey -> { source -> classification }
-            conflicts: new Map(), // assetKey -> conflict details
-            resolutions: new Map(), // assetKey -> resolution strategy used
+            classifications: SafeUtils.createBoundedMap(1000, 50), // Max 1000 entries, 50MB limit
+            conflicts: SafeUtils.createBoundedMap(500, 25), // Max 500 conflicts, 25MB limit
+            resolutions: SafeUtils.createBoundedMap(500, 25), // Max 500 resolutions, 25MB limit
             strategies: {
                 PRIORITY_BASED: 'priority', // Use source priority
                 CONSENSUS_BASED: 'consensus', // Use majority vote
                 MOST_SPECIFIC: 'specific', // Use most specific classification
                 NEWEST_FIRST: 'newest' // Use most recent classification
-            }
+            },
+            globalMemoryLimit: 100 * 1024 * 1024 // 100MB global limit
         };
 
-        // Schema management and validation
+        // Schema management and validation with bounded memory
         this._schemaManager = {
             expectedSchemas: new Map(), // source -> expected schema
-            violations: new Map(), // source -> schema violations
-            unknownAttributes: new Map(), // source -> unknown attributes found
+            violations: SafeUtils.createBoundedMap(100, 10), // Max 100 sources, 10MB limit
+            unknownAttributes: SafeUtils.createBoundedMap(100, 10), // Max 100 sources, 10MB limit
             dataFormats: new Map(), // source -> detected data format versions
-            evolutionTracking: new Map() // source -> schema evolution history
+            evolutionTracking: SafeUtils.createBoundedMap(50, 5), // Max 50 sources, 5MB limit
+            evolutionLock: new Map() // Track locks for atomic operations
         };
 
         // Initialize expected schemas for common sources
@@ -219,8 +222,10 @@ class AssetClassifier {
         this._currencySymbolPatterns = new Map();
         try {
             for (const code of this._isoCurrencyCodes) {
+                // Simplified pattern to avoid nested quantifier issues
                 // Pattern matches: USD, USDt, USDC, USD-TOKEN, etc.
-                const patternStr = `^${code.toLowerCase()}[tc]?\b|\b${code.toLowerCase()}[-_]?(?:token|coin|t)?\b`;
+                const escapedCode = this._escapeRegexSpecialChars(code.toLowerCase());
+                const patternStr = `^${escapedCode}[tc]?$|^${escapedCode}[-_](?:token|coin|t)$`;
                 const pattern = this._createSafeRegex(patternStr, 'i', `currencySymbol-${code}`);
                 this._currencySymbolPatterns.set(code, pattern);
             }
@@ -398,7 +403,7 @@ class AssetClassifier {
                 output: result,
                 durationMs: parseFloat(durationMs.toFixed(2)),
                 metadata: {
-                    totalClassifications: this._metrics.classifications.total,
+                    totalClassifications: this._metrics.classifications.total.get(),
                     successRate: this._getSuccessRate(),
                     assetKey,
                     hasConflict: conflictInfo.hasConflict,
@@ -911,17 +916,20 @@ class AssetClassifier {
             assetInfo: { ...assetInfo }
         });
 
-        // Clean up old classifications (keep last 10 per asset)
-        if (assetClassifications.size > 10) {
+        // Clean up old classifications (keep last 5 per asset to save memory)
+        if (assetClassifications.size > 5) {
             const entries = Array.from(assetClassifications.entries())
                 .sort((a, b) => a[1].timestamp - b[1].timestamp);
             
             // Remove oldest entries
-            const toRemove = entries.slice(0, entries.length - 10);
+            const toRemove = entries.slice(0, entries.length - 5);
             toRemove.forEach(([sourceKey]) => {
                 assetClassifications.delete(sourceKey);
             });
         }
+        
+        // Global memory check - clean up if approaching limit
+        this._performMemoryCleanupIfNeeded();
     }
 
     /**
@@ -1271,25 +1279,37 @@ class AssetClassifier {
 
         const evolution = this._schemaManager.evolutionTracking.get(source);
         const now = Date.now();
+        
+        // Use lock for atomic operations
+        const lockKey = `evolution_${source}`;
+        if (this._schemaManager.evolutionLock.get(lockKey)) {
+            return; // Skip if already being modified
+        }
+        
+        this._schemaManager.evolutionLock.set(lockKey, true);
+        
+        try {
+            // Only record significant changes
+            if (violations.length > 0 || unknownAttributes.length > 0) {
+                evolution.push({
+                    timestamp: now,
+                    violationCount: violations.length,
+                    unknownAttributeCount: unknownAttributes.length,
+                    newAttributes: unknownAttributes.slice(0, 10), // Limit stored attributes
+                    sampleAsset: {
+                        symbol: asset.symbol,
+                        name: asset.name,
+                        attributeCount: Object.keys(asset).length
+                    }
+                });
 
-        // Only record significant changes
-        if (violations.length > 0 || unknownAttributes.length > 0) {
-            evolution.push({
-                timestamp: now,
-                violationCount: violations.length,
-                unknownAttributeCount: unknownAttributes.length,
-                newAttributes: unknownAttributes,
-                sampleAsset: {
-                    symbol: asset.symbol,
-                    name: asset.name,
-                    attributeCount: Object.keys(asset).length
+                // Keep only last 25 evolution records per source (reduced for memory)
+                if (evolution.length > 25) {
+                    evolution.splice(0, evolution.length - 25);
                 }
-            });
-
-            // Keep only last 50 evolution records per source
-            if (evolution.length > 50) {
-                evolution.splice(0, evolution.length - 50);
             }
+        } finally {
+            this._schemaManager.evolutionLock.delete(lockKey);
         }
     }
 
@@ -1439,10 +1459,12 @@ class AssetClassifier {
      * @param {number} durationMs - Processing time
      */
     _recordSuccessfulClassification(source, result, durationMs) {
-        this._metrics.classifications.successful++;
+        this._metrics.classifications.successful.increment();
+        this._metrics.classifications.total.increment();
         this._metrics.classifications.totalDurationMs += durationMs;
+        const totalCount = this._metrics.classifications.total.get();
         this._metrics.classifications.averageDurationMs = 
-            this._metrics.classifications.totalDurationMs / this._metrics.classifications.total;
+            totalCount > 0 ? this._metrics.classifications.totalDurationMs / totalCount : 0;
 
         // Track by source
         const sourceStats = this._metrics.classifications.bySource.get(source) || { count: 0, totalMs: 0 };
@@ -1465,20 +1487,21 @@ class AssetClassifier {
      * @param {Object} context - Additional context
      */
     _recordError(errorType, message, source, context = {}) {
-        this._metrics.classifications.failed++;
+        this._metrics.classifications.failed.increment();
+        this._metrics.classifications.total.increment();
         
         switch (errorType) {
             case 'validation':
-                this._metrics.errors.validationErrors++;
+                this._metrics.errors.validationErrors.increment();
                 break;
             case 'pattern':
-                this._metrics.errors.patternErrors++;
+                this._metrics.errors.patternErrors.increment();
                 break;
             case 'config':
-                this._metrics.errors.configErrors++;
+                this._metrics.errors.configErrors.increment();
                 break;
             default:
-                this._metrics.errors.unknownErrors++;
+                this._metrics.errors.unknownErrors.increment();
         }
 
         this.logger.error(`AssetClassifier ${errorType} error`, {
@@ -1517,8 +1540,10 @@ class AssetClassifier {
      * @returns {number} Success rate as decimal (0-1)
      */
     _getSuccessRate() {
-        const { total, successful } = this._metrics.classifications;
-        return total > 0 ? successful / total : 1;
+        // Use atomic getters to avoid race conditions
+        const totalValue = this._metrics.classifications.total.get();
+        const successfulValue = this._metrics.classifications.successful.get();
+        return totalValue > 0 ? successfulValue / totalValue : 1.0;
     }
 
     /**
@@ -1553,6 +1578,17 @@ class AssetClassifier {
         }
 
         try {
+            // Use SafeUtils for regex with timeout protection
+            const testResult = SafeUtils.executeRegexWithTimeout(
+                new RegExp(pattern, flags),
+                'test_string_for_validation',
+                100 // 100ms timeout for validation
+            );
+            
+            if (testResult.error) {
+                throw new Error(testResult.error);
+            }
+            
             const regex = new RegExp(pattern, flags);
             
             this.logger.debug(`Regex compiled successfully for ${patternName}`, {
@@ -1592,10 +1628,8 @@ class AssetClassifier {
      * @returns {boolean} True if pattern might cause performance issues
      */
     _hasNestedQuantifiers(pattern) {
-        // Simple heuristic: look for patterns like (a+)+, (a*)+, (a+)*, etc.
-        // This is basic detection - more sophisticated analysis would require parsing
-        return /\([^)]*[+*][^)]*\)[+*]/.test(pattern) || 
-               /[+*]\?[^)]*[+*]/.test(pattern);
+        // Use SafeUtils enhanced detection
+        return SafeUtils.hasNestedQuantifiers(pattern);
     }
 
     /**
@@ -1890,6 +1924,51 @@ class AssetClassifier {
             totalAlerts: alerts.length,
             uptime: Date.now() - this._metrics.classifications.lastReset
         };
+    }
+    
+    /**
+     * Perform memory cleanup if approaching limits
+     * @private
+     */
+    _performMemoryCleanupIfNeeded() {
+        const memUsage = process.memoryUsage();
+        if (memUsage.heapUsed > this._conflictTracking.globalMemoryLimit) {
+            // Clear oldest entries from all maps
+            const mapsToClean = [
+                this._conflictTracking.classifications,
+                this._conflictTracking.conflicts,
+                this._conflictTracking.resolutions,
+                this._schemaManager.violations,
+                this._schemaManager.unknownAttributes
+            ];
+            
+            mapsToClean.forEach(map => {
+                if (map.size > 10) {
+                    // Keep only recent 10 entries
+                    const entries = Array.from(map.entries());
+                    const toKeep = entries.slice(-10);
+                    map.clear();
+                    toKeep.forEach(([k, v]) => map.set(k, v));
+                }
+            });
+            
+            // Clear unknown patterns if too large
+            if (this._metrics.classifications.unknownPatterns.size > 100) {
+                const patterns = Array.from(this._metrics.classifications.unknownPatterns);
+                this._metrics.classifications.unknownPatterns.clear();
+                patterns.slice(-50).forEach(p => this._metrics.classifications.unknownPatterns.add(p));
+            }
+            
+            // Force garbage collection if available
+            if (global.gc) {
+                global.gc();
+            }
+            
+            this.logger.info('Memory cleanup performed', {
+                beforeMB: Math.round(memUsage.heapUsed / 1024 / 1024),
+                limitMB: Math.round(this._conflictTracking.globalMemoryLimit / 1024 / 1024)
+            });
+        }
     }
 }
 
