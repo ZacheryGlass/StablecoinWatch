@@ -122,6 +122,73 @@
             </ul>
         </section>
         <% } %>
+
+        <% if (health && health.conflicts) { %>
+        <section class="content-section">
+            <h2 class="section-title">Data Quality & Conflicts</h2>
+            <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-bottom: 1rem;">
+                <div class="summary-card" style="background: rgba(102, 126, 234, 0.1); color: #333; border: 1px solid rgba(102, 126, 234, 0.2);">
+                    <span class="summary-value"><span class="badge <%= (health.conflicts.status === 'healthy') ? 'healthy' : (health.conflicts.status === 'elevated') ? 'degraded' : 'critical' %>"><%= health.conflicts.status.toUpperCase() %></span></span>
+                    <span class="summary-label">Conflict Status</span>
+                </div>
+                <div class="summary-card" style="background: rgba(102, 126, 234, 0.1); color: #333; border: 1px solid rgba(102, 126, 234, 0.2);">
+                    <span class="summary-value"><%= health.conflicts.totalConflicts || 0 %></span>
+                    <span class="summary-label">Total Conflicts</span>
+                </div>
+                <div class="summary-card" style="background: rgba(102, 126, 234, 0.1); color: #333; border: 1px solid rgba(102, 126, 234, 0.2);">
+                    <span class="summary-value"><%= health.conflicts.conflictRate || 0 %>/hr</span>
+                    <span class="summary-label">Conflict Rate</span>
+                </div>
+                <div class="summary-card" style="background: rgba(102, 126, 234, 0.1); color: #333; border: 1px solid rgba(102, 126, 234, 0.2);">
+                    <span class="summary-value"><%= health.conflicts.assetConflictCount || 0 %></span>
+                    <span class="summary-label">Assets with Conflicts</span>
+                </div>
+                <div class="summary-card" style="background: rgba(102, 126, 234, 0.1); color: #333; border: 1px solid rgba(102, 126, 234, 0.2);">
+                    <span class="summary-value"><%= health.conflicts.fieldConflictCount || 0 %></span>
+                    <span class="summary-label">Field Types</span>
+                </div>
+            </div>
+
+            <% if (health.conflicts.conflictsByField && Object.keys(health.conflicts.conflictsByField).length > 0) { %>
+            <div style="margin-bottom: 1rem;">
+                <h3 style="margin-bottom: 0.5rem; color: #374151;">Conflicts by Field Type</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    <% Object.entries(health.conflicts.conflictsByField).forEach(([field, count]) => { %>
+                        <span class="badge degraded" style="background: #6b7280;"><%= field %> (<%= count %>)</span>
+                    <% }) %>
+                </div>
+            </div>
+            <% } %>
+
+            <% if (health.conflicts.conflictsByAsset && Object.keys(health.conflicts.conflictsByAsset).length > 0) { %>
+            <div style="margin-bottom: 1rem;">
+                <h3 style="margin-bottom: 0.5rem; color: #374151;">Top Conflicting Assets</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    <% 
+                    const topAssets = Object.entries(health.conflicts.conflictsByAsset)
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 10);
+                    topAssets.forEach(([asset, count]) => { 
+                    %>
+                        <span class="badge <%= (count >= 3) ? 'critical' : 'degraded' %>"><%= asset %> (<%= count %>)</span>
+                    <% }) %>
+                </div>
+            </div>
+            <% } %>
+
+            <% if (health.conflicts.thresholds) { %>
+            <div class="note">
+                <strong>Thresholds:</strong> 
+                Max conflicts/hour: <%= health.conflicts.thresholds.maxConflictsPerHour %>, 
+                Max conflicts/asset: <%= health.conflicts.thresholds.maxConflictsPerAsset %>, 
+                Alert threshold: <%= (health.conflicts.thresholds.alertThreshold * 100).toFixed(1) %>% of assets
+                <% if (health.conflicts.lastConflictTime) { %>
+                <br><strong>Last conflict:</strong> <%= new Date(health.conflicts.lastConflictTime).toLocaleString() %>
+                <% } %>
+            </div>
+            <% } %>
+        </section>
+        <% } %>
     </main>
 
     <%- include('partials/footer') %>

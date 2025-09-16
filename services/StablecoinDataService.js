@@ -462,6 +462,19 @@ class StablecoinDataService extends IStablecoinDataService {
             platform_data: platformData
         };
 
+        // Update conflict metrics in health monitor if available
+        if (this.healthMonitor && typeof this.healthMonitor.recordConflictMetrics === 'function') {
+            try {
+                const conflictData = this.getConflictMetrics();
+                await this.healthMonitor.recordConflictMetrics(conflictData, this._aggregated.length);
+            } catch (conflictTrackingError) {
+                // Don't fail refresh if conflict tracking fails - just log in development
+                if (process.env.NODE_ENV === 'development') {
+                    console.warn('[Conflict Tracking Warning]:', conflictTrackingError.message);
+                }
+            }
+        }
+
         return {
             success: errors.length === 0,
             stablecoinsUpdated: this._aggregated.length,

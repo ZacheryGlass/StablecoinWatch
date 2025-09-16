@@ -43,6 +43,23 @@ class HealthMonitor extends IHealthMonitor {
             lastSystemCheck: Date.now()
         };
         
+        // Conflict tracking metrics
+        this.conflictMetrics = {
+            totalConflicts: 0,
+            conflictsByField: {},
+            conflictsByAsset: {},
+            conflictsByType: {},
+            conflictTrends: [], // historical data points
+            lastConflictTime: null,
+            conflictRate: 0, // conflicts per hour
+            peakConflictPeriods: [], // time periods with high conflicts
+            threshold: {
+                maxConflictsPerHour: parseInt(process.env.MAX_CONFLICTS_PER_HOUR) || 50,
+                maxConflictsPerAsset: parseInt(process.env.MAX_CONFLICTS_PER_ASSET) || 5,
+                alertThreshold: parseFloat(process.env.CONFLICT_ALERT_THRESHOLD) || 0.1 // 10% of assets having conflicts
+            }
+        };
+        
         // Performance tracking windows (circular buffers)
         this.performanceWindows = new Map(); // sourceId -> CircularBuffer
         
@@ -182,8 +199,15 @@ class HealthMonitor extends IHealthMonitor {
             sourceCount++;
         }
         
-        const overallScore = sourceCount > 0 ? totalScore / sourceCount : 0;
+        let overallScore = sourceCount > 0 ? totalScore / sourceCount : 0;
+        
+        // Apply conflict penalty to overall score
+        if (this.systemMetrics.conflictHealthPenalty) {
+            overallScore = Math.max(0, overallScore - this.systemMetrics.conflictHealthPenalty);
+        }
+        
         const degradedMode = await this.checkDegradedMode();
+        const conflictMetrics = await this.getConflictMetrics();
         
         return {
             status: this._determineSystemStatus(overallScore, healthySources, sourceCount),
@@ -198,6 +222,7 @@ class HealthMonitor extends IHealthMonitor {
                 sourceCount,
                 healthySourceCount: healthySources
             },
+            conflicts: conflictMetrics,
             activeAlerts,
             degradedMode,
             timestamp: Date.now(),
@@ -504,6 +529,112 @@ class HealthMonitor extends IHealthMonitor {
     }
 
     /**
+     * Records conflict metrics from the data service for health monitoring.
+     * Integrates conflict tracking into the health monitoring system.
+     * 
+     * @async
+     * @param {Object} conflictData - Conflict metrics from StablecoinDataService
+     * @param {number} conflictData.totalConflicts - Total conflicts detected
+     * @param {Object} conflictData.conflictsByField - Conflicts grouped by field
+     * @param {Object} conflictData.conflictsByAsset - Conflicts grouped by asset
+     * @param {number} conflictData.lastConflictTime - Timestamp of last conflict
+     * @param {number} [assetCount] - Total number of assets for rate calculations
+     * @returns {Promise<void>}
+     * 
+     * @example
+     * const dataService = services.dataService;
+     * const conflictData = dataService.getConflictMetrics();
+     * await healthMonitor.recordConflictMetrics(conflictData, assetCount);
+     */
+    async recordConflictMetrics(conflictData, assetCount = 0) {
+        // Update conflict metrics
+        this.conflictMetrics.totalConflicts = conflictData.totalConflicts || 0;
+        this.conflictMetrics.conflictsByField = { ...conflictData.conflictsByField };
+        this.conflictMetrics.conflictsByAsset = { ...conflictData.conflictsByAsset };
+        this.conflictMetrics.lastConflictTime = conflictData.lastConflictTime;
+
+        // Calculate conflict rate (conflicts per hour)
+        const now = Date.now();
+        const oneHourAgo = now - 3600000;
+        
+        // Add current data point to trends
+        this.conflictMetrics.conflictTrends.push({
+            timestamp: now,
+            totalConflicts: this.conflictMetrics.totalConflicts,
+            assetCount: assetCount,
+            conflictRate: assetCount > 0 ? this.conflictMetrics.totalConflicts / assetCount : 0
+        });
+
+        // Keep only last 24 hours of trend data
+        this.conflictMetrics.conflictTrends = this.conflictMetrics.conflictTrends
+            .filter(trend => trend.timestamp > now - 86400000);
+
+        // Calculate current conflict rate
+        const recentTrends = this.conflictMetrics.conflictTrends
+            .filter(trend => trend.timestamp > oneHourAgo);
+        
+        if (recentTrends.length > 1) {
+            const oldestTrend = recentTrends[0];
+            const newestTrend = recentTrends[recentTrends.length - 1];
+            const conflictIncrease = newestTrend.totalConflicts - oldestTrend.totalConflicts;
+            const timeDiff = (newestTrend.timestamp - oldestTrend.timestamp) / 3600000; // hours
+            this.conflictMetrics.conflictRate = timeDiff > 0 ? conflictIncrease / timeDiff : 0;
+        }
+
+        // Check for conflict-based alerts
+        this._checkConflictAlerts(assetCount);
+
+        // Update health scoring with conflict impact
+        this._updateSystemHealthScoreForConflicts();
+    }
+
+    /**
+     * Retrieves comprehensive conflict metrics and trends for health status.
+     * 
+     * @async
+     * @returns {Promise<Object>} Conflict metrics summary containing:
+     * @returns {Promise<number>} returns.totalConflicts - Total conflicts detected
+     * @returns {Promise<number>} returns.conflictRate - Conflicts per hour
+     * @returns {Promise<Object>} returns.conflictsByField - Field-specific conflict counts
+     * @returns {Promise<Object>} returns.conflictsByAsset - Asset-specific conflict counts
+     * @returns {Promise<Array>} returns.trends - Historical conflict data points
+     * @returns {Promise<Object>} returns.thresholds - Current alert thresholds
+     * @returns {Promise<string>} returns.status - Overall conflict status ('healthy', 'elevated', 'critical')
+     * @returns {Promise<number>} returns.lastConflictTime - Timestamp of most recent conflict
+     * 
+     * @example
+     * const conflictStatus = await healthMonitor.getConflictMetrics();
+     * console.log(`Conflict rate: ${conflictStatus.conflictRate.toFixed(2)} per hour`);
+     * console.log(`Status: ${conflictStatus.status}`);
+     */
+    async getConflictMetrics() {
+        const assetConflictCount = Object.keys(this.conflictMetrics.conflictsByAsset).length;
+        const fieldConflictCount = Object.keys(this.conflictMetrics.conflictsByField).length;
+        
+        // Determine conflict status
+        let status = 'healthy';
+        if (this.conflictMetrics.conflictRate > this.conflictMetrics.threshold.maxConflictsPerHour) {
+            status = 'critical';
+        } else if (this.conflictMetrics.conflictRate > this.conflictMetrics.threshold.maxConflictsPerHour * 0.5) {
+            status = 'elevated';
+        }
+
+        return {
+            totalConflicts: this.conflictMetrics.totalConflicts,
+            conflictRate: Math.round(this.conflictMetrics.conflictRate * 100) / 100,
+            conflictsByField: { ...this.conflictMetrics.conflictsByField },
+            conflictsByAsset: { ...this.conflictMetrics.conflictsByAsset },
+            assetConflictCount,
+            fieldConflictCount,
+            trends: this.conflictMetrics.conflictTrends.slice(-24), // Last 24 data points
+            thresholds: { ...this.conflictMetrics.threshold },
+            status,
+            lastConflictTime: this.conflictMetrics.lastConflictTime,
+            peakPeriods: this.conflictMetrics.peakConflictPeriods.slice(-5) // Last 5 peak periods
+        };
+    }
+
+    /**
      * Calculates comprehensive health details for a specific data source.
      * Combines health data with circuit breaker state to determine overall source status.
      * 
@@ -786,6 +917,8 @@ class HealthMonitor extends IHealthMonitor {
      * - error_rate: Actions for high error rate issues
      * - consecutive_failures: Actions for repeated failures
      * - circuit_breaker: Actions for circuit breaker trips
+     * - conflict_rate: Actions for high conflict rates
+     * - conflict_threshold: Actions when conflict thresholds are exceeded
      */
     _getRecommendedActions(alertType) {
         const actions = {
@@ -803,10 +936,130 @@ class HealthMonitor extends IHealthMonitor {
                 'Wait for circuit breaker timeout',
                 'Check API service status',
                 'Review error logs for root cause'
+            ],
+            conflict_rate: [
+                'Review data source configurations',
+                'Check for API schema changes',
+                'Validate source priority settings',
+                'Monitor data quality trends'
+            ],
+            conflict_threshold: [
+                'Investigate specific conflicting assets',
+                'Review field-level conflict patterns',
+                'Check for systematic data quality issues',
+                'Consider adjusting conflict resolution rules'
             ]
         };
         
         return actions[alertType] || ['Review service logs'];
+    }
+
+    /**
+     * Checks for conflict-related alerts and generates them when thresholds are exceeded.
+     * 
+     * @private
+     * @param {number} assetCount - Total number of assets being monitored
+     * @returns {void}
+     */
+    _checkConflictAlerts(assetCount) {
+        const { threshold } = this.conflictMetrics;
+        
+        // Check conflict rate threshold
+        if (this.conflictMetrics.conflictRate > threshold.maxConflictsPerHour) {
+            this._createAlert({
+                type: 'conflict_rate',
+                level: 'warning',
+                source: 'system',
+                title: 'High Conflict Rate',
+                description: `Conflict rate is ${this.conflictMetrics.conflictRate.toFixed(1)} per hour (threshold: ${threshold.maxConflictsPerHour})`,
+                metadata: { 
+                    conflictRate: this.conflictMetrics.conflictRate,
+                    threshold: threshold.maxConflictsPerHour
+                }
+            });
+        }
+
+        // Check percentage of assets with conflicts
+        if (assetCount > 0) {
+            const assetConflictCount = Object.keys(this.conflictMetrics.conflictsByAsset).length;
+            const conflictPercentage = assetConflictCount / assetCount;
+            
+            if (conflictPercentage > threshold.alertThreshold) {
+                this._createAlert({
+                    type: 'conflict_threshold',
+                    level: conflictPercentage > threshold.alertThreshold * 2 ? 'error' : 'warning',
+                    source: 'system',
+                    title: 'High Asset Conflict Percentage',
+                    description: `${(conflictPercentage * 100).toFixed(1)}% of assets have conflicts (threshold: ${(threshold.alertThreshold * 100).toFixed(1)}%)`,
+                    metadata: { 
+                        conflictPercentage,
+                        assetConflictCount,
+                        totalAssets: assetCount,
+                        threshold: threshold.alertThreshold
+                    }
+                });
+            }
+        }
+
+        // Check for specific assets with high conflict counts
+        Object.entries(this.conflictMetrics.conflictsByAsset).forEach(([assetKey, count]) => {
+            if (count >= threshold.maxConflictsPerAsset) {
+                this._createAlert({
+                    type: 'asset_conflict',
+                    level: count >= threshold.maxConflictsPerAsset * 2 ? 'error' : 'warning',
+                    source: 'system',
+                    title: `High Conflicts for ${assetKey}`,
+                    description: `Asset ${assetKey} has ${count} conflicts (threshold: ${threshold.maxConflictsPerAsset})`,
+                    metadata: { 
+                        assetKey,
+                        conflictCount: count,
+                        threshold: threshold.maxConflictsPerAsset
+                    }
+                });
+            }
+        });
+
+        // Track peak conflict periods
+        const now = Date.now();
+        if (this.conflictMetrics.conflictRate > threshold.maxConflictsPerHour * 1.5) {
+            this.conflictMetrics.peakConflictPeriods.push({
+                timestamp: now,
+                conflictRate: this.conflictMetrics.conflictRate,
+                duration: 'ongoing'
+            });
+
+            // Keep only last 10 peak periods
+            this.conflictMetrics.peakConflictPeriods = this.conflictMetrics.peakConflictPeriods.slice(-10);
+        }
+    }
+
+    /**
+     * Updates system health scoring to include conflict impact.
+     * Conflicts reduce overall system health score and operational status.
+     * 
+     * @private
+     * @returns {void}
+     */
+    _updateSystemHealthScoreForConflicts() {
+        // Apply conflict penalties to overall system health
+        // This affects the health score reported in getSystemHealth()
+        
+        const conflictPenalty = Math.min(
+            this.conflictMetrics.conflictRate * 0.5, // 0.5 points per conflict per hour
+            20 // Maximum penalty of 20 points
+        );
+
+        // Store conflict penalty for use in getSystemHealth
+        this.systemMetrics.conflictHealthPenalty = conflictPenalty;
+        
+        // Add conflict impact to degraded mode consideration
+        const assetConflictCount = Object.keys(this.conflictMetrics.conflictsByAsset).length;
+        this.systemMetrics.conflictStatus = {
+            rate: this.conflictMetrics.conflictRate,
+            assetCount: assetConflictCount,
+            penalty: conflictPenalty,
+            timestamp: Date.now()
+        };
     }
 
     // Helper methods for calculations
