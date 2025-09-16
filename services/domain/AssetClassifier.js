@@ -24,6 +24,52 @@ class AssetClassifier {
             debug: () => {},
         };
         
+        // Performance and success rate tracking
+        this._metrics = {
+            classifications: {
+                total: 0,
+                successful: 0,
+                failed: 0,
+                averageDurationMs: 0,
+                totalDurationMs: 0,
+                bySource: new Map(),
+                byCategory: new Map(),
+                unknownPatterns: new Set(),
+                lastReset: Date.now()
+            },
+            errors: {
+                validationErrors: 0,
+                patternErrors: 0,
+                configErrors: 0,
+                unknownErrors: 0
+            }
+        };
+
+        // Conflict detection and resolution tracking
+        this._conflictTracking = {
+            classifications: new Map(), // assetKey -> { source -> classification }
+            conflicts: new Map(), // assetKey -> conflict details
+            resolutions: new Map(), // assetKey -> resolution strategy used
+            strategies: {
+                PRIORITY_BASED: 'priority', // Use source priority
+                CONSENSUS_BASED: 'consensus', // Use majority vote
+                MOST_SPECIFIC: 'specific', // Use most specific classification
+                NEWEST_FIRST: 'newest' // Use most recent classification
+            }
+        };
+
+        // Schema management and validation
+        this._schemaManager = {
+            expectedSchemas: new Map(), // source -> expected schema
+            violations: new Map(), // source -> schema violations
+            unknownAttributes: new Map(), // source -> unknown attributes found
+            dataFormats: new Map(), // source -> detected data format versions
+            evolutionTracking: new Map() // source -> schema evolution history
+        };
+
+        // Initialize expected schemas for common sources
+        this._initializeExpectedSchemas();
+        
         // Classification constants
         this.ASSET_CATEGORIES = {
             STABLECOIN: 'Stablecoin',
@@ -90,25 +136,43 @@ class AssetClassifier {
     _initializePatterns() {
         const patterns = this.config.taxonomy?.patterns || {};
         
-        // Gold detection patterns
-        this._goldPatterns = {
-            symbols: new RegExp(patterns.goldSymbols || 'xau|paxg|xaut', 'i'),
-            names: new RegExp(patterns.goldNames || 'gold', 'i')
-        };
-        
-        // Silver detection patterns  
-        this._silverPatterns = {
-            symbols: new RegExp(patterns.silverSymbols || 'xag', 'i'),
-            names: new RegExp(patterns.silverNames || 'silver', 'i')
-        };
-        
-        // Other asset patterns
-        this._assetPatterns = {
-            etf: new RegExp(patterns.etf || 'etf', 'i'),
-            treasury: new RegExp(patterns.treasury || 'treasury', 'i'),
-            stock: new RegExp(patterns.stock || 'stock', 'i'),
-            realEstate: new RegExp(patterns.realEstate || 'real estate|real-estate|estate', 'i')
-        };
+        try {
+            // Gold detection patterns
+            this._goldPatterns = {
+                symbols: this._createSafeRegex(patterns.goldSymbols || 'xau|paxg|xaut', 'i', 'goldSymbols'),
+                names: this._createSafeRegex(patterns.goldNames || 'gold', 'i', 'goldNames')
+            };
+            
+            // Silver detection patterns  
+            this._silverPatterns = {
+                symbols: this._createSafeRegex(patterns.silverSymbols || 'xag', 'i', 'silverSymbols'),
+                names: this._createSafeRegex(patterns.silverNames || 'silver', 'i', 'silverNames')
+            };
+            
+            // Other asset patterns
+            this._assetPatterns = {
+                etf: this._createSafeRegex(patterns.etf || 'etf', 'i', 'etf'),
+                treasury: this._createSafeRegex(patterns.treasury || 'treasury', 'i', 'treasury'),
+                stock: this._createSafeRegex(patterns.stock || 'stock', 'i', 'stock'),
+                realEstate: this._createSafeRegex(patterns.realEstate || 'real estate|real-estate|estate', 'i', 'realEstate')
+            };
+            
+            this.logger.info('Asset classification patterns initialized successfully', {
+                patternsCount: Object.keys(patterns).length,
+                compiledPatterns: [
+                    'goldSymbols', 'goldNames', 'silverSymbols', 'silverNames', 
+                    'etf', 'treasury', 'stock', 'realEstate'
+                ]
+            });
+            
+        } catch (error) {
+            this.logger.error('Critical failure initializing classification patterns', { 
+                error: error.message,
+                stack: error.stack,
+                patterns: Object.keys(patterns)
+            });
+            throw new Error(`AssetClassifier pattern initialization failed: ${error.message}`);
+        }
     }
 
     /**
@@ -153,14 +217,83 @@ class AssetClassifier {
 
         // Common symbol variations for currency detection
         this._currencySymbolPatterns = new Map();
-        for (const code of this._isoCurrencyCodes) {
-            // Pattern matches: USD, USDt, USDC, USD-TOKEN, etc.
-            const pattern = new RegExp(`^${code.toLowerCase()}[tc]?\b|\b${code.toLowerCase()}[-_]?(?:token|coin|t)?\b`, 'i');
-            this._currencySymbolPatterns.set(code, pattern);
+        try {
+            for (const code of this._isoCurrencyCodes) {
+                // Pattern matches: USD, USDt, USDC, USD-TOKEN, etc.
+                const patternStr = `^${code.toLowerCase()}[tc]?\b|\b${code.toLowerCase()}[-_]?(?:token|coin|t)?\b`;
+                const pattern = this._createSafeRegex(patternStr, 'i', `currencySymbol-${code}`);
+                this._currencySymbolPatterns.set(code, pattern);
+            }
+
+            this.logger.info('Currency symbol patterns compiled successfully', {
+                currencyCount: this._isoCurrencyCodes.size,
+                patternCount: this._currencySymbolPatterns.size
+            });
+
+        } catch (error) {
+            this.logger.error('Failed to compile currency symbol patterns', { 
+                error: error.message,
+                currencyCodesCount: this._isoCurrencyCodes.size
+            });
+            throw new Error(`Currency pattern compilation failed: ${error.message}`);
         }
 
         // Load additional currencies from environment
         this._loadEnvironmentCurrencies();
+    }
+
+    /**
+     * Initialize expected schemas for known data sources
+     * @private
+     */
+    _initializeExpectedSchemas() {
+        // CMC asset schema
+        this._schemaManager.expectedSchemas.set('cmc', {
+            required: ['symbol', 'name', 'id'],
+            optional: ['tags', 'slug', 'marketData', 'metadata'],
+            types: {
+                symbol: 'string',
+                name: 'string', 
+                id: 'number',
+                tags: 'array',
+                slug: 'string'
+            }
+        });
+
+        // Messari asset schema
+        this._schemaManager.expectedSchemas.set('messari', {
+            required: ['symbol', 'name'],
+            optional: ['tags', 'slug', 'supplyData', 'metadata'],
+            types: {
+                symbol: 'string',
+                name: 'string',
+                tags: 'array'
+            }
+        });
+
+        // CoinGecko asset schema
+        this._schemaManager.expectedSchemas.set('coingecko', {
+            required: ['symbol', 'name', 'id'],
+            optional: ['tags', 'categories', 'platforms'],
+            types: {
+                symbol: 'string',
+                name: 'string',
+                id: 'string',
+                categories: 'array'
+            }
+        });
+
+        // DeFiLlama asset schema
+        this._schemaManager.expectedSchemas.set('defillama', {
+            required: ['symbol', 'name'],
+            optional: ['tags', 'pegged', 'pegType', 'chainCirculating'],
+            types: {
+                symbol: 'string',
+                name: 'string',
+                pegged: 'string',
+                chainCirculating: 'object'
+            }
+        });
     }
 
     /**
@@ -190,48 +323,120 @@ class AssetClassifier {
      */
     classify({ asset, source = 'Unknown' }) {
         const startTime = performance.now();
+        this._metrics.classifications.total++;
 
-        // 1. Input validation
-        if (!asset || typeof asset !== 'object') {
-            this.logger.error('Invalid asset input: asset must be an object.', { source, asset });
+        try {
+            // 1. Enhanced Input validation with schema checking
+            const validationResult = this._validateInput(asset, source);
+            if (!validationResult.isValid) {
+                this._recordError('validation', validationResult.error, source);
+                return null;
+            }
+
+            // 2. Schema validation and evolution tracking
+            const schemaResult = this._validateAndTrackSchema(asset, source);
+            if (schemaResult.hasViolations) {
+                this.logger.warn('Schema violations detected', {
+                    source,
+                    asset: { symbol: asset.symbol, name: asset.name },
+                    violations: schemaResult.violations,
+                    unknownAttributes: schemaResult.unknownAttributes
+                });
+            }
+
+            const { tags = [], name = '', symbol = '', slug = '' } = asset;
+
+            // Normalize inputs for consistent matching with additional safety checks
+            let tagsLower, nameLower, symbolLower, slugLower;
+            try {
+                tagsLower = this._normalizeTags(tags);
+                nameLower = this._normalizeString(name);
+                symbolLower = this._normalizeString(symbol);
+                slugLower = this._normalizeString(slug);
+            } catch (normalizationError) {
+                this._recordError('pattern', 'Input normalization failed', source, { 
+                    error: normalizationError.message,
+                    asset: { symbol, name }
+                });
+                return null;
+            }
+
+            // Determine primary asset category first (stablecoin takes priority)
+            const assetCategory = this._classifyCategory(tagsLower);
+
+            // Determine specific pegged asset type
+            const peggedAsset = this._classifyPeggedAsset(tagsLower, nameLower, symbolLower, slugLower, assetCategory);
+
+            const result = {
+                assetCategory,
+                peggedAsset
+            };
+
+            const durationMs = performance.now() - startTime;
+
+            // Create asset key for conflict tracking
+            const assetKey = this._createAssetKey({ symbol, name, slug });
+
+            // Record classification for conflict detection
+            this._recordClassificationForConflictDetection(assetKey, source, result, { symbol, name });
+
+            // Check for conflicts with other sources
+            const conflictInfo = this._detectConflicts(assetKey, source, result);
+
+            // Update success metrics
+            this._recordSuccessfulClassification(source, result, durationMs);
+
+            // Track unknown patterns for future improvements
+            if (assetCategory === this.ASSET_CATEGORIES.OTHER && tags.length > 0) {
+                this._trackUnknownPattern(tags, { symbol, name });
+            }
+
+            // 3. Structured Decision & Performance Logging
+            this.logger.info('Asset classification complete', {
+                source,
+                input: { symbol, name, tags: tags.slice(0, 10) }, // Limit tags to avoid huge logs
+                output: result,
+                durationMs: parseFloat(durationMs.toFixed(2)),
+                metadata: {
+                    totalClassifications: this._metrics.classifications.total,
+                    successRate: this._getSuccessRate(),
+                    assetKey,
+                    hasConflict: conflictInfo.hasConflict,
+                    conflictType: conflictInfo.hasConflict ? conflictInfo.type : null
+                }
+            });
+
+            // Log conflicts separately at higher visibility
+            if (conflictInfo.hasConflict) {
+                this.logger.warn('Asset classification conflict detected', {
+                    assetKey,
+                    source,
+                    currentClassification: result,
+                    conflictDetails: conflictInfo,
+                    asset: { symbol, name }
+                });
+            }
+
+            return result;
+
+        } catch (error) {
+            const durationMs = performance.now() - startTime;
+            this._recordError('unknown', error.message, source, { 
+                stack: error.stack,
+                asset: { symbol: asset?.symbol, name: asset?.name },
+                durationMs
+            });
+            
+            this.logger.error('Unexpected error in asset classification', {
+                source,
+                error: error.message,
+                stack: error.stack,
+                durationMs,
+                asset: asset ? { symbol: asset.symbol, name: asset.name } : null
+            });
+            
             return null;
         }
-
-        const { tags = [], name = '', symbol = '', slug = '' } = asset;
-
-        if (!Array.isArray(tags)) {
-            this.logger.error('Invalid asset input: tags must be an array.', { source, asset });
-            return null;
-        }
-
-        // Normalize inputs for consistent matching
-        const tagsLower = this._normalizeTags(tags);
-        const nameLower = String(name).toLowerCase();
-        const symbolLower = String(symbol).toLowerCase();
-        const slugLower = String(slug).toLowerCase();
-
-        // Determine primary asset category first (stablecoin takes priority)
-        const assetCategory = this._classifyCategory(tagsLower);
-
-        // Determine specific pegged asset type
-        const peggedAsset = this._classifyPeggedAsset(tagsLower, nameLower, symbolLower, slugLower, assetCategory);
-
-        const result = {
-            assetCategory,
-            peggedAsset
-        };
-
-        const durationMs = performance.now() - startTime;
-
-        // 3. Structured Decision & Performance Logging
-        this.logger.info('Asset classification complete', {
-            source,
-            input: { symbol, name, tags: tags.slice(0, 10) }, // Limit tags to avoid huge logs
-            output: result,
-            durationMs: parseFloat(durationMs.toFixed(2)),
-        });
-
-        return result;
     }
 
     /**
@@ -531,12 +736,14 @@ class AssetClassifier {
                     this._currencyAliasMap[upperCode] = name;
                     
                     // Create basic pattern for the currency
-                    const symbolPattern = new RegExp(`^${upperCode.toLowerCase()}[tc]?\b|\b${upperCode.toLowerCase()}[-_]?(?:token|coin|t)?\b`, 'i');
+                    const symbolPatternStr = `^${upperCode.toLowerCase()}[tc]?\b|\b${upperCode.toLowerCase()}[-_]?(?:token|coin|t)?\b`;
+                    const symbolPattern = this._createSafeRegex(symbolPatternStr, 'i', `customCurrencySymbol-${upperCode}`);
                     this._currencySymbolPatterns.set(upperCode, symbolPattern);
                     
                     // If name is provided, create name pattern
                     if (name.length > 2) {
-                        const namePattern = new RegExp(`\b${name.toLowerCase()}\b`, 'i');
+                        const namePatternStr = `\b${this._escapeRegexSpecialChars(name.toLowerCase())}\b`;
+                        const namePattern = this._createSafeRegex(namePatternStr, 'i', `customCurrencyName-${upperCode}`);
                         this._currencyNamePatterns.set(upperCode, namePattern);
                     }
                 }
@@ -590,7 +797,1098 @@ class AssetClassifier {
             assetBackedTagCount: this._assetBackedTags.size,
             supportedCurrencyCount: this._isoCurrencyCodes.size,
             currencyNamePatternCount: this._currencyNamePatterns.size,
-            currencySymbolPatternCount: this._currencySymbolPatterns.size
+            currencySymbolPatternCount: this._currencySymbolPatterns.size,
+            metrics: this.getMetrics()
+        };
+    }
+
+    /**
+     * Get comprehensive performance and error metrics with alerting thresholds
+     * @returns {Object} Performance and error metrics with monitoring data
+     */
+    getMetrics() {
+        const conflictSummary = this.getConflictSummary();
+        const schemaSummary = this.getSchemaMonitoringSummary();
+        
+        // Calculate alerting status
+        const alerts = this._generateAlerts();
+        
+        return {
+            classifications: {
+                total: this._metrics.classifications.total,
+                successful: this._metrics.classifications.successful,
+                failed: this._metrics.classifications.failed,
+                successRate: this._getSuccessRate(),
+                averageDurationMs: this._metrics.classifications.averageDurationMs,
+                bySource: Object.fromEntries(this._metrics.classifications.bySource),
+                byCategory: Object.fromEntries(this._metrics.classifications.byCategory),
+                unknownPatternCount: this._metrics.classifications.unknownPatterns.size,
+                lastReset: this._metrics.classifications.lastReset
+            },
+            errors: { ...this._metrics.errors },
+            conflicts: conflictSummary,
+            schema: schemaSummary,
+            alerts: alerts,
+            health: {
+                overall: this._calculateOverallHealth(),
+                performance: this._getPerformanceHealth(),
+                dataQuality: this._getDataQualityHealth(),
+                operationalStatus: this._getOperationalStatus()
+            },
+            monitoring: {
+                alertCount: alerts.length,
+                criticalAlerts: alerts.filter(a => a.severity === 'critical').length,
+                warningAlerts: alerts.filter(a => a.severity === 'warning').length,
+                lastAlertTime: alerts.length > 0 ? Math.max(...alerts.map(a => a.timestamp)) : null
+            }
+        };
+    }
+
+    /**
+     * Reset performance metrics
+     */
+    resetMetrics() {
+        this._metrics.classifications = {
+            total: 0,
+            successful: 0,
+            failed: 0,
+            averageDurationMs: 0,
+            totalDurationMs: 0,
+            bySource: new Map(),
+            byCategory: new Map(),
+            unknownPatterns: new Set(),
+            lastReset: Date.now()
+        };
+        this._metrics.errors = {
+            validationErrors: 0,
+            patternErrors: 0,
+            configErrors: 0,
+            unknownErrors: 0
+        };
+        
+        this.logger.info('AssetClassifier metrics reset', { timestamp: Date.now() });
+    }
+
+    /**
+     * Create a consistent asset key for conflict tracking
+     * @private
+     * @param {Object} asset - Asset data
+     * @returns {string} Asset key
+     */
+    _createAssetKey({ symbol, name, slug }) {
+        // Use symbol as primary key, fallback to name or slug
+        const primary = symbol || name || slug || 'unknown';
+        const secondary = symbol ? name : (name ? slug : '');
+        
+        // Create normalized key
+        const key = secondary ? 
+            `${primary.toLowerCase()}|${secondary.toLowerCase()}` : 
+            primary.toLowerCase();
+        
+        return key;
+    }
+
+    /**
+     * Record classification for conflict detection
+     * @private
+     * @param {string} assetKey - Asset key
+     * @param {string} source - Data source
+     * @param {Object} result - Classification result
+     * @param {Object} assetInfo - Asset info for context
+     */
+    _recordClassificationForConflictDetection(assetKey, source, result, assetInfo) {
+        // Get or create asset classification record
+        if (!this._conflictTracking.classifications.has(assetKey)) {
+            this._conflictTracking.classifications.set(assetKey, new Map());
+        }
+
+        const assetClassifications = this._conflictTracking.classifications.get(assetKey);
+        
+        // Record this classification
+        assetClassifications.set(source, {
+            classification: { ...result },
+            timestamp: Date.now(),
+            assetInfo: { ...assetInfo }
+        });
+
+        // Clean up old classifications (keep last 10 per asset)
+        if (assetClassifications.size > 10) {
+            const entries = Array.from(assetClassifications.entries())
+                .sort((a, b) => a[1].timestamp - b[1].timestamp);
+            
+            // Remove oldest entries
+            const toRemove = entries.slice(0, entries.length - 10);
+            toRemove.forEach(([sourceKey]) => {
+                assetClassifications.delete(sourceKey);
+            });
+        }
+    }
+
+    /**
+     * Detect conflicts between different sources for the same asset
+     * @private
+     * @param {string} assetKey - Asset key
+     * @param {string} currentSource - Current data source
+     * @param {Object} currentResult - Current classification result
+     * @returns {Object} Conflict information
+     */
+    _detectConflicts(assetKey, currentSource, currentResult) {
+        const assetClassifications = this._conflictTracking.classifications.get(assetKey);
+        
+        if (!assetClassifications || assetClassifications.size < 2) {
+            return { hasConflict: false };
+        }
+
+        const conflicts = {
+            category: [],
+            peggedAsset: [],
+            sources: []
+        };
+
+        let hasConflict = false;
+
+        // Compare with other sources
+        for (const [source, data] of assetClassifications) {
+            if (source === currentSource) continue;
+
+            const { classification } = data;
+            conflicts.sources.push(source);
+
+            // Check category conflicts
+            if (classification.assetCategory !== currentResult.assetCategory) {
+                conflicts.category.push({
+                    source,
+                    category: classification.assetCategory,
+                    timestamp: data.timestamp
+                });
+                hasConflict = true;
+            }
+
+            // Check pegged asset conflicts
+            if (classification.peggedAsset !== currentResult.peggedAsset) {
+                conflicts.peggedAsset.push({
+                    source,
+                    peggedAsset: classification.peggedAsset,
+                    timestamp: data.timestamp
+                });
+                hasConflict = true;
+            }
+        }
+
+        if (hasConflict) {
+            // Record conflict
+            this._conflictTracking.conflicts.set(assetKey, {
+                detected: Date.now(),
+                currentSource,
+                currentResult: { ...currentResult },
+                conflicts,
+                resolved: false
+            });
+
+            // Determine conflict type
+            let type = 'mixed';
+            if (conflicts.category.length > 0 && conflicts.peggedAsset.length === 0) {
+                type = 'category';
+            } else if (conflicts.category.length === 0 && conflicts.peggedAsset.length > 0) {
+                type = 'peggedAsset';
+            }
+
+            return {
+                hasConflict: true,
+                type,
+                conflicts,
+                totalSources: assetClassifications.size
+            };
+        }
+
+        return { hasConflict: false };
+    }
+
+    /**
+     * Resolve conflicts using specified strategy
+     * @param {string} assetKey - Asset key
+     * @param {string} strategy - Resolution strategy
+     * @param {Object} sourcePriorities - Source priority mapping
+     * @returns {Object|null} Resolved classification or null
+     */
+    resolveConflict(assetKey, strategy = 'priority', sourcePriorities = {}) {
+        const conflict = this._conflictTracking.conflicts.get(assetKey);
+        const classifications = this._conflictTracking.classifications.get(assetKey);
+
+        if (!conflict || !classifications) {
+            return null;
+        }
+
+        let resolvedClassification = null;
+        let resolutionMethod = strategy;
+
+        try {
+            switch (strategy) {
+                case this._conflictTracking.strategies.PRIORITY_BASED:
+                    resolvedClassification = this._resolvePriorityBased(classifications, sourcePriorities);
+                    break;
+
+                case this._conflictTracking.strategies.CONSENSUS_BASED:
+                    resolvedClassification = this._resolveConsensusBased(classifications);
+                    break;
+
+                case this._conflictTracking.strategies.MOST_SPECIFIC:
+                    resolvedClassification = this._resolveMostSpecific(classifications);
+                    break;
+
+                case this._conflictTracking.strategies.NEWEST_FIRST:
+                    resolvedClassification = this._resolveNewestFirst(classifications);
+                    break;
+
+                default:
+                    // Default to priority-based
+                    resolvedClassification = this._resolvePriorityBased(classifications, sourcePriorities);
+                    resolutionMethod = this._conflictTracking.strategies.PRIORITY_BASED;
+            }
+
+            if (resolvedClassification) {
+                // Mark conflict as resolved
+                conflict.resolved = true;
+                conflict.resolutionTimestamp = Date.now();
+                conflict.resolutionMethod = resolutionMethod;
+                conflict.resolvedClassification = { ...resolvedClassification };
+
+                // Record resolution strategy used
+                this._conflictTracking.resolutions.set(assetKey, {
+                    strategy: resolutionMethod,
+                    timestamp: Date.now(),
+                    result: { ...resolvedClassification }
+                });
+
+                this.logger.info('Asset classification conflict resolved', {
+                    assetKey,
+                    strategy: resolutionMethod,
+                    resolvedClassification,
+                    involvedSources: Array.from(classifications.keys()),
+                    conflictDurationMs: Date.now() - conflict.detected
+                });
+            }
+
+        } catch (error) {
+            this.logger.error('Failed to resolve classification conflict', {
+                assetKey,
+                strategy,
+                error: error.message,
+                involvedSources: Array.from(classifications.keys())
+            });
+        }
+
+        return resolvedClassification;
+    }
+
+    /**
+     * Get conflict summary and statistics
+     * @returns {Object} Conflict summary
+     */
+    getConflictSummary() {
+        const summary = {
+            totalAssets: this._conflictTracking.classifications.size,
+            assetsWithConflicts: this._conflictTracking.conflicts.size,
+            resolvedConflicts: Array.from(this._conflictTracking.conflicts.values())
+                .filter(c => c.resolved).length,
+            conflictRate: 0,
+            topConflictingSources: new Map(),
+            conflictTypes: { category: 0, peggedAsset: 0, mixed: 0 },
+            resolutionStrategies: new Map()
+        };
+
+        if (summary.totalAssets > 0) {
+            summary.conflictRate = summary.assetsWithConflicts / summary.totalAssets;
+        }
+
+        // Analyze conflicts
+        for (const conflict of this._conflictTracking.conflicts.values()) {
+            // Count conflict types
+            const { conflicts } = conflict;
+            if (conflicts.category.length > 0 && conflicts.peggedAsset.length > 0) {
+                summary.conflictTypes.mixed++;
+            } else if (conflicts.category.length > 0) {
+                summary.conflictTypes.category++;
+            } else if (conflicts.peggedAsset.length > 0) {
+                summary.conflictTypes.peggedAsset++;
+            }
+
+            // Track conflicting sources
+            for (const source of conflicts.sources) {
+                const count = summary.topConflictingSources.get(source) || 0;
+                summary.topConflictingSources.set(source, count + 1);
+            }
+        }
+
+        // Analyze resolution strategies
+        for (const resolution of this._conflictTracking.resolutions.values()) {
+            const count = summary.resolutionStrategies.get(resolution.strategy) || 0;
+            summary.resolutionStrategies.set(resolution.strategy, count + 1);
+        }
+
+        return summary;
+    }
+
+    /**
+     * Validate asset against expected schema and track evolution
+     * @private
+     * @param {Object} asset - Asset to validate
+     * @param {string} source - Data source name
+     * @returns {Object} Schema validation result
+     */
+    _validateAndTrackSchema(asset, source) {
+        const expectedSchema = this._schemaManager.expectedSchemas.get(source);
+        
+        if (!expectedSchema) {
+            // Unknown source - track for future schema learning
+            this._trackUnknownDataFormat(source, asset);
+            return { hasViolations: false };
+        }
+
+        const violations = [];
+        const unknownAttributes = [];
+        const assetKeys = Object.keys(asset);
+
+        // Check required fields
+        for (const requiredField of expectedSchema.required || []) {
+            if (!(requiredField in asset)) {
+                violations.push({
+                    type: 'missing_required',
+                    field: requiredField,
+                    expected: 'required field'
+                });
+            }
+        }
+
+        // Check field types
+        for (const [field, expectedType] of Object.entries(expectedSchema.types || {})) {
+            if (field in asset) {
+                const actualType = this._getFieldType(asset[field]);
+                if (actualType !== expectedType) {
+                    violations.push({
+                        type: 'type_mismatch',
+                        field,
+                        expected: expectedType,
+                        actual: actualType
+                    });
+                }
+            }
+        }
+
+        // Check for unknown attributes
+        const knownFields = new Set([
+            ...(expectedSchema.required || []),
+            ...(expectedSchema.optional || [])
+        ]);
+
+        for (const field of assetKeys) {
+            if (!knownFields.has(field)) {
+                unknownAttributes.push(field);
+            }
+        }
+
+        // Record violations and unknown attributes
+        if (violations.length > 0) {
+            this._recordSchemaViolations(source, violations);
+        }
+
+        if (unknownAttributes.length > 0) {
+            this._recordUnknownAttributes(source, unknownAttributes);
+        }
+
+        // Track data format evolution
+        this._trackSchemaEvolution(source, asset, violations, unknownAttributes);
+
+        return {
+            hasViolations: violations.length > 0 || unknownAttributes.length > 0,
+            violations,
+            unknownAttributes
+        };
+    }
+
+    /**
+     * Get the type of a field value
+     * @private
+     * @param {*} value - Value to check
+     * @returns {string} Type name
+     */
+    _getFieldType(value) {
+        if (value === null) return 'null';
+        if (Array.isArray(value)) return 'array';
+        return typeof value;
+    }
+
+    /**
+     * Record schema violations for monitoring
+     * @private
+     * @param {string} source - Data source
+     * @param {Array} violations - List of violations
+     */
+    _recordSchemaViolations(source, violations) {
+        if (!this._schemaManager.violations.has(source)) {
+            this._schemaManager.violations.set(source, []);
+        }
+
+        const sourceViolations = this._schemaManager.violations.get(source);
+        sourceViolations.push({
+            timestamp: Date.now(),
+            violations: [...violations]
+        });
+
+        // Keep only last 100 violation records per source
+        if (sourceViolations.length > 100) {
+            sourceViolations.splice(0, sourceViolations.length - 100);
+        }
+    }
+
+    /**
+     * Record unknown attributes for monitoring
+     * @private
+     * @param {string} source - Data source
+     * @param {Array} attributes - Unknown attributes
+     */
+    _recordUnknownAttributes(source, attributes) {
+        if (!this._schemaManager.unknownAttributes.has(source)) {
+            this._schemaManager.unknownAttributes.set(source, new Set());
+        }
+
+        const sourceUnknown = this._schemaManager.unknownAttributes.get(source);
+        attributes.forEach(attr => sourceUnknown.add(attr));
+    }
+
+    /**
+     * Track schema evolution over time
+     * @private
+     * @param {string} source - Data source
+     * @param {Object} asset - Current asset data
+     * @param {Array} violations - Current violations
+     * @param {Array} unknownAttributes - Unknown attributes
+     */
+    _trackSchemaEvolution(source, asset, violations, unknownAttributes) {
+        if (!this._schemaManager.evolutionTracking.has(source)) {
+            this._schemaManager.evolutionTracking.set(source, []);
+        }
+
+        const evolution = this._schemaManager.evolutionTracking.get(source);
+        const now = Date.now();
+
+        // Only record significant changes
+        if (violations.length > 0 || unknownAttributes.length > 0) {
+            evolution.push({
+                timestamp: now,
+                violationCount: violations.length,
+                unknownAttributeCount: unknownAttributes.length,
+                newAttributes: unknownAttributes,
+                sampleAsset: {
+                    symbol: asset.symbol,
+                    name: asset.name,
+                    attributeCount: Object.keys(asset).length
+                }
+            });
+
+            // Keep only last 50 evolution records per source
+            if (evolution.length > 50) {
+                evolution.splice(0, evolution.length - 50);
+            }
+        }
+    }
+
+    /**
+     * Track unknown data formats for learning
+     * @private
+     * @param {string} source - Data source
+     * @param {Object} asset - Asset data
+     */
+    _trackUnknownDataFormat(source, asset) {
+        if (!this._schemaManager.dataFormats.has(source)) {
+            this._schemaManager.dataFormats.set(source, {
+                discovered: Date.now(),
+                sampleCount: 0,
+                commonFields: new Map(),
+                fieldTypes: new Map()
+            });
+        }
+
+        const format = this._schemaManager.dataFormats.get(source);
+        format.sampleCount++;
+
+        // Track field frequency and types
+        for (const [field, value] of Object.entries(asset)) {
+            const count = format.commonFields.get(field) || 0;
+            format.commonFields.set(field, count + 1);
+            
+            const type = this._getFieldType(value);
+            const typeKey = `${field}:${type}`;
+            const typeCount = format.fieldTypes.get(typeKey) || 0;
+            format.fieldTypes.set(typeKey, typeCount + 1);
+        }
+
+        this.logger.info('Learning schema for unknown source', {
+            source,
+            sampleCount: format.sampleCount,
+            discoveredFields: format.commonFields.size,
+            asset: { symbol: asset.symbol, name: asset.name }
+        });
+    }
+
+    /**
+     * Get schema monitoring summary
+     * @returns {Object} Schema monitoring summary
+     */
+    getSchemaMonitoringSummary() {
+        const summary = {
+            sources: {},
+            overallHealth: 'healthy',
+            totalViolations: 0,
+            totalUnknownAttributes: 0
+        };
+
+        for (const [source, violations] of this._schemaManager.violations) {
+            const recentViolations = violations.filter(v => 
+                Date.now() - v.timestamp < 86400000 // Last 24 hours
+            );
+            
+            summary.sources[source] = {
+                violations: recentViolations.length,
+                unknownAttributes: this._schemaManager.unknownAttributes.get(source)?.size || 0,
+                evolutionEvents: this._schemaManager.evolutionTracking.get(source)?.length || 0
+            };
+
+            summary.totalViolations += recentViolations.length;
+            summary.totalUnknownAttributes += summary.sources[source].unknownAttributes;
+        }
+
+        // Determine overall health
+        if (summary.totalViolations > 50 || summary.totalUnknownAttributes > 20) {
+            summary.overallHealth = 'critical';
+        } else if (summary.totalViolations > 10 || summary.totalUnknownAttributes > 5) {
+            summary.overallHealth = 'degraded';
+        }
+
+        return summary;
+    }
+
+    /**
+     * Validate input data for classification
+     * @private
+     * @param {*} asset - Asset to validate
+     * @param {string} source - Data source name
+     * @returns {Object} Validation result
+     */
+    _validateInput(asset, source) {
+        if (!asset || typeof asset !== 'object') {
+            return {
+                isValid: false,
+                error: `Invalid asset input: asset must be an object (got ${typeof asset})`
+            };
+        }
+
+        if (Array.isArray(asset)) {
+            return {
+                isValid: false,
+                error: 'Invalid asset input: asset cannot be an array'
+            };
+        }
+
+        const { tags, name, symbol, slug } = asset;
+
+        if (tags !== undefined && !Array.isArray(tags)) {
+            return {
+                isValid: false,
+                error: `Invalid asset input: tags must be an array (got ${typeof tags})`
+            };
+        }
+
+        // Check for excessively long inputs that could cause performance issues
+        const inputs = { name, symbol, slug };
+        for (const [field, value] of Object.entries(inputs)) {
+            if (value && typeof value === 'string' && value.length > 500) {
+                return {
+                    isValid: false,
+                    error: `Asset ${field} is too long: ${value.length} characters (max 500)`
+                };
+            }
+        }
+
+        return { isValid: true };
+    }
+
+    /**
+     * Safely normalize string input
+     * @private
+     * @param {*} input - Input to normalize
+     * @returns {string} Normalized lowercase string
+     */
+    _normalizeString(input) {
+        if (input === null || input === undefined) {
+            return '';
+        }
+        
+        if (typeof input !== 'string') {
+            input = String(input);
+        }
+        
+        return input.toLowerCase().trim();
+    }
+
+    /**
+     * Record successful classification with metrics tracking
+     * @private
+     * @param {string} source - Data source
+     * @param {Object} result - Classification result
+     * @param {number} durationMs - Processing time
+     */
+    _recordSuccessfulClassification(source, result, durationMs) {
+        this._metrics.classifications.successful++;
+        this._metrics.classifications.totalDurationMs += durationMs;
+        this._metrics.classifications.averageDurationMs = 
+            this._metrics.classifications.totalDurationMs / this._metrics.classifications.total;
+
+        // Track by source
+        const sourceStats = this._metrics.classifications.bySource.get(source) || { count: 0, totalMs: 0 };
+        sourceStats.count++;
+        sourceStats.totalMs += durationMs;
+        this._metrics.classifications.bySource.set(source, sourceStats);
+
+        // Track by category
+        const categoryStats = this._metrics.classifications.byCategory.get(result.assetCategory) || { count: 0 };
+        categoryStats.count++;
+        this._metrics.classifications.byCategory.set(result.assetCategory, categoryStats);
+    }
+
+    /**
+     * Record error with metrics tracking
+     * @private
+     * @param {string} errorType - Type of error
+     * @param {string} message - Error message
+     * @param {string} source - Data source
+     * @param {Object} context - Additional context
+     */
+    _recordError(errorType, message, source, context = {}) {
+        this._metrics.classifications.failed++;
+        
+        switch (errorType) {
+            case 'validation':
+                this._metrics.errors.validationErrors++;
+                break;
+            case 'pattern':
+                this._metrics.errors.patternErrors++;
+                break;
+            case 'config':
+                this._metrics.errors.configErrors++;
+                break;
+            default:
+                this._metrics.errors.unknownErrors++;
+        }
+
+        this.logger.error(`AssetClassifier ${errorType} error`, {
+            errorType,
+            message,
+            source,
+            context,
+            metrics: {
+                totalFailed: this._metrics.classifications.failed,
+                successRate: this._getSuccessRate()
+            }
+        });
+    }
+
+    /**
+     * Track unknown patterns for future improvement
+     * @private
+     * @param {Array<string>} tags - Asset tags
+     * @param {Object} asset - Asset info for context
+     */
+    _trackUnknownPattern(tags, asset) {
+        const pattern = tags.slice(0, 5).sort().join('|'); // Limit and sort for consistency
+        this._metrics.classifications.unknownPatterns.add(pattern);
+
+        this.logger.debug('Unknown asset pattern detected', {
+            pattern,
+            tags: tags.slice(0, 10),
+            asset: { symbol: asset.symbol, name: asset.name },
+            totalUnknownPatterns: this._metrics.classifications.unknownPatterns.size
+        });
+    }
+
+    /**
+     * Calculate current success rate
+     * @private
+     * @returns {number} Success rate as decimal (0-1)
+     */
+    _getSuccessRate() {
+        const { total, successful } = this._metrics.classifications;
+        return total > 0 ? successful / total : 1;
+    }
+
+    /**
+     * Create a safe RegExp with comprehensive error handling and logging
+     * @private
+     * @param {string} pattern - Regex pattern string
+     * @param {string} flags - Regex flags
+     * @param {string} patternName - Pattern name for logging
+     * @returns {RegExp} Compiled regex pattern
+     * @throws {Error} If pattern compilation fails
+     */
+    _createSafeRegex(pattern, flags = '', patternName = 'unknown') {
+        if (typeof pattern !== 'string') {
+            throw new Error(`Invalid regex pattern type for ${patternName}: expected string, got ${typeof pattern}`);
+        }
+
+        if (pattern.length === 0) {
+            throw new Error(`Empty regex pattern provided for ${patternName}`);
+        }
+
+        // Basic safety checks for potentially dangerous patterns
+        if (pattern.length > 1000) {
+            throw new Error(`Regex pattern too long for ${patternName}: ${pattern.length} characters (max 1000)`);
+        }
+
+        // Check for catastrophic backtracking patterns (basic detection)
+        if (this._hasNestedQuantifiers(pattern)) {
+            this.logger.warn(`Potentially inefficient regex pattern detected for ${patternName}`, {
+                pattern: pattern.substring(0, 100),
+                patternName
+            });
+        }
+
+        try {
+            const regex = new RegExp(pattern, flags);
+            
+            this.logger.debug(`Regex compiled successfully for ${patternName}`, {
+                patternName,
+                patternLength: pattern.length,
+                flags
+            });
+
+            return regex;
+            
+        } catch (error) {
+            this.logger.error(`Regex compilation failed for ${patternName}`, {
+                patternName,
+                pattern: pattern.substring(0, 100),
+                flags,
+                error: error.message
+            });
+            throw new Error(`Failed to compile regex pattern for ${patternName}: ${error.message}`);
+        }
+    }
+
+    /**
+     * Escape special regex characters in user input
+     * @private
+     * @param {string} text - Text to escape
+     * @returns {string} Escaped text safe for use in regex
+     */
+    _escapeRegexSpecialChars(text) {
+        if (typeof text !== 'string') return '';
+        return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    /**
+     * Detect potentially catastrophic backtracking patterns
+     * @private
+     * @param {string} pattern - Regex pattern to analyze
+     * @returns {boolean} True if pattern might cause performance issues
+     */
+    _hasNestedQuantifiers(pattern) {
+        // Simple heuristic: look for patterns like (a+)+, (a*)+, (a+)*, etc.
+        // This is basic detection - more sophisticated analysis would require parsing
+        return /\([^)]*[+*][^)]*\)[+*]/.test(pattern) || 
+               /[+*]\?[^)]*[+*]/.test(pattern);
+    }
+
+    /**
+     * Resolve conflict using priority-based strategy
+     * @private
+     * @param {Map} classifications - Asset classifications by source
+     * @param {Object} sourcePriorities - Source priority mapping
+     * @returns {Object} Highest priority classification
+     */
+    _resolvePriorityBased(classifications, sourcePriorities = {}) {
+        const defaultPriorities = {
+            'cmc': 10,
+            'messari': 9, 
+            'coingecko': 6,
+            'defillama': 8
+        };
+
+        const priorities = { ...defaultPriorities, ...sourcePriorities };
+        
+        let highestPriority = -1;
+        let resolvedClassification = null;
+
+        for (const [source, data] of classifications) {
+            const priority = priorities[source] || 0;
+            if (priority > highestPriority) {
+                highestPriority = priority;
+                resolvedClassification = data.classification;
+            }
+        }
+
+        return resolvedClassification;
+    }
+
+    /**
+     * Resolve conflict using consensus-based strategy (majority vote)
+     * @private
+     * @param {Map} classifications - Asset classifications by source
+     * @returns {Object} Consensus classification
+     */
+    _resolveConsensusBased(classifications) {
+        const categoryVotes = new Map();
+        const peggedAssetVotes = new Map();
+
+        // Count votes for each classification
+        for (const [source, data] of classifications) {
+            const { assetCategory, peggedAsset } = data.classification;
+
+            // Vote for category
+            const categoryCount = categoryVotes.get(assetCategory) || 0;
+            categoryVotes.set(assetCategory, categoryCount + 1);
+
+            // Vote for pegged asset
+            const peggedAssetKey = peggedAsset || 'none';
+            const peggedAssetCount = peggedAssetVotes.get(peggedAssetKey) || 0;
+            peggedAssetVotes.set(peggedAssetKey, peggedAssetCount + 1);
+        }
+
+        // Find majority winners
+        const winningCategory = Array.from(categoryVotes.entries())
+            .reduce((a, b) => a[1] > b[1] ? a : b)[0];
+            
+        const winningPeggedAsset = Array.from(peggedAssetVotes.entries())
+            .reduce((a, b) => a[1] > b[1] ? a : b)[0];
+
+        return {
+            assetCategory: winningCategory,
+            peggedAsset: winningPeggedAsset === 'none' ? null : winningPeggedAsset
+        };
+    }
+
+    /**
+     * Resolve conflict using most specific classification
+     * @private
+     * @param {Map} classifications - Asset classifications by source
+     * @returns {Object} Most specific classification
+     */
+    _resolveMostSpecific(classifications) {
+        const specificityOrder = {
+            'Stablecoin': 2,
+            'Tokenized Asset': 2,
+            'Other': 1
+        };
+
+        let mostSpecific = null;
+        let highestSpecificity = 0;
+
+        for (const [source, data] of classifications) {
+            const { assetCategory, peggedAsset } = data.classification;
+            
+            let specificity = specificityOrder[assetCategory] || 0;
+            
+            // Bonus for having specific pegged asset
+            if (peggedAsset && peggedAsset !== 'none') {
+                specificity += 1;
+            }
+
+            if (specificity > highestSpecificity) {
+                highestSpecificity = specificity;
+                mostSpecific = data.classification;
+            }
+        }
+
+        return mostSpecific;
+    }
+
+    /**
+     * Resolve conflict using newest-first strategy
+     * @private
+     * @param {Map} classifications - Asset classifications by source
+     * @returns {Object} Most recent classification
+     */
+    _resolveNewestFirst(classifications) {
+        let newestClassification = null;
+        let newestTimestamp = 0;
+
+        for (const [source, data] of classifications) {
+            if (data.timestamp > newestTimestamp) {
+                newestTimestamp = data.timestamp;
+                newestClassification = data.classification;
+            }
+        }
+
+        return newestClassification;
+    }
+
+    /**
+     * Generate alerts based on current metrics and thresholds
+     * @private
+     * @returns {Array} Array of active alerts
+     */
+    _generateAlerts() {
+        const alerts = [];
+        const now = Date.now();
+
+        // Success rate alert
+        const successRate = this._getSuccessRate();
+        if (successRate < 0.8) {
+            alerts.push({
+                id: 'classification_success_rate',
+                severity: successRate < 0.5 ? 'critical' : 'warning',
+                title: 'Low Classification Success Rate',
+                message: `Classification success rate is ${(successRate * 100).toFixed(1)}%`,
+                timestamp: now,
+                threshold: '80%',
+                actual: `${(successRate * 100).toFixed(1)}%`
+            });
+        }
+
+        // Performance alert
+        if (this._metrics.classifications.averageDurationMs > 100) {
+            alerts.push({
+                id: 'classification_performance',
+                severity: this._metrics.classifications.averageDurationMs > 500 ? 'critical' : 'warning',
+                title: 'Slow Classification Performance',
+                message: `Average classification time is ${this._metrics.classifications.averageDurationMs.toFixed(1)}ms`,
+                timestamp: now,
+                threshold: '100ms',
+                actual: `${this._metrics.classifications.averageDurationMs.toFixed(1)}ms`
+            });
+        }
+
+        // Unknown patterns alert
+        if (this._metrics.classifications.unknownPatterns.size > 20) {
+            alerts.push({
+                id: 'unknown_patterns',
+                severity: 'warning',
+                title: 'High Number of Unknown Patterns',
+                message: `${this._metrics.classifications.unknownPatterns.size} unknown asset patterns detected`,
+                timestamp: now,
+                threshold: '20 patterns',
+                actual: `${this._metrics.classifications.unknownPatterns.size} patterns`
+            });
+        }
+
+        // Conflict rate alert
+        const conflictSummary = this.getConflictSummary();
+        if (conflictSummary.conflictRate > 0.1) {
+            alerts.push({
+                id: 'high_conflict_rate',
+                severity: conflictSummary.conflictRate > 0.3 ? 'critical' : 'warning',
+                title: 'High Classification Conflict Rate',
+                message: `${(conflictSummary.conflictRate * 100).toFixed(1)}% of assets have conflicts`,
+                timestamp: now,
+                threshold: '10%',
+                actual: `${(conflictSummary.conflictRate * 100).toFixed(1)}%`
+            });
+        }
+
+        return alerts;
+    }
+
+    /**
+     * Calculate overall health score
+     * @private
+     * @returns {Object} Overall health assessment
+     */
+    _calculateOverallHealth() {
+        const successRate = this._getSuccessRate();
+        const conflictRate = this.getConflictSummary().conflictRate;
+        const schemaHealth = this.getSchemaMonitoringSummary().overallHealth;
+        
+        let score = 100;
+        
+        // Deduct for low success rate
+        score -= (1 - successRate) * 40;
+        
+        // Deduct for high conflict rate
+        score -= conflictRate * 30;
+        
+        // Deduct for schema issues
+        if (schemaHealth === 'degraded') score -= 10;
+        if (schemaHealth === 'critical') score -= 25;
+        
+        // Deduct for performance issues
+        if (this._metrics.classifications.averageDurationMs > 100) {
+            score -= Math.min(this._metrics.classifications.averageDurationMs / 10, 20);
+        }
+
+        score = Math.max(0, Math.round(score));
+        
+        let status = 'healthy';
+        if (score < 50) status = 'critical';
+        else if (score < 75) status = 'degraded';
+        
+        return { status, score };
+    }
+
+    /**
+     * Get performance health assessment
+     * @private
+     * @returns {Object} Performance health
+     */
+    _getPerformanceHealth() {
+        const avgDuration = this._metrics.classifications.averageDurationMs;
+        const successRate = this._getSuccessRate();
+        
+        let status = 'healthy';
+        if (avgDuration > 500 || successRate < 0.5) status = 'critical';
+        else if (avgDuration > 100 || successRate < 0.8) status = 'degraded';
+        
+        return {
+            status,
+            averageResponseTime: avgDuration,
+            successRate: successRate,
+            throughput: this._metrics.classifications.total
+        };
+    }
+
+    /**
+     * Get data quality health assessment
+     * @private
+     * @returns {Object} Data quality health
+     */
+    _getDataQualityHealth() {
+        const conflictRate = this.getConflictSummary().conflictRate;
+        const schemaHealth = this.getSchemaMonitoringSummary().overallHealth;
+        const unknownPatterns = this._metrics.classifications.unknownPatterns.size;
+        
+        let status = 'healthy';
+        if (conflictRate > 0.3 || schemaHealth === 'critical' || unknownPatterns > 50) {
+            status = 'critical';
+        } else if (conflictRate > 0.1 || schemaHealth === 'degraded' || unknownPatterns > 20) {
+            status = 'degraded';
+        }
+        
+        return {
+            status,
+            conflictRate,
+            schemaCompliance: schemaHealth,
+            unknownPatterns
+        };
+    }
+
+    /**
+     * Get operational status
+     * @private
+     * @returns {Object} Operational status
+     */
+    _getOperationalStatus() {
+        const alerts = this._generateAlerts();
+        const criticalAlerts = alerts.filter(a => a.severity === 'critical').length;
+        const warningAlerts = alerts.filter(a => a.severity === 'warning').length;
+        
+        let status = 'operational';
+        if (criticalAlerts > 0) status = 'critical';
+        else if (warningAlerts > 2) status = 'degraded';
+        
+        return {
+            status,
+            criticalAlerts,
+            warningAlerts,
+            totalAlerts: alerts.length,
+            uptime: Date.now() - this._metrics.classifications.lastReset
         };
     }
 }
