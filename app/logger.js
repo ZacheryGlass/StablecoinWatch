@@ -1,45 +1,52 @@
-/**
- * Minimal application-wide logging setup with a single toggle.
- *
- * Controls verbosity via either LOG_LEVEL=debug or VERBOSE_LOGGING=true.
- * When not in debug, console.debug becomes a no-op. Other console methods
- * are left intact to avoid behavior changes.
- */
-(function setupLogger() {
-    const level = (process.env.LOG_LEVEL || '').toLowerCase();
-    const verbose = String(process.env.VERBOSE_LOGGING || process.env.VERBOSE || '').toLowerCase() === 'true';
-    // Also honor DEBUG=true as a universal debug toggle
-    const envDebug = String(process.env.DEBUG || '').toLowerCase() === 'true';
-    const isDebug = envDebug || verbose || level === 'debug';
+const winston = require('winston');
 
-    const original = {
-        debug: console.debug.bind(console),
-        info: console.info.bind(console),
-        warn: console.warn.bind(console),
-        error: console.error.bind(console),
-        log: console.log.bind(console)
+/**
+ * Application-wide logging setup using Winston.
+ *
+ * Configures a structured JSON logger with log levels controlled by
+ * the LOG_LEVEL environment variable.
+ *
+ * Supported LOG_LEVELS: error, warn, info, http, verbose, debug, silly
+ */
+function setupLogger() {
+    const level = (process.env.LOG_LEVEL || 'info').toLowerCase();
+
+    const logger = winston.createLogger({
+        level: level,
+        format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.errors({ stack: true }), // Log stack traces
+            winston.format.json()
+        ),
+        transports: [
+            new winston.transports.Console({
+                // In development, use a simpler format for readability
+                format: process.env.NODE_ENV === 'development' ? winston.format.combine(
+                    winston.format.colorize(),
+                    winston.format.simple()
+                ) : undefined,
+            }),
+        ],
+        exitOnError: false, // Do not exit on handled exceptions
+    });
+
+    // Create a stream for morgan logging
+    logger.stream = {
+        write: (message) => {
+            logger.http(message.trim());
+        },
     };
 
-    // Timestamp prefix helper (kept lightweight)
-    const ts = () => new Date().toISOString();
-    const withPrefix = (fn, tag) => (...args) => fn(`[${ts()}] ${tag}:`, ...args);
+    // Expose a global DEBUG flag for legacy modules
+    global.DEBUG = ['debug', 'verbose', 'silly'].includes(level);
 
-    // Wrap info/warn/error/log to include level + timestamp for consistency
-    console.info = withPrefix(original.info, 'info');
-    console.warn = withPrefix(original.warn, 'warn');
-    console.error = withPrefix(original.error, 'error');
-    console.log = withPrefix(original.log, 'log');
-
-    // Expose a global DEBUG flag for legacy modules that use it
-    global.DEBUG = !!isDebug;
-
-    // Control debug output via the single toggle
-    if (isDebug) {
-        console.debug = withPrefix(original.debug, 'debug');
-        console.info('[logger] Verbose logging enabled (LOG_LEVEL=debug or VERBOSE_LOGGING=true)');
-    } else {
-        console.debug = () => {};
+    if (global.DEBUG) {
+        logger.info(`Verbose logging enabled with level: ${level}`);
     }
-})();
 
-module.exports = {};
+    return logger;
+}
+
+const logger = setupLogger();
+
+module.exports = logger;

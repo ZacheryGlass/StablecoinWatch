@@ -304,6 +304,73 @@ class ApiConfig {
                 
                 // Asset-backed stablecoin tags
                 assetBackedTags: ['asset-backed-stablecoin'],
+
+                // Currency aliases and special mappings.
+                // Keys are normalized uppercase tokens or codes found in tags like
+                // 'peggedXAU' or 'xau-stablecoin' and values are the canonical
+                // peggedAsset representation returned by the classifier.
+                // Add new mappings here to support new pegged currencies without
+                // modifying classifier code.
+                currencyAliases: {
+                    // Precious metals and commodities
+                    'XAU': 'Gold',
+                    'XAG': 'Silver',
+                    'XAUT': 'Gold',
+                    'PAXG': 'Gold',
+                    'GOLD': 'Gold',
+                    'SILVER': 'Silver',
+                    
+                    // Special drawing rights and composite currencies
+                    'XDR': 'Special Drawing Rights',
+                    'SDR': 'Special Drawing Rights',
+                    
+                    // Common alternative representations
+                    'DOLLAR': 'USD',
+                    'EURO': 'EUR',
+                    'POUND': 'GBP',
+                    'YEN': 'JPY',
+                    'YUAN': 'CNY',
+                    'RENMINBI': 'CNY',
+                    'FRANC': 'CHF',
+                    'RUPEE': 'INR',
+                    'WON': 'KRW',
+                    'REAL': 'BRL',
+                    'PESO': 'MXN',
+                    'RAND': 'ZAR',
+                    'RUBLE': 'RUB',
+                    'ROUBLE': 'RUB',
+                    'LIRA': 'TRY',
+                    
+                    // Common stablecoin symbol variations
+                    'USDT': 'USD',
+                    'USDC': 'USD',
+                    'BUSD': 'USD',
+                    'USDP': 'USD',
+                    'TUSD': 'USD',
+                    'FDUSD': 'USD',
+                    'PYUSD': 'USD',
+                    'EURC': 'EUR',
+                    'EURS': 'EUR',
+                    'EURT': 'EUR',
+                    'CEUR': 'EUR',
+                    'STASIS': 'EUR',
+                    'GBPT': 'GBP',
+                    'QCAD': 'CAD',
+                    'CADC': 'CAD',
+                    'AUDX': 'AUD',
+                    'NZDS': 'NZD',
+                    'JPYC': 'JPY',
+                    'CNHT': 'CNY',
+                    'IDRT': 'IDR',
+                    'BIDR': 'IDR',
+                    'THBX': 'THB',
+                    'BRLT': 'BRL',
+                    'INRT': 'INR',
+                    'KRWT': 'KRW',
+                    'ZZAR': 'ZAR'
+                    // Note: By default, unrecognized 3-letter ISO codes will be returned as-is
+                    // This provides extensibility for new currencies without requiring code changes
+                },
                 
                 // Pattern matching rules for name/symbol heuristics
                 patterns: {

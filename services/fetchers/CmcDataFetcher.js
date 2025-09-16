@@ -230,21 +230,28 @@ class CmcDataFetcher extends IDataFetcher {
     _filterStablecoinsSync(rawData) {
         const priceRange = this.config?.processing?.stablecoinFilter?.priceRange || { min: 0.5, max: 2.0 };
         const includeTokenizedAssets = this.config?.processing?.includeTokenizedAssets ?? false;
+        console.log(`[CMC Debug] includeTokenizedAssets: ${includeTokenizedAssets}`);
 
         return rawData.filter((crypto) => {
             // Use AssetClassifier for consistent classification
             const classification = this.classifier.classify({
-                tags: crypto.tags || [],
-                name: crypto.name,
-                symbol: crypto.symbol,
-                slug: crypto.slug
+                asset: {
+                    tags: crypto.tags || [],
+                    name: crypto.name,
+                    symbol: crypto.symbol,
+                    slug: crypto.slug
+                }
             });
+
+            console.log(`[CMC Debug] Classifying ${crypto.name} (${crypto.symbol}): ${JSON.stringify(classification)}`);
 
             const isStablecoin = classification.assetCategory === 'Stablecoin';
             const isTokenizedAsset = classification.assetCategory === 'Tokenized Asset';
 
             // Feature flag gating: include stablecoins always, tokenized assets only if flag is enabled
             const include = isStablecoin || (includeTokenizedAssets && isTokenizedAsset);
+            console.log(`[CMC Debug] Decision for ${crypto.name}: isStablecoin=${isStablecoin}, isTokenizedAsset=${isTokenizedAsset}, includeTokenizedAssets=${includeTokenizedAssets}, include=${include}`);
+            
             if (!include) return false;
 
             // Apply USD price validation only to fiat-pegged stablecoins
@@ -252,6 +259,7 @@ class CmcDataFetcher extends IDataFetcher {
                 const price = crypto.quote?.USD?.price;
                 if (typeof price === 'number' && isFinite(price)) {
                     if (price < priceRange.min || price > priceRange.max) {
+                        console.log(`[CMC Debug] Filtering out ${crypto.name} due to price ${price}`);
                         return false;
                     }
                 }
@@ -305,10 +313,13 @@ class CmcDataFetcher extends IDataFetcher {
         const out = (rawData || []).map((coin) => {
             // Use AssetClassifier for consistent classification
             const classification = this.classifier.classify({
-                tags: coin.tags || [],
-                name: coin.name,
-                symbol: coin.symbol,
-                slug: coin.slug
+                asset: {
+                    tags: coin.tags || [],
+                    name: coin.name,
+                    symbol: coin.symbol,
+                    slug: coin.slug
+                },
+                source: this.sourceId
             });
 
             return {

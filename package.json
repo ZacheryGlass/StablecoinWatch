@@ -10,10 +10,11 @@
         "ejs": "^3.1.3",
         "express": "^4.17.1",
         "node": "^24.8.0",
-        "node-cron": "^2.0.3"
+        "node-cron": "^2.0.3",
+        "winston": "^3.17.0"
     },
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "jest --runInBand",
         "start": "node app/app.js",
         "build:static": "node scripts/build-static.js",
         "screenshot": "node scripts/take-screenshot.js",
@@ -32,6 +33,7 @@
     "author": "",
     "license": "ISC",
     "devDependencies": {
+        "jest": "^29.7.0",
         "puppeteer": "^24.20.0"
     }
 }

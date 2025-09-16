@@ -215,10 +215,13 @@ class CoinGeckoDataFetcher extends IDataFetcher {
         const out = (rawData || []).map((coin) => {
             // Use AssetClassifier for consistent classification
             const classification = this.classifier.classify({
-                tags: ['coingecko'], // CoinGecko doesn't provide detailed tags in markets endpoint
-                name: coin.name,
-                symbol: coin.symbol,
-                slug: coin.id
+                asset: {
+                    tags: ['coingecko'], // CoinGecko doesn't provide detailed tags in markets endpoint
+                    name: coin.name,
+                    symbol: coin.symbol,
+                    slug: coin.id
+                },
+                source: this.sourceId
             });
             
             return {

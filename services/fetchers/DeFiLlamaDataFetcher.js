@@ -339,10 +339,13 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
             
             // Use AssetClassifier for consistent classification
             const classification = this.classifier.classify({
-                tags: tags,
-                name: coin.name,
-                symbol: coin.symbol,
-                slug: coin.symbol || coin.name
+                asset: {
+                    tags: tags,
+                    name: coin.name,
+                    symbol: coin.symbol,
+                    slug: coin.symbol || coin.name
+                },
+                source: this.sourceId
             });
             
             // Prefer DeFiLlama's peggedAsset over classifier if available

@@ -380,10 +380,13 @@ class MessariDataFetcher extends IDataFetcher {
             
             // Use AssetClassifier for consistent classification
             const classification = this.classifier.classify({
-                tags: Array.isArray(m.tags) ? m.tags : [],
-                name: m.name,
-                symbol: m.symbol,
-                slug: m.slug
+                asset: {
+                    tags: Array.isArray(m.tags) ? m.tags : [],
+                    name: m.name,
+                    symbol: m.symbol,
+                    slug: m.slug
+                },
+                source: this.sourceId
             });
             
             // No tracing logs in production
