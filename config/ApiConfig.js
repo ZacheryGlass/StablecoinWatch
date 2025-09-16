@@ -77,7 +77,7 @@ class ApiConfig {
                             max: parseFloat(process.env.CMC_PRICE_MAX) || 2.00
                         }
                     },
-                    includeTokenizedAssets: process.env.CMC_INCLUDE_TOKENIZED_ASSETS === 'true',
+                    includeTokenizedAssets: process.env[this._getTokenizedAssetsEnvVar('cmc')] === 'true',
                     batchSize: parseInt(process.env.CMC_BATCH_SIZE) || 5000,
                     maxResults: parseInt(process.env.CMC_MAX_RESULTS) || 5000
                 },
@@ -131,6 +131,7 @@ class ApiConfig {
                 processing: {
                     useStablecoinEndpoint: process.env.MESSARI_USE_STABLECOIN_ENDPOINT !== 'false',
                     includeInactive: process.env.MESSARI_INCLUDE_INACTIVE === 'true',
+                    includeTokenizedAssets: process.env[this._getTokenizedAssetsEnvVar('messari')] === 'true',
                     batchSize: parseInt(process.env.MESSARI_BATCH_SIZE) || 100
                 },
 
@@ -187,7 +188,8 @@ class ApiConfig {
                     category: 'stablecoins',
                     currency: 'usd',
                     includeSparkline: false,
-                    priceChangePercentage: '24h'
+                    priceChangePercentage: '24h',
+                    includeTokenizedAssets: process.env[this._getTokenizedAssetsEnvVar('coingecko')] === 'true'
                 },
 
                 mockData: {
@@ -239,6 +241,7 @@ class ApiConfig {
                 processing: {
                     includeBridges: process.env.DEFILLAMA_INCLUDE_BRIDGES === 'true',
                     minMarketCap: parseInt(process.env.DEFILLAMA_MIN_MCAP) || 1000000,
+                    includeTokenizedAssets: process.env[this._getTokenizedAssetsEnvVar('defillama')] === 'true',
                     stablecoinFilter: {
                         priceRange: {
                             min: parseFloat(process.env.DEFILLAMA_PRICE_MIN) || 0.50,
