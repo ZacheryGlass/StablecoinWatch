@@ -23,6 +23,7 @@ const templateHelpers = require('../app/util/templateHelpers');
 const utilFmt = require('../app/util');
 const HealthMonitor = require('../services/HealthMonitor');
 const ServiceFactory = require('../services/ServiceFactory');
+const AppConfig = require('../config/AppConfig');
 
 async function ensureDir(dir) {
   await fs.promises.mkdir(dir, { recursive: true });
@@ -102,6 +103,7 @@ async function main() {
       formatPercentage: utilFmt.formatPercentage,
       formatSupply: utilFmt.formatSupply,
     },
+    featureFlags: AppConfig.featureFlags,
   };
 
   console.log('Rendering pages...');
