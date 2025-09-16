@@ -328,7 +328,7 @@ class AssetClassifier {
      */
     classify({ asset, source = 'Unknown' }) {
         const startTime = performance.now();
-        this._metrics.classifications.total++;
+        this._metrics.classifications.total.increment();
 
         try {
             // 1. Enhanced Input validation with schema checking
@@ -1460,7 +1460,6 @@ class AssetClassifier {
      */
     _recordSuccessfulClassification(source, result, durationMs) {
         this._metrics.classifications.successful.increment();
-        this._metrics.classifications.total.increment();
         this._metrics.classifications.totalDurationMs += durationMs;
         const totalCount = this._metrics.classifications.total.get();
         this._metrics.classifications.averageDurationMs = 
@@ -1488,7 +1487,6 @@ class AssetClassifier {
      */
     _recordError(errorType, message, source, context = {}) {
         this._metrics.classifications.failed.increment();
-        this._metrics.classifications.total.increment();
         
         switch (errorType) {
             case 'validation':
