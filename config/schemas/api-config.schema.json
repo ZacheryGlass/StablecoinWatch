@@ -1,0 +1,281 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://stablecoinwatch.com/schemas/api-config.json",
+  "title": "API Configuration Schema",
+  "description": "Schema for StablecoinWatch API configuration objects",
+  "type": "object",
+  "required": ["name", "enabled", "baseUrl", "endpoints", "capabilities"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Human-readable name of the API service",
+      "minLength": 1,
+      "examples": ["CoinMarketCap", "Messari", "CoinGecko"]
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Whether this API source is enabled for data fetching"
+    },
+    "baseUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "Base URL for the API service",
+      "examples": ["https://pro-api.coinmarketcap.com", "https://data.messari.io/api"]
+    },
+    "apiKey": {
+      "type": ["string", "null"],
+      "description": "API key for authentication (null if not required)",
+      "minLength": 10
+    },
+    "endpoints": {
+      "type": "object",
+      "description": "API endpoint paths relative to baseUrl",
+      "minProperties": 1,
+      "patternProperties": {
+        "^[a-zA-Z][a-zA-Z0-9]*$": {
+          "type": "string",
+          "pattern": "^/.*",
+          "description": "Endpoint path starting with /"
+        }
+      },
+      "examples": [
+        {
+          "listings": "/v1/cryptocurrency/listings/latest",
+          "quotes": "/v1/cryptocurrency/quotes/latest"
+        }
+      ]
+    },
+    "rateLimit": {
+      "type": "object",
+      "description": "Rate limiting configuration for the API",
+      "properties": {
+        "requestsPerMinute": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Maximum requests per minute"
+        },
+        "requestsPerHour": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Maximum requests per hour"
+        },
+        "requestsPerDay": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Maximum requests per day"
+        },
+        "burstLimit": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 5,
+          "description": "Maximum burst requests allowed"
+        }
+      },
+      "required": ["burstLimit"],
+      "additionalProperties": false
+    },
+    "request": {
+      "type": "object",
+      "description": "HTTP request configuration",
+      "properties": {
+        "timeout": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 300000,
+          "description": "Request timeout in milliseconds"
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Number of retry attempts on failure"
+        },
+        "retryDelay": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 60000,
+          "description": "Delay between retries in milliseconds"
+        },
+        "headers": {
+          "type": "object",
+          "description": "Default HTTP headers to include with requests",
+          "patternProperties": {
+            "^[a-zA-Z][a-zA-Z0-9-]*$": {
+              "type": "string",
+              "description": "HTTP header value"
+            }
+          }
+        }
+      },
+      "required": ["timeout", "retries", "retryDelay"],
+      "additionalProperties": false
+    },
+    "capabilities": {
+      "type": "object",
+      "description": "Data capabilities and priority information",
+      "properties": {
+        "hasMarketData": {
+          "type": "boolean",
+          "description": "Can provide market data (price, volume, market cap)"
+        },
+        "hasSupplyData": {
+          "type": "boolean",
+          "description": "Can provide supply information"
+        },
+        "hasPlatformData": {
+          "type": "boolean",
+          "description": "Can provide platform/blockchain information"
+        },
+        "hasNetworkBreakdown": {
+          "type": "boolean",
+          "description": "Can provide cross-chain supply breakdown"
+        },
+        "hasMetadata": {
+          "type": "boolean",
+          "description": "Can provide additional metadata"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Priority for data merging (higher values win)"
+        },
+        "dataTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["price", "market_cap", "volume", "rank", "tags", "supply", "network_breakdown", "platforms", "metadata", "chains"]
+          },
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Types of data this source provides"
+        }
+      },
+      "required": ["hasMarketData", "hasSupplyData", "hasPlatformData", "hasNetworkBreakdown", "hasMetadata", "priority", "dataTypes"],
+      "additionalProperties": false
+    },
+    "processing": {
+      "type": "object",
+      "description": "Data processing configuration specific to this API",
+      "properties": {
+        "batchSize": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000,
+          "description": "Batch size for processing large datasets"
+        },
+        "maxResults": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum number of results to process"
+        },
+        "includeTokenizedAssets": {
+          "type": "boolean",
+          "description": "Whether to include tokenized assets in results"
+        },
+        "stablecoinFilter": {
+          "type": "object",
+          "description": "Filters specific to stablecoin identification",
+          "properties": {
+            "byTag": {
+              "type": "boolean",
+              "description": "Filter by stablecoin tag"
+            },
+            "tagName": {
+              "type": "string",
+              "description": "Name of the stablecoin tag to filter by"
+            },
+            "priceRange": {
+              "type": "object",
+              "properties": {
+                "min": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Minimum valid stablecoin price"
+                },
+                "max": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Maximum valid stablecoin price"
+                }
+              },
+              "required": ["min", "max"],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "mockData": {
+      "type": "object",
+      "description": "Mock data configuration for development/testing",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether to use mock data instead of live API"
+        },
+        "filePath": {
+          "type": "string",
+          "description": "Path to mock data file relative to project root",
+          "pattern": ".*\\.json$"
+        }
+      },
+      "required": ["enabled", "filePath"],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "name": "CoinMarketCap",
+      "enabled": true,
+      "baseUrl": "https://pro-api.coinmarketcap.com",
+      "apiKey": "your-api-key-here",
+      "endpoints": {
+        "listings": "/v1/cryptocurrency/listings/latest",
+        "quotes": "/v1/cryptocurrency/quotes/latest"
+      },
+      "rateLimit": {
+        "requestsPerMinute": 333,
+        "requestsPerDay": 10000,
+        "burstLimit": 10
+      },
+      "request": {
+        "timeout": 15000,
+        "retries": 3,
+        "retryDelay": 2000,
+        "headers": {
+          "Accepts": "application/json"
+        }
+      },
+      "capabilities": {
+        "hasMarketData": true,
+        "hasSupplyData": true,
+        "hasPlatformData": true,
+        "hasNetworkBreakdown": false,
+        "hasMetadata": true,
+        "priority": 10,
+        "dataTypes": ["price", "market_cap", "volume", "rank", "tags"]
+      },
+      "processing": {
+        "batchSize": 5000,
+        "maxResults": 5000,
+        "includeTokenizedAssets": false,
+        "stablecoinFilter": {
+          "byTag": true,
+          "tagName": "stablecoin",
+          "priceRange": {
+            "min": 0.5,
+            "max": 2.0
+          }
+        }
+      },
+      "mockData": {
+        "enabled": false,
+        "filePath": "cmc_raw_output.json"
+      }
+    }
+  ]
+}

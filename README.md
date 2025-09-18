@@ -195,7 +195,18 @@ interfaces/
 
 config/
 +-- AppConfig.js                     # Application configuration (active)
-+-- ApiConfig.js                     # API-specific configurations (integrated)
++-- ApiConfig.js                     # Main API configuration entry point (registry-based)
++-- ApiConfigRegistry.js             # Central API configuration registry
++-- AssetClassificationConfig.js     # Asset classification and mapping
++-- schemas/
+    +-- api-config.schema.json       # JSON schema for API configurations
++-- apis/
+    +-- base/
+        +-- ApiConfigBase.js         # Base class for API configurations
+    +-- cmc.config.js                # CoinMarketCap configuration
+    +-- messari.config.js            # Messari configuration
+    +-- coingecko.config.js          # CoinGecko configuration
+    +-- defillama.config.js          # DeFiLlama configuration
 
 services/
 +-- HealthMonitor.js                 # Health monitoring implementation

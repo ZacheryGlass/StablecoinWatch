@@ -1,612 +1,47 @@
 /**
- * API-specific configuration for different data sources
- * Designed for easy addition of new APIs (CoinGecko, DeFiLlama, etc.)
+ * API Configuration - Modernized Architecture
+ * 
+ * This is the main entry point for API configuration management.
+ * It uses the new modular architecture with ApiConfigRegistry for better
+ * scalability, maintainability, and testing.
+ * 
+ * For backward compatibility, this maintains the same public interface
+ * as the original ApiConfig while using the new registry internally.
  */
 const AppConfig = require('./AppConfig');
-const SafeUtils = require('../utils/SafeUtils');
+const ApiConfigRegistry = require('./ApiConfigRegistry');
 
 class ApiConfig {
     constructor() {
-        this._apiConfigs = this._loadApiConfigs();
-        // In debug or mockApis mode, force mock data usage for all sources
+        this.registry = ApiConfigRegistry;
+        this._applyGlobalOverrides();
+    }
+
+    /**
+     * Apply global overrides based on AppConfig settings
+     * @private
+     */
+    _applyGlobalOverrides() {
         try {
             const debugMode = !!(AppConfig?.development?.debugMode);
             const mockApis = !!(AppConfig?.development?.mockApis);
-            if (debugMode || mockApis) {
-                for (const [key, cfg] of Object.entries(this._apiConfigs)) {
-                    if (!cfg.mockData) cfg.mockData = {};
-                    cfg.mockData.enabled = true;
-                }
-            }
-        } catch (_) { /* best-effort */ }
-    }
-
-    /**
-     * Load API-specific configurations
-     * @private
-     * @returns {Object} API configurations by source ID
-     */
-    _loadApiConfigs() {
-        const configs = {
-            // CoinMarketCap Configuration
-            cmc: {
-                name: 'CoinMarketCap',
-                enabled: !!process.env.CMC_API_KEY,
-                baseUrl: process.env.CMC_BASE_URL || 'https://pro-api.coinmarketcap.com',
-                apiKey: process.env.CMC_API_KEY,
-                
-                endpoints: {
-                    listings: '/v1/cryptocurrency/listings/latest',
-                    quotes: '/v1/cryptocurrency/quotes/latest',
-                    metadata: '/v1/cryptocurrency/info',
-                    global: '/v1/global-metrics/quotes/latest'
-                },
-                
-                rateLimit: {
-                    requestsPerMinute: this._parseRateLimit(process.env.CMC_RATE_LIMIT, 333), // Basic plan
-                    requestsPerHour: null,
-                    requestsPerDay: this._parseRateLimit(process.env.CMC_DAILY_LIMIT, 10000),
-                    burstLimit: 10
-                },
-                
-                request: {
-                    timeout: SafeUtils.safeParseInt(process.env.CMC_TIMEOUT_MS, 15000),
-                    retries: SafeUtils.safeParseInt(process.env.CMC_RETRIES, 3),
-                    retryDelay: SafeUtils.safeParseInt(process.env.CMC_RETRY_DELAY_MS, 2000),
-                    headers: {
-                        'Accepts': 'application/json',
-                        'Accept-Encoding': 'deflate, gzip'
-                    }
-                },
-                
-                capabilities: {
-                    hasMarketData: true,
-                    hasSupplyData: true,
-                    hasPlatformData: true,  // Limited to token platform
-                    hasNetworkBreakdown: false,
-                    hasMetadata: true,
-                    priority: 10, // High priority for market data
-                    dataTypes: ['price', 'market_cap', 'volume', 'rank', 'tags']
-                },
-                
-                processing: {
-                    stablecoinFilter: {
-                        byTag: true,
-                        tagName: 'stablecoin',
-                        priceRange: {
-                            min: SafeUtils.safeParseFloat(process.env.CMC_PRICE_MIN, 0.50),
-                            max: SafeUtils.safeParseFloat(process.env.CMC_PRICE_MAX, 2.00)
-                        }
-                    },
-                    // includeTokenizedAssets set in _setTokenizedAssetsConfig() to avoid context issues
-                    batchSize: SafeUtils.safeParseInt(process.env.CMC_BATCH_SIZE, 5000),
-                    maxResults: SafeUtils.safeParseInt(process.env.CMC_MAX_RESULTS, 5000)
-                },
-
-                mockData: {
-                    enabled: process.env.CMC_MOCK_DATA === 'true',
-                    filePath: process.env.CMC_MOCK_FILE || 'cmc_raw_output.json'
-                }
-            },
-
-            // Messari Configuration
-            messari: {
-                name: 'Messari',
-                enabled: !!process.env.MESSARI_API_KEY,
-                baseUrl: process.env.MESSARI_BASE_URL || 'https://data.messari.io/api',
-                apiKey: process.env.MESSARI_API_KEY,
-                
-                endpoints: {
-                    stablecoins: '/v2/assets',
-                    stablecoinMetrics: '/v2/assets',
-                    asset: '/v1/assets/{id}',
-                    metrics: '/v1/assets/{id}/metrics'
-                },
-                
-                rateLimit: {
-                    requestsPerMinute: this._parseRateLimit(process.env.MESSARI_RATE_LIMIT, 20), // Free plan
-                    requestsPerHour: this._parseRateLimit(process.env.MESSARI_HOURLY_LIMIT, 1000),
-                    requestsPerDay: null,
-                    burstLimit: 5
-                },
-                
-                request: {
-                    timeout: SafeUtils.safeParseInt(process.env.MESSARI_TIMEOUT_MS, 20000),
-                    retries: SafeUtils.safeParseInt(process.env.MESSARI_RETRIES, 3),
-                    retryDelay: SafeUtils.safeParseInt(process.env.MESSARI_RETRY_DELAY_MS, 3000),
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                },
-                
-                capabilities: {
-                    hasMarketData: false, // Limited market data
-                    hasSupplyData: true,
-                    hasPlatformData: true,
-                    hasNetworkBreakdown: true, // Excellent network breakdown
-                    hasMetadata: true,
-                    priority: 8, // High priority for supply and platform data
-                    dataTypes: ['supply', 'network_breakdown', 'platforms', 'metadata']
-                },
-                
-                processing: {
-                    useStablecoinEndpoint: process.env.MESSARI_USE_STABLECOIN_ENDPOINT !== 'false',
-                    includeInactive: process.env.MESSARI_INCLUDE_INACTIVE === 'true',
-                    // includeTokenizedAssets set in _setTokenizedAssetsConfig() to avoid context issues
-                    batchSize: SafeUtils.safeParseInt(process.env.MESSARI_BATCH_SIZE, 100)
-                },
-
-                mockData: {
-                    enabled: process.env.MESSARI_MOCK_DATA === 'true',
-                    filePath: process.env.MESSARI_MOCK_FILE || 'messari_raw_output.json'
-                }
-            },
-
-            // CoinGecko Configuration (for future use)
-            coingecko: {
-                name: 'CoinGecko',
-                // CoinGecko can operate without an API key (free tier)
-                // Enable by default to provide resilient fallback for price/volume/images
-                enabled: true,
-                baseUrl: process.env.COINGECKO_BASE_URL || 'https://api.coingecko.com/api/v3',
-                apiKey: process.env.COINGECKO_API_KEY, // Optional for free tier
-                
-                endpoints: {
-                    coins: '/coins/markets',
-                    coin: '/coins/{id}',
-                    search: '/search',
-                    categories: '/coins/categories'
-                },
-                
-                rateLimit: {
-                    requestsPerMinute: this._parseRateLimit(process.env.COINGECKO_RATE_LIMIT, 
-                        process.env.COINGECKO_API_KEY ? 500 : 10), // Pro vs free
-                    requestsPerHour: null,
-                    requestsPerDay: null,
-                    burstLimit: process.env.COINGECKO_API_KEY ? 20 : 5
-                },
-                
-                request: {
-                    timeout: SafeUtils.safeParseInt(process.env.COINGECKO_TIMEOUT_MS, 10000),
-                    retries: SafeUtils.safeParseInt(process.env.COINGECKO_RETRIES, 2),
-                    retryDelay: SafeUtils.safeParseInt(process.env.COINGECKO_RETRY_DELAY_MS, 1000),
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                },
-                
-                capabilities: {
-                    hasMarketData: true,
-                    hasSupplyData: true,
-                    hasPlatformData: true,
-                    hasNetworkBreakdown: false,
-                    hasMetadata: true,
-                    priority: 6, // Medium priority
-                    dataTypes: ['price', 'market_cap', 'volume', 'supply', 'metadata']
-                },
-                
-                processing: {
-                    category: 'stablecoins',
-                    currency: 'usd',
-                    includeSparkline: false,
-                    priceChangePercentage: '24h',
-                    // includeTokenizedAssets set in _setTokenizedAssetsConfig() to avoid context issues
-                },
-
-                mockData: {
-                    enabled: process.env.COINGECKO_MOCK_DATA === 'true',
-                    filePath: process.env.COINGECKO_MOCK_FILE || 'coingecko_raw_output.json'
-                }
-            },
-
-            // DeFiLlama Configuration (for future use)
-            defillama: {
-                name: 'DeFiLlama',
-                enabled: true, // No API key required, controlled by ENABLED_SOURCES
-                baseUrl: process.env.DEFILLAMA_BASE_URL || 'https://api.llama.fi',
-                apiKey: null, // DeFiLlama doesn't require API key
-                
-                endpoints: {
-                    stablecoins: '/stablecoins',
-                    stablecoin: '/stablecoin/{id}',
-                    chains: '/chains',
-                    protocols: '/protocols'
-                },
-                
-                rateLimit: {
-                    requestsPerMinute: this._parseRateLimit(process.env.DEFILLAMA_RATE_LIMIT, 30),
-                    requestsPerHour: null,
-                    requestsPerDay: null,
-                    burstLimit: 10
-                },
-                
-                request: {
-                    timeout: SafeUtils.safeParseInt(process.env.DEFILLAMA_TIMEOUT_MS, 15000),
-                    retries: SafeUtils.safeParseInt(process.env.DEFILLAMA_RETRIES, 3),
-                    retryDelay: SafeUtils.safeParseInt(process.env.DEFILLAMA_RETRY_DELAY_MS, 2000),
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                },
-                
-                capabilities: {
-                    hasMarketData: false,
-                    hasSupplyData: true,
-                    hasPlatformData: true,
-                    hasNetworkBreakdown: true,
-                    hasMetadata: false,
-                    priority: 4, // Lower priority, specialized data
-                    dataTypes: ['supply', 'network_breakdown', 'chains']
-                },
-                
-                processing: {
-                    includeBridges: process.env.DEFILLAMA_INCLUDE_BRIDGES === 'true',
-                    minMarketCap: SafeUtils.safeParseInt(process.env.DEFILLAMA_MIN_MCAP, 1000000),
-                    // includeTokenizedAssets set in _setTokenizedAssetsConfig() to avoid context issues
-                    stablecoinFilter: {
-                        priceRange: {
-                            min: SafeUtils.safeParseFloat(process.env.DEFILLAMA_PRICE_MIN, 0.50),
-                            max: SafeUtils.safeParseFloat(process.env.DEFILLAMA_PRICE_MAX, 2.00)
-                        },
-                        // Allow all peg types by default; optionally exclude specific ones
-                        // e.g. to exclude BTC-pegged assets: DEFILLAMA_EXCLUDED_PEG_TYPES=peggedBTC
-                        excludedPegTypes: (process.env.DEFILLAMA_EXCLUDED_PEG_TYPES || 'peggedBTC')
-                            .split(',')
-                            .map(s => s.trim())
-                            .filter(Boolean),
-                        minCirculatingSupply: SafeUtils.safeParseInt(process.env.DEFILLAMA_MIN_SUPPLY, 1000000),
-                        excludePatterns: [
-                            // Common non-stablecoin patterns
-                            /wrapped/i, /liquid/i, /staked/i, /yield/i, /reward/i,
-                            /^w[A-Z]+$/, // Wrapped tokens like wETH, wBTC
-                            /pool/i, /vault/i, /interest/i, /synthetic/i
-                        ],
-                        excludeSymbols: (process.env.DEFILLAMA_EXCLUDE_SYMBOLS || '').split(',').filter(s => s.trim()),
-                        requireStablecoinKeywords: true, // Require 'usd', 'dollar', or common stable patterns
-                        maxExpectedCount: SafeUtils.safeParseInt(process.env.DEFILLAMA_MAX_COINS, 200) // Circuit breaker
-                    }
-                },
-
-                mockData: {
-                    enabled: process.env.DEFILLAMA_MOCK_DATA === 'true',
-                    filePath: process.env.DEFILLAMA_MOCK_FILE || 'defillama_raw_output.json'
-                }
-            }
-        };
-        
-        // Set tokenized assets configuration after object construction to avoid context issues
-        this._setTokenizedAssetsConfig(configs);
-        
-        return configs;
-    }
-
-    /**
-     * Set tokenized assets configuration for all API sources
-     * This is called after object construction to avoid context issues with method calls in object literals
-     * @private
-     * @param {Object} configs - API configurations object
-     */
-    _setTokenizedAssetsConfig(configs) {
-        const sources = ['cmc', 'messari', 'coingecko', 'defillama'];
-        sources.forEach(sourceId => {
-            if (configs[sourceId] && configs[sourceId].processing) {
-                configs[sourceId].processing.includeTokenizedAssets = 
-                    process.env[this._getTokenizedAssetsEnvVar(sourceId)] === 'true';
-            }
-        });
-    }
-
-    /**
-     * Validate asset classification configuration
-     * @returns {Object} Validation result with isValid flag and errors array
-     */
-    validateAssetClassificationConfig() {
-        const config = this.getAssetClassificationConfig();
-        const errors = [];
-        
-        // Validate taxonomy exists
-        if (!config.taxonomy) {
-            errors.push('Missing taxonomy configuration');
-        } else {
-            // Validate required taxonomy fields
-            if (!config.taxonomy.stablecoinTags || !Array.isArray(config.taxonomy.stablecoinTags)) {
-                errors.push('Invalid or missing stablecoinTags in taxonomy');
-            }
-            if (!config.taxonomy.tokenizedAssetTags || !Array.isArray(config.taxonomy.tokenizedAssetTags)) {
-                errors.push('Invalid or missing tokenizedAssetTags in taxonomy');
-            }
-            if (!config.taxonomy.currencyAliases || typeof config.taxonomy.currencyAliases !== 'object') {
-                errors.push('Invalid or missing currencyAliases in taxonomy');
-            }
-        }
-        
-        // Validate patterns
-        if (!config.patterns) {
-            errors.push('Missing patterns configuration');
-        } else {
-            // Validate pattern arrays
-            const patternArrays = ['fiatStablecoinPatterns', 'cryptoStablecoinPatterns', 
-                                   'commodityStablecoinPatterns', 'tokenizedFiatPatterns',
-                                   'tokenizedCommodityPatterns'];
-            patternArrays.forEach(field => {
-                if (!config.patterns[field] || !Array.isArray(config.patterns[field])) {
-                    errors.push(`Invalid or missing ${field} in patterns`);
-                } else {
-                    // Validate each pattern is a valid regex string
-                    config.patterns[field].forEach((pattern, idx) => {
-                        if (typeof pattern !== 'string') {
-                            errors.push(`Invalid pattern at ${field}[${idx}]: must be string`);
-                        } else {
-                            try {
-                                new RegExp(pattern);
-                            } catch (e) {
-                                errors.push(`Invalid regex pattern at ${field}[${idx}]: ${e.message}`);
-                            }
-                        }
-                    });
-                }
-            });
-        }
-        
-        // Validate sources configuration
-        if (!config.sources || typeof config.sources !== 'object') {
-            errors.push('Missing or invalid sources configuration');
-        }
-        
-        return {
-            isValid: errors.length === 0,
-            errors,
-            config
-        };
-    }
-    
-    /**
-     * Get shared asset classification configuration
-     * @returns {Object} Shared taxonomy configuration for AssetClassifier
-     */
-    getAssetClassificationConfig() {
-        return {
-            enabled: process.env.ASSET_CLASSIFICATION_ENABLED !== 'false',
-            taxonomy: {
-                // Stablecoin identification tags
-                stablecoinTags: [
-                    'stablecoin',
-                    ...(this._parseCustomTags(process.env.CUSTOM_STABLECOIN_TAGS))
-                ],
-                
-                // Tokenized asset identification tags
-                tokenizedAssetTags: [
-                    'tokenized-assets',
-                    ...(this._parseCustomTags(process.env.CUSTOM_TOKENIZED_TAGS))
-                ],
-                
-                // Specific tokenized asset subtypes
-                tokenizedSubtypes: {
-                    'tokenized-gold': 'Gold',
-                    'tokenized-silver': 'Silver',
-                    'tokenized-etfs': 'ETF',
-                    'tokenized-stock': 'Stocks',
-                    'tokenized-real-estate': 'Real Estate',
-                    'tokenized-treasury-bills': 'Treasury Bills',
-                    'tokenized-commodities': 'Commodities'
-                },
-                
-                // Asset-backed stablecoin tags
-                assetBackedTags: ['asset-backed-stablecoin'],
-
-                // Currency aliases and special mappings.
-                // Keys are normalized uppercase tokens or codes found in tags like
-                // 'peggedXAU' or 'xau-stablecoin' and values are the canonical
-                // peggedAsset representation returned by the classifier.
-                // Add new mappings here to support new pegged currencies without
-                // modifying classifier code.
-                currencyAliases: {
-                    // Precious metals and commodities
-                    'XAU': 'Gold',
-                    'XAG': 'Silver',
-                    'XAUT': 'Gold',
-                    'PAXG': 'Gold',
-                    'GOLD': 'Gold',
-                    'SILVER': 'Silver',
-                    
-                    // Special drawing rights and composite currencies
-                    'XDR': 'Special Drawing Rights',
-                    'SDR': 'Special Drawing Rights',
-                    
-                    // Common alternative representations
-                    'DOLLAR': 'USD',
-                    'EURO': 'EUR',
-                    'POUND': 'GBP',
-                    'YEN': 'JPY',
-                    'YUAN': 'CNY',
-                    'RENMINBI': 'CNY',
-                    'FRANC': 'CHF',
-                    'RUPEE': 'INR',
-                    'WON': 'KRW',
-                    'REAL': 'BRL',
-                    'PESO': 'MXN',
-                    'RAND': 'ZAR',
-                    'RUBLE': 'RUB',
-                    'ROUBLE': 'RUB',
-                    'LIRA': 'TRY',
-                    
-                    // Common stablecoin symbol variations
-                    'USDT': 'USD',
-                    'USDC': 'USD',
-                    'BUSD': 'USD',
-                    'USDP': 'USD',
-                    'TUSD': 'USD',
-                    'FDUSD': 'USD',
-                    'PYUSD': 'USD',
-                    'EURC': 'EUR',
-                    'EURS': 'EUR',
-                    'EURT': 'EUR',
-                    'CEUR': 'EUR',
-                    'STASIS': 'EUR',
-                    'GBPT': 'GBP',
-                    'QCAD': 'CAD',
-                    'CADC': 'CAD',
-                    'AUDX': 'AUD',
-                    'NZDS': 'NZD',
-                    'JPYC': 'JPY',
-                    'CNHT': 'CNY',
-                    'IDRT': 'IDR',
-                    'BIDR': 'IDR',
-                    'THBX': 'THB',
-                    'BRLT': 'BRL',
-                    'INRT': 'INR',
-                    'KRWT': 'KRW',
-                    'ZZAR': 'ZAR',
-                    'XSGD': 'SGD'
-                    // Note: By default, unrecognized 3-letter ISO codes will be returned as-is
-                    // This provides extensibility for new currencies without requiring code changes
-                },
-                
-                // Pattern matching rules for name/symbol heuristics
-                patterns: {
-                    goldSymbols: 'xau|paxg|xaut',
-                    goldNames: 'gold',
-                    silverSymbols: 'xag',
-                    silverNames: 'silver',
-                    etf: 'etf',
-                    treasury: 'treasury',
-                    stock: 'stock',
-                    realEstate: 'real estate|real-estate|estate'
-                }
-            }
-        };
-    }
-
-    /**
-     * Parse custom tags from environment variables
-     * @private
-     * @param {string} envValue - Comma-separated tag string
-     * @returns {Array<string>} Array of tags
-     */
-    _parseCustomTags(envValue) {
-        if (!envValue || typeof envValue !== 'string') return [];
-        return envValue.split(',').map(tag => tag.trim().toLowerCase()).filter(Boolean);
-    }
-
-    /**
-     * Get tokenized assets configuration for a specific source
-     * @param {string} sourceId - Source identifier ('cmc', 'messari', etc.)
-     * @returns {Object} Tokenized assets configuration
-     */
-    getTokenizedAssetsConfig(sourceId) {
-        const config = this.getApiConfig(sourceId);
-        if (!config || !config.processing) {
-            return { 
-                enabled: false, 
-                source: sourceId,
-                reason: 'Source not configured or missing processing section'
-            };
-        }
-
-        const enabled = !!config.processing.includeTokenizedAssets;
-        return {
-            enabled,
-            source: sourceId,
-            environmentVariable: this._getTokenizedAssetsEnvVar(sourceId),
-            reason: enabled ? 'Explicitly enabled via configuration' : 'Disabled by default (backward compatibility)'
-        };
-    }
-
-    /**
-     * Get the environment variable name for tokenized assets config
-     * @private
-     * @param {string} sourceId - Source identifier
-     * @returns {string} Environment variable name
-     */
-    _getTokenizedAssetsEnvVar(sourceId) {
-        const sourceUpper = sourceId.toUpperCase();
-        return `${sourceUpper}_INCLUDE_TOKENIZED_ASSETS`;
-    }
-
-    /**
-     * Get global tokenized assets configuration summary
-     * @returns {Object} Summary of tokenized assets configuration across all sources
-     */
-    getGlobalTokenizedAssetsConfig() {
-        const sources = Object.keys(this._apiConfigs);
-        const summary = {
-            enabledSources: [],
-            disabledSources: [],
-            totalSources: sources.length,
-            globallyEnabled: false
-        };
-
-        sources.forEach(sourceId => {
-            const config = this.getTokenizedAssetsConfig(sourceId);
-            if (config.enabled) {
-                summary.enabledSources.push(sourceId);
-            } else {
-                summary.disabledSources.push(sourceId);
-            }
-        });
-
-        summary.globallyEnabled = summary.enabledSources.length > 0;
-        return summary;
-    }
-
-    /**
-     * Parse rate limit from environment variable
-     * @private
-     * @param {string} envValue - Environment variable value
-     * @param {number} defaultValue - Default value if not set
-     * @returns {number} Parsed rate limit
-     */
-    _parseRateLimit(envValue, defaultValue) {
-        if (!envValue) return defaultValue;
-        const parsed = SafeUtils.safeParseInt(envValue, defaultValue);
-        return parsed;
-    }
-
-    /**
-     * Get headers for API request with sanitized API key
-     * @param {string} sourceId - API source identifier
-     * @returns {Object} Sanitized headers object
-     */
-    getRequestHeaders(sourceId) {
-        const config = this._apiConfigs[sourceId];
-        if (!config) return {};
-        
-        const headers = { ...config.request.headers };
-        
-        // Add API key header if configured
-        if (config.apiKey) {
-            const sanitizedKey = SafeUtils.sanitizeApiKey(config.apiKey);
-            if (!sanitizedKey) {
-                console.error(`Invalid API key format for ${sourceId}`);
-                return headers;
-            }
             
-            // Different APIs use different header names
-            switch(sourceId) {
-                case 'cmc':
-                    headers['X-CMC_PRO_API_KEY'] = sanitizedKey;
-                    break;
-                case 'messari':
-                    headers['x-messari-api-key'] = sanitizedKey;
-                    break;
-                case 'coingecko':
-                    if (sanitizedKey) {
-                        headers['x-cg-pro-api-key'] = sanitizedKey;
+            if (debugMode || mockApis) {
+                // Enable mock data for all sources when in debug/mock mode
+                const enabledSources = this.registry.getEnabledSources();
+                for (const sourceId of enabledSources) {
+                    const configInstance = this.registry.getApiConfigInstance(sourceId);
+                    if (configInstance && configInstance.getConfig) {
+                        const config = configInstance.getConfig();
+                        if (config.mockData) {
+                            config.mockData.enabled = true;
+                        }
                     }
-                    break;
-                // DeFiLlama doesn't require API key
+                }
             }
+        } catch (error) {
+            console.warn('Failed to apply global configuration overrides:', error.message);
         }
-        
-        // Validate all header values
-        for (const [key, value] of Object.entries(headers)) {
-            if (!SafeUtils.isValidHeaderValue(value)) {
-                console.error(`Invalid header value for ${key} in ${sourceId}`);
-                delete headers[key];
-            }
-        }
-        
-        return headers;
     }
 
     /**
@@ -615,8 +50,7 @@ class ApiConfig {
      * @returns {Object|null} API configuration or null if not found
      */
     getApiConfig(sourceId) {
-        const config = this._apiConfigs[sourceId];
-        return config ? SafeUtils.deepClone(config) : null;
+        return this.registry.getApiConfig(sourceId);
     }
 
     /**
@@ -624,7 +58,7 @@ class ApiConfig {
      * @returns {Object} All API configurations
      */
     getAllApiConfigs() {
-        return SafeUtils.deepClone(this._apiConfigs);
+        return this.registry.getAllApiConfigs();
     }
 
     /**
@@ -632,11 +66,7 @@ class ApiConfig {
      * @returns {Array<string>} Array of enabled source IDs
      */
     getEnabledSources() {
-        return Object.keys(this._apiConfigs).filter(sourceId => {
-            const cfg = this._apiConfigs[sourceId];
-            // Consider a source enabled if explicitly enabled or if mock mode is enabled
-            return !!(cfg.enabled || (cfg.mockData && cfg.mockData.enabled));
-        });
+        return this.registry.getEnabledSources();
     }
 
     /**
@@ -644,9 +74,7 @@ class ApiConfig {
      * @returns {Array<string>} Array of disabled source IDs
      */
     getDisabledSources() {
-        return Object.keys(this._apiConfigs).filter(sourceId => 
-            !this._apiConfigs[sourceId].enabled
-        );
+        return this.registry.getDisabledSources();
     }
 
     /**
@@ -655,20 +83,7 @@ class ApiConfig {
      * @returns {boolean} Whether source is ready to use
      */
     isSourceReady(sourceId) {
-        const config = this._apiConfigs[sourceId];
-        if (!config) return false;
-
-        // If mock mode is enabled for this source, consider it ready even without API keys
-        if (config.mockData && config.mockData.enabled) return true;
-
-        if (!config.enabled) return false;
-
-        // Check if API key is required and present
-        if (sourceId === 'cmc' || sourceId === 'messari') {
-            return !!config.apiKey;
-        }
-
-        return true;
+        return this.registry.isSourceReady(sourceId);
     }
 
     /**
@@ -676,15 +91,7 @@ class ApiConfig {
      * @returns {Array<Object>} Sources with their priorities
      */
     getSourcesByPriority() {
-        return Object.entries(this._apiConfigs)
-            .filter(([_, config]) => config.enabled)
-            .map(([sourceId, config]) => ({
-                sourceId,
-                name: config.name,
-                priority: config.capabilities.priority,
-                capabilities: config.capabilities
-            }))
-            .sort((a, b) => b.priority - a.priority);
+        return this.registry.getSourcesByPriority();
     }
 
     /**
@@ -693,9 +100,7 @@ class ApiConfig {
      * @returns {Array<string>} Source IDs that provide this capability
      */
     getSourcesWithCapability(capability) {
-        return Object.entries(this._apiConfigs)
-            .filter(([_, config]) => config.enabled && config.capabilities[capability])
-            .map(([sourceId, _]) => sourceId);
+        return this.registry.getSourcesWithCapability(capability);
     }
 
     /**
@@ -704,14 +109,49 @@ class ApiConfig {
      * @returns {string|null} Best source ID for this data type
      */
     getBestSourceForDataType(dataType) {
-        const sources = Object.entries(this._apiConfigs)
-            .filter(([_, config]) => 
-                config.enabled && 
-                config.capabilities.dataTypes.includes(dataType)
-            )
-            .sort((a, b) => b[1].capabilities.priority - a[1].capabilities.priority);
-            
-        return sources.length > 0 ? sources[0][0] : null;
+        return this.registry.getBestSourceForDataType(dataType);
+    }
+
+    /**
+     * Get headers for API request with sanitized API key
+     * @param {string} sourceId - API source identifier
+     * @returns {Object} Sanitized headers object
+     */
+    getRequestHeaders(sourceId) {
+        return this.registry.getRequestHeaders(sourceId);
+    }
+
+    /**
+     * Get shared asset classification configuration
+     * @returns {Object} Shared taxonomy configuration for AssetClassifier
+     */
+    getAssetClassificationConfig() {
+        return this.registry.getAssetClassificationConfig();
+    }
+
+    /**
+     * Validate asset classification configuration
+     * @returns {Object} Validation result with isValid flag and errors array
+     */
+    validateAssetClassificationConfig() {
+        return this.registry.validateAssetClassificationConfig();
+    }
+
+    /**
+     * Get tokenized assets configuration for a specific source
+     * @param {string} sourceId - Source identifier ('cmc', 'messari', etc.)
+     * @returns {Object} Tokenized assets configuration
+     */
+    getTokenizedAssetsConfig(sourceId) {
+        return this.registry.getTokenizedAssetsConfig(sourceId);
+    }
+
+    /**
+     * Get global tokenized assets configuration summary
+     * @returns {Object} Summary of tokenized assets configuration across all sources
+     */
+    getGlobalTokenizedAssetsConfig() {
+        return this.registry.getGlobalTokenizedAssetsConfig();
     }
 
     /**
@@ -719,69 +159,19 @@ class ApiConfig {
      * @returns {Object} Validation results
      */
     validate() {
-        const results = {
-            valid: true,
-            enabledSources: 0,
-            warnings: [],
-            errors: []
-        };
-
-        for (const [sourceId, config] of Object.entries(this._apiConfigs)) {
-            const usingMock = !!(config.mockData && config.mockData.enabled);
-            if (config.enabled || usingMock) {
-                results.enabledSources++;
-                
-                // Validate required API keys
-                if (!usingMock && (sourceId === 'cmc' || sourceId === 'messari') && !config.apiKey) {
-                    results.errors.push(`${config.name} is enabled but missing API key`);
-                    results.valid = false;
-                }
-                
-                // Validate URLs
-                if (!usingMock) {
-                    try {
-                        new URL(config.baseUrl);
-                    } catch (error) {
-                        results.errors.push(`${config.name} has invalid base URL: ${config.baseUrl}`);
-                        results.valid = false;
-                    }
-                }
-                
-                // Check rate limits
-                if (config.rateLimit.requestsPerMinute < 1) {
-                    results.warnings.push(`${config.name} has very low rate limit`);
-                }
-            }
-        }
-
-        if (results.enabledSources === 0) {
-            results.errors.push('No data sources are enabled');
-            results.valid = false;
-        }
-
-        return results;
+        return this.registry.validate();
     }
 
     /**
      * Add or update API configuration (for dynamic configuration)
      * @param {string} sourceId - Source identifier
-     * @param {Object} config - API configuration
+     * @param {Object} config - API configuration instance
      */
     addApiConfig(sourceId, config) {
-        // Validate required fields
-        const required = ['name', 'baseUrl', 'endpoints', 'capabilities'];
-        for (const field of required) {
-            if (!config[field]) {
-                throw new Error(`Missing required field '${field}' for source '${sourceId}'`);
-            }
+        if (!config || typeof config.getConfig !== 'function') {
+            throw new Error('Config must be an instance that implements getConfig method');
         }
-
-        this._apiConfigs[sourceId] = {
-            enabled: false,
-            rateLimit: { requestsPerMinute: 10, burstLimit: 5 },
-            request: { timeout: 15000, retries: 3 },
-            ...config
-        };
+        this.registry.register(sourceId, config);
     }
 
     /**
@@ -789,11 +179,88 @@ class ApiConfig {
      * @param {string} sourceId - Source identifier to remove
      */
     removeApiConfig(sourceId) {
-        if (this._apiConfigs[sourceId]) {
-            delete this._apiConfigs[sourceId];
-        }
+        this.registry.unregister(sourceId);
+    }
+
+    // Backward compatibility methods for legacy code
+
+    /**
+     * Legacy method: Parse rate limit from environment variable
+     * @deprecated Use ApiConfigBase._parseRateLimit instead
+     * @private
+     * @param {string} envValue - Environment variable value
+     * @param {number} defaultValue - Default value if not set
+     * @returns {number} Parsed rate limit
+     */
+    _parseRateLimit(envValue, defaultValue) {
+        console.warn('_parseRateLimit is deprecated. Use ApiConfigBase._parseRateLimit instead.');
+        if (!envValue) return defaultValue;
+        const parsed = parseInt(envValue, 10);
+        return isNaN(parsed) ? defaultValue : parsed;
+    }
+
+    /**
+     * Legacy method: Parse custom tags from environment variables
+     * @deprecated Use AssetClassificationConfig._parseCustomTags instead
+     * @private
+     * @param {string} envValue - Comma-separated tag string
+     * @returns {Array<string>} Array of tags
+     */
+    _parseCustomTags(envValue) {
+        console.warn('_parseCustomTags is deprecated. Use AssetClassificationConfig._parseCustomTags instead.');
+        if (!envValue || typeof envValue !== 'string') return [];
+        return envValue.split(',').map(tag => tag.trim().toLowerCase()).filter(Boolean);
+    }
+
+    /**
+     * Legacy method: Set tokenized assets configuration
+     * @deprecated Configuration is now handled automatically by individual API configs
+     * @private
+     * @param {Object} configs - API configurations object
+     */
+    _setTokenizedAssetsConfig(configs) {
+        console.warn('_setTokenizedAssetsConfig is deprecated. Configuration is now handled automatically.');
+        // No-op for backward compatibility
+    }
+
+    /**
+     * Legacy method: Get tokenized assets environment variable name
+     * @deprecated Use AssetClassificationConfig._getTokenizedAssetsEnvVar instead
+     * @private
+     * @param {string} sourceId - Source identifier
+     * @returns {string} Environment variable name
+     */
+    _getTokenizedAssetsEnvVar(sourceId) {
+        console.warn('_getTokenizedAssetsEnvVar is deprecated. Use AssetClassificationConfig._getTokenizedAssetsEnvVar instead.');
+        const sourceUpper = sourceId.toUpperCase();
+        return `${sourceUpper}_INCLUDE_TOKENIZED_ASSETS`;
+    }
+
+    /**
+     * Get registry statistics for debugging
+     * @returns {Object} Registry statistics
+     */
+    getStats() {
+        return this.registry.getStats();
+    }
+
+    /**
+     * Export configuration as JSON for debugging/documentation
+     * @param {boolean} includeSensitive - Whether to include sensitive data like API keys
+     * @returns {Object} JSON representation of all configurations
+     */
+    toJSON(includeSensitive = false) {
+        return this.registry.toJSON(includeSensitive);
+    }
+
+    /**
+     * Get the underlying registry instance (for advanced usage)
+     * @returns {ApiConfigRegistry} The registry instance
+     */
+    getRegistry() {
+        return this.registry;
     }
 }
 
-// Export singleton instance
+// Export singleton instance for backward compatibility
 module.exports = new ApiConfig();
