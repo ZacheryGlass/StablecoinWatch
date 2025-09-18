@@ -456,7 +456,8 @@ class ApiConfig {
                     'BRLT': 'BRL',
                     'INRT': 'INR',
                     'KRWT': 'KRW',
-                    'ZZAR': 'ZAR'
+                    'ZZAR': 'ZAR',
+                    'XSGD': 'SGD'
                     // Note: By default, unrecognized 3-letter ISO codes will be returned as-is
                     // This provides extensibility for new currencies without requiring code changes
                 },

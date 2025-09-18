@@ -651,8 +651,23 @@ class AssetClassifier {
      * @returns {string} Asset backing type
      */
     _inferAssetBackedType(nameLower, symbolLower, slugLower) {
-        // Use same patterns as tokenized assets for now
-        return this._inferTokenizedAssetType(nameLower, symbolLower, slugLower) || 'Asset-Backed';
+        // First, try to detect currency from symbol/name patterns
+        const detectedCurrency = this._detectCurrencyFromContent(symbolLower, nameLower, slugLower);
+        if (detectedCurrency) {
+            return detectedCurrency;
+        }
+
+        // Then try specific asset patterns (but avoid generic "Tokenized Asset" fallback)
+        const assetType = this._inferTokenizedAssetType(nameLower, symbolLower, slugLower);
+        
+        // Only return specific asset types, not the generic fallback
+        if (assetType && assetType !== 'Tokenized Asset') {
+            return assetType;
+        }
+
+        // For asset-backed stablecoins without clear patterns, return null
+        // This allows DeFiLlama's explicit pegType to take priority
+        return null;
     }
 
     /**
@@ -705,6 +720,15 @@ class AssetClassifier {
         const symbolMatch = symbolLower.match(/^([a-z]{3})[tc]?$|^([a-z]{3})[-_]/); 
         if (symbolMatch) {
             const code = (symbolMatch[1] || symbolMatch[2]).toUpperCase();
+            if (this._isoCurrencyCodes.has(code)) {
+                return this._currencyAliasMap[code] || code;
+            }
+        }
+
+        // Special handling for X-prefixed currency stablecoins (XSGD, XEUR, etc.)
+        const xPrefixMatch = symbolLower.match(/^x([a-z]{3})$/);
+        if (xPrefixMatch) {
+            const code = xPrefixMatch[1].toUpperCase();
             if (this._isoCurrencyCodes.has(code)) {
                 return this._currencyAliasMap[code] || code;
             }
