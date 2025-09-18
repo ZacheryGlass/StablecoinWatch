@@ -45,24 +45,8 @@ router.get('/', async (req, res) => {
     const svc = services || req.services || {};
     const data = svc.dataService.getData();
     
-    // Check if user wants to show only fiat-backed stablecoins
-    const fiatOnly = req.query.fiatOnly === 'true';
-    
-    // Create a copy of data with filtered stablecoins if needed
+    // Filtering is now handled client-side by the advanced filter system
     let displayData = data;
-    if (fiatOnly && Array.isArray(data.stablecoins)) {
-        // Initialize classifier for fiat checking
-        const classifier = new AssetClassifier(AssetClassificationConfig.getConfig());
-        
-        displayData = {
-            ...data,
-            stablecoins: data.stablecoins.filter(coin => {
-                // Get pegged asset from either location
-                const peggedAsset = coin.pegged_asset || coin.metadata?.peggedAsset;
-                return classifier.isFiatBacked(peggedAsset);
-            })
-        };
-    }
     
     // Calculate data completeness for chain metrics
     const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(displayData);
@@ -73,7 +57,6 @@ router.get('/', async (req, res) => {
         data: displayData,
         dataCompleteness,
         showChainMetrics,
-        fiatOnly,
         active: 'home',
         formatter: {
             formatNumber: util.formatNumber,

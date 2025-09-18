@@ -94,7 +94,8 @@ class ApiConfig {
         
         if (inMockMode) {
             // In mock mode, include all configured sources
-            const allSources = this.registry.getAllSources();
+            const allConfigs = this.registry.getAllApiConfigs();
+            const allSources = Object.keys(allConfigs);
             return allSources.filter(sourceId => {
                 const config = this.registry.getApiConfig(sourceId);
                 return config && (config.enabled || (config.mockData && config.mockData.enabled) || inMockMode);

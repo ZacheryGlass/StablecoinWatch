@@ -6,6 +6,7 @@
     <link rel="stylesheet" type="text/css" href="/common.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script type="application/javascript" src="/chart.min.js"></script>
+    <script type="application/javascript" src="/filter-system.js"></script>
     <style>
         .home-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -36,39 +37,498 @@
         .header-toggle:hover { background: rgba(255,255,255,0.3); }
         .header-toggle:focus { outline: 2px solid white; outline-offset: 2px; }
         
-        .filter-controls {
+        /* Advanced Filter System Styles */
+        .advanced-filters {
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #dee2e6;
+            background: #ffffff;
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .filter-header h3 {
+            margin: 0;
+            color: #333;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .filter-header-controls {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        
+        .filter-toggle-btn, .clear-filters-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        
+        .filter-toggle-btn {
+            background: #667eea;
+            color: white;
+        }
+        
+        .filter-toggle-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+        
+        .clear-filters-btn {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .clear-filters-btn:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+        
+        .filter-panel {
+            padding: 1.5rem;
+            background: #ffffff;
+            border-radius: 0 0 12px 12px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .filter-section {
             background: #f8f9fa;
             padding: 1rem;
             border-radius: 8px;
-            margin-bottom: 1.5rem;
+            border: 1px solid #e9ecef;
+        }
+        
+        .filter-section h4 {
+            margin: 0 0 0.75rem 0;
+            color: #495057;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .checkbox-group {
+            gap: 0.75rem;
+        }
+        
+        .filter-checkbox {
             display: flex;
             align-items: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #495057;
+            position: relative;
+            padding-left: 2rem;
+            user-select: none;
+        }
+        
+        .filter-checkbox input[type="checkbox"] {
+            position: absolute;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+        
+        .checkmark {
+            position: absolute;
+            left: 0;
+            height: 18px;
+            width: 18px;
+            background-color: #fff;
+            border: 2px solid #dee2e6;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .filter-checkbox:hover .checkmark {
+            border-color: #667eea;
+        }
+        
+        .filter-checkbox input:checked ~ .checkmark {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+        
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+            left: 5px;
+            top: 2px;
+            width: 4px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        
+        .filter-checkbox input:checked ~ .checkmark:after {
+            display: block;
+        }
+        
+        .range-group {
             gap: 1rem;
         }
         
-        .filter-toggle {
+        .range-inputs {
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
         
-        .filter-toggle input[type="checkbox"] {
-            width: 1.2rem;
-            height: 1.2rem;
-            cursor: pointer;
+        .range-inputs input[type="number"] {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 0.9rem;
         }
         
-        .filter-toggle label {
+        .range-separator {
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .range-slider-container {
+            position: relative;
+            height: 40px;
+        }
+        
+        .range-slider {
+            position: absolute;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #dee2e6;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
             cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .range-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .platform-multiselect {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            min-height: 100px;
+        }
+        
+        .platform-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        
+        .blockchain-count-filter {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .blockchain-count-filter label {
+            font-size: 0.9rem;
+            color: #495057;
+        }
+        
+        .count-input {
+            width: 80px;
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
             font-size: 0.95rem;
-            color: #333;
-            user-select: none;
+            transition: border-color 0.2s ease;
         }
         
-        .filter-info {
-            color: #666;
-            font-size: 0.85rem;
-            margin-left: auto;
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .active-filters {
+            padding: 1rem 1.5rem;
+            background: #e8f4fd;
+            border-top: 1px solid #dee2e6;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        .active-filters-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        
+        .active-filters-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+        
+        .results-count {
+            font-size: 0.9rem;
+            color: #667eea;
+            font-weight: 500;
+        }
+        
+        .filter-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .filter-badge {
+            display: inline-flex;
+            align-items: center;
+            background: #667eea;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            gap: 0.5rem;
+        }
+        
+        .filter-badge-remove {
+            background: rgba(255,255,255,0.3);
+            border: none;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .filter-badge-remove:hover {
+            background: rgba(255,255,255,0.5);
+        }
+        
+        /* Mobile responsiveness for filter system */
+        @media (max-width: 1024px) {
+            .filter-panel {
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 1rem;
+                padding: 1rem;
+            }
+            
+            .filter-section {
+                padding: 0.75rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .filter-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+            
+            .filter-header-controls {
+                justify-content: space-between;
+            }
+            
+            .filter-panel {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+                padding: 0.75rem;
+                max-height: 70vh;
+            }
+            
+            .range-inputs {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+            
+            .range-inputs input[type="number"] {
+                width: 100%;
+            }
+            
+            .range-separator {
+                display: none;
+            }
+            
+            .platform-multiselect {
+                min-height: 80px;
+            }
+            
+            .active-filters-header {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-start;
+            }
+            
+            .filter-badges {
+                gap: 0.25rem;
+            }
+            
+            .filter-badge {
+                font-size: 0.75rem;
+                padding: 0.2rem 0.5rem;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .advanced-filters {
+                margin: 0 -1rem 1.5rem -1rem;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+            }
+            
+            .filter-header {
+                padding: 0.75rem 1rem;
+                border-radius: 0;
+            }
+            
+            .filter-header h3 {
+                font-size: 1rem;
+            }
+            
+            .filter-toggle-btn, .clear-filters-btn {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.85rem;
+            }
+            
+            .filter-panel {
+                padding: 0.5rem;
+                max-height: 60vh;
+            }
+            
+            .filter-section {
+                padding: 0.5rem;
+            }
+            
+            .filter-section h4 {
+                font-size: 0.85rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .filter-checkbox {
+                font-size: 0.85rem;
+                padding-left: 1.75rem;
+            }
+            
+            .checkmark {
+                height: 16px;
+                width: 16px;
+            }
+            
+            .search-input {
+                padding: 0.5rem;
+                font-size: 0.9rem;
+            }
+            
+            .blockchain-count-filter {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+            
+            .count-input {
+                width: 100%;
+            }
+            
+            .active-filters {
+                padding: 0.75rem 1rem;
+            }
+            
+            .filter-badge {
+                font-size: 0.7rem;
+                padding: 0.15rem 0.4rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .filter-header-controls {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .filter-toggle-btn, .clear-filters-btn {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .range-slider-container {
+                height: 30px;
+            }
+            
+            .range-slider::-webkit-slider-thumb {
+                width: 16px;
+                height: 16px;
+            }
+            
+            .range-slider::-moz-range-thumb {
+                width: 16px;
+                height: 16px;
+            }
+            
+            .platform-multiselect {
+                min-height: 60px;
+                font-size: 0.85rem;
+            }
         }
 
         .header-content.collapsed .summary-grid { display: none; }
@@ -157,23 +617,7 @@
         .metric-highlight.peg-commodities { background: linear-gradient(135deg, #b45309, #fbbf24); }
         .metric-highlight.peg-tokenizedasset { background: linear-gradient(135deg, #1f2937, #6b7280); }
         .metric-highlight.peg-other { background: linear-gradient(135deg, #64748b, #94a3b8); }
-        /* Pegged Asset color variants (reuse metric-highlight chip style) */
-        .metric-highlight.peg-usd { background: linear-gradient(135deg, #16a34a, #22c55e); }
-        .metric-highlight.peg-eur { background: linear-gradient(135deg, #2563eb, #60a5fa); }
-        .metric-highlight.peg-gbp { background: linear-gradient(135deg, #7c3aed, #a78bfa); }
-        .metric-highlight.peg-jpy { background: linear-gradient(135deg, #0ea5e9, #38bdf8); }
-        .metric-highlight.peg-cny { background: linear-gradient(135deg, #dc2626, #ef4444); }
-        .metric-highlight.peg-btc { background: linear-gradient(135deg, #f97316, #fb923c); }
-        .metric-highlight.peg-gold, .metric-highlight.peg-xau { background: linear-gradient(135deg, #d97706, #f59e0b); }
-        .metric-highlight.peg-silver, .metric-highlight.peg-xag { background: linear-gradient(135deg, #6b7280, #9ca3af); }
-        /* New tokenized asset categories */
-        .metric-highlight.peg-etf { background: linear-gradient(135deg, #0891b2, #06b6d4); }
-        .metric-highlight.peg-stocks { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-        .metric-highlight.peg-realestate { background: linear-gradient(135deg, #8b5e34, #d7a86e); }
-        .metric-highlight.peg-treasurybills { background: linear-gradient(135deg, #0f766e, #14b8a6); }
-        .metric-highlight.peg-commodities { background: linear-gradient(135deg, #b45309, #fbbf24); }
-        .metric-highlight.peg-tokenizedasset { background: linear-gradient(135deg, #1f2937, #6b7280); }
-        .metric-highlight.peg-other { background: linear-gradient(135deg, #64748b, #94a3b8); }
+
 
         /* Enhanced mobile responsiveness */
         @media (max-width: 1024px) {
@@ -394,15 +838,160 @@
                     </div>
                 </div>
                 
-                <!-- Filter Controls -->
-                <div class="filter-controls">
-                    <div class="filter-toggle">
-                        <input type="checkbox" id="fiatOnlyToggle" <%= typeof fiatOnly !== 'undefined' && fiatOnly ? 'checked' : '' %>>
-                        <label for="fiatOnlyToggle">Show only fiat-backed stablecoins (USD, EUR, etc.)</label>
+                <!-- Advanced Filter Controls -->
+                <div class="advanced-filters">
+                    <div class="filter-header">
+                        <h3>Advanced Filters</h3>
+                        <div class="filter-header-controls">
+                            <button id="filterToggleBtn" class="filter-toggle-btn" type="button" aria-expanded="false" aria-controls="filterPanel">
+                                🎛️ Show Filters
+                            </button>
+                            <button id="clearFiltersBtn" class="clear-filters-btn" type="button">
+                                Clear All
+                            </button>
+                        </div>
                     </div>
-                    <% if (typeof fiatOnly !== 'undefined' && fiatOnly) { %>
-                        <span class="filter-info">Showing only fiat-backed stablecoins</span>
-                    <% } %>
+                    
+                    <div class="filter-panel" id="filterPanel" style="display: none;">
+                        <!-- Asset Type Filters -->
+                        <div class="filter-section">
+                            <h4>Asset Types</h4>
+                            <div class="filter-group checkbox-group">
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" id="filter_fiat" value="fiat" checked>
+                                    <span class="checkmark"></span>
+                                    Fiat-backed (USD, EUR, GBP, etc.)
+                                </label>
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" id="filter_commodities" value="commodities" checked>
+                                    <span class="checkmark"></span>
+                                    Commodities (Gold, Silver)
+                                </label>
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" id="filter_crypto" value="crypto" checked>
+                                    <span class="checkmark"></span>
+                                    Crypto-backed (BTC, ETH)
+                                </label>
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" id="filter_tokenized" value="tokenized" checked>
+                                    <span class="checkmark"></span>
+                                    Tokenized Assets (ETF, Stocks, Real Estate)
+                                </label>
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" id="filter_other" value="other" checked>
+                                    <span class="checkmark"></span>
+                                    Other/Unknown
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Price Range Filter -->
+                        <div class="filter-section">
+                            <h4>Price Range</h4>
+                            <div class="filter-group range-group">
+                                <div class="range-inputs">
+                                    <input type="number" id="priceMin" placeholder="Min" step="0.01" min="0" max="2" value="0.90">
+                                    <span class="range-separator">to</span>
+                                    <input type="number" id="priceMax" placeholder="Max" step="0.01" min="0" max="2" value="1.10">
+                                </div>
+                                <div class="range-slider-container">
+                                    <input type="range" id="priceRangeMin" min="0.50" max="2.00" step="0.01" value="0.90" class="range-slider">
+                                    <input type="range" id="priceRangeMax" min="0.50" max="2.00" step="0.01" value="1.10" class="range-slider">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Market Cap Range Filter -->
+                        <div class="filter-section">
+                            <h4>Market Cap Range</h4>
+                            <div class="filter-group range-group">
+                                <div class="range-inputs">
+                                    <input type="number" id="mcapMin" placeholder="Min (millions)" step="1" min="0" value="1">
+                                    <span class="range-separator">to</span>
+                                    <input type="number" id="mcapMax" placeholder="Max (millions)" step="1" min="0" value="100000">
+                                </div>
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" id="mcapLogScale" checked>
+                                    <span class="checkmark"></span>
+                                    Logarithmic scale
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Volume Range Filter -->
+                        <div class="filter-section">
+                            <h4>24h Volume Range</h4>
+                            <div class="filter-group range-group">
+                                <div class="range-inputs">
+                                    <input type="number" id="volumeMin" placeholder="Min (thousands)" step="1" min="0" value="100">
+                                    <span class="range-separator">to</span>
+                                    <input type="number" id="volumeMax" placeholder="Max (thousands)" step="1" min="0" value="10000000">
+                                </div>
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" id="volumeLogScale" checked>
+                                    <span class="checkmark"></span>
+                                    Logarithmic scale
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Platform/Chain Filters -->
+                        <div class="filter-section">
+                            <h4>Blockchain Platforms</h4>
+                            <div class="filter-group">
+                                <div class="platform-filter-controls">
+                                    <select id="platformSelect" multiple class="platform-multiselect">
+                                        <option value="">All platforms</option>
+                                    </select>
+                                </div>
+                                <div class="platform-options">
+                                    <label class="filter-checkbox">
+                                        <input type="checkbox" id="filter_crosschain">
+                                        <span class="checkmark"></span>
+                                        Cross-chain only (2+ blockchains)
+                                    </label>
+                                    <div class="blockchain-count-filter">
+                                        <label for="blockchainCount">Min blockchains:</label>
+                                        <input type="number" id="blockchainCount" min="1" max="50" value="1" class="count-input">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Data Quality Filters -->
+                        <div class="filter-section">
+                            <h4>Data Quality</h4>
+                            <div class="filter-group checkbox-group">
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" id="filter_hideConflicts">
+                                    <span class="checkmark"></span>
+                                    Hide coins with data conflicts
+                                </label>
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" id="filter_completeDataOnly">
+                                    <span class="checkmark"></span>
+                                    Complete data only
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Search Filter -->
+                        <div class="filter-section">
+                            <h4>Search</h4>
+                            <div class="filter-group">
+                                <input type="text" id="searchFilter" placeholder="Search by name or symbol..." class="search-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Filters Display -->
+                    <div class="active-filters" id="activeFilters" style="display: none;">
+                        <div class="active-filters-header">
+                            <span class="active-filters-label">Active filters:</span>
+                            <span class="results-count" id="resultsCount">Showing all results</span>
+                        </div>
+                        <div class="filter-badges" id="filterBadges"></div>
+                    </div>
                 </div>
 
                 <div class="content-section">
@@ -662,11 +1251,93 @@
                 });
             }
 
-            // Prepare slices (top 8 + Others)
-            const mcapSlices = buildTopSlices(coinsRaw, 'mcap', 8);
-            const volSlices = buildTopSlices(coinsRaw, 'vol', 8);
+            // Prepare initial slices (top 8 + Others)
+            let mcapSlices = buildTopSlices(coinsRaw, 'mcap', 8);
+            let volSlices = buildTopSlices(coinsRaw, 'vol', 8);
             // Consistent colors across both charts and single legend
-            const { order: legendOrder, map: colorMap } = assignColors(mcapSlices.labels, volSlices.labels);
+            let { order: legendOrder, map: colorMap } = assignColors(mcapSlices.labels, volSlices.labels);
+            
+            // Store chart instances for updates
+            let mcapChart = null;
+            let volChart = null;
+            
+            // Function to build/rebuild charts
+            function buildCharts(filteredData = null) {
+                // Use filtered data if provided, otherwise use original data
+                const dataToUse = filteredData || coinsRaw;
+                
+                // Recalculate slices with current data
+                mcapSlices = buildTopSlices(dataToUse, 'mcap', 8);
+                volSlices = buildTopSlices(dataToUse, 'vol', 8);
+                
+                // Recalculate colors
+                const colors = assignColors(mcapSlices.labels, volSlices.labels);
+                legendOrder = colors.order;
+                colorMap = colors.map;
+                
+                // Destroy existing charts if they exist
+                if (mcapChart) {
+                    mcapChart.destroy();
+                    mcapChart = null;
+                }
+                if (volChart) {
+                    volChart.destroy();
+                    volChart = null;
+                }
+                
+                // Create new charts
+                mcapChart = makeDoughnutChart('mcapChart', 'Market Cap Share (%)', mcapSlices, colorMap);
+                volChart = makeDoughnutChart('volChart', 'Volume Share (%)', volSlices, colorMap);
+                
+                // Handle empty state displays
+                if (!mcapChart) { 
+                    const e = document.getElementById('mcapEmptyState'); 
+                    if (e) e.style.display = 'block'; 
+                } else {
+                    const e = document.getElementById('mcapEmptyState'); 
+                    if (e) e.style.display = 'none';
+                }
+                
+                if (!volChart) { 
+                    const e = document.getElementById('volEmptyState'); 
+                    if (e) e.style.display = 'block'; 
+                } else {
+                    const e = document.getElementById('volEmptyState'); 
+                    if (e) e.style.display = 'none';
+                }
+                
+                // Build shared legend
+                const legend = document.getElementById('sharedLegend');
+                if (legend) {
+                    if (legendOrder.length) {
+                        legend.innerHTML = legendOrder.map(label => {
+                            const color = colorMap.get(label) || '#667eea';
+                            return `<span class="legend-item"><span class="legend-swatch" style="background:${color}"></span>${label}</span>`;
+                        }).join('');
+                    } else {
+                        legend.innerHTML = '<span style="color:#666;">No data available.</span>';
+                    }
+                }
+            }
+            
+            // Listen for filter updates
+            window.addEventListener('stablecoinDataFiltered', function(event) {
+                const filteredStablecoins = event.detail.filteredData;
+                
+                // Convert filtered data to chart format
+                const filteredChartData = filteredStablecoins.map(coin => ({
+                    name: coin.name,
+                    symbol: coin.symbol,
+                    mcap: coin.circulating_mcap,
+                    vol: coin.volume_24h
+                }));
+                
+                // Only rebuild charts if they are currently visible
+                const chartsContent = document.getElementById('chartsContent');
+                if (chartsContent && chartsContent.style.display === 'block') {
+                    buildCharts(filteredChartData);
+                }
+            });
 
             // Toggle behavior for collapsibles
             function setupCollapsible(btn, contentId, buildAll) {
@@ -683,22 +1354,7 @@
                         this.classList.add('active');
                         // Lazy init charts when first opened
                         if (!initialized) {
-                            const mcapChart = makeDoughnutChart('mcapChart', 'Market Cap Share (%)', mcapSlices, colorMap);
-                            const volChart = makeDoughnutChart('volChart', 'Volume Share (%)', volSlices, colorMap);
-                            if (!mcapChart) { const e = document.getElementById('mcapEmptyState'); if (e) e.style.display = 'block'; }
-                            if (!volChart) { const e = document.getElementById('volEmptyState'); if (e) e.style.display = 'block'; }
-                            // Build shared legend
-                            const legend = document.getElementById('sharedLegend');
-                            if (legend) {
-                                if (legendOrder.length) {
-                                    legend.innerHTML = legendOrder.map(label => {
-                                        const color = colorMap.get(label) || '#667eea';
-                                        return `<span class="legend-item"><span class="legend-swatch" style="background:${color}"></span>${label}</span>`;
-                                    }).join('');
-                                } else {
-                                    legend.innerHTML = '<span style="color:#666;">No data available.</span>';
-                                }
-                            }
+                            buildCharts();
                             initialized = true;
                         }
                     }
@@ -717,46 +1373,88 @@
 
             <% } %>
         })();
+    </script>
+
+    <!-- Embedded Stablecoin Data for Client-Side Filtering -->
+    <script>
+        // Global stablecoin data for filtering
+        window.StablecoinData = {
+            stablecoins: [
+                <% if (data.stablecoins && data.stablecoins.length) { %>
+                    <% let validIndex = 0; %>
+                    <% data.stablecoins.forEach((coin, index) => { %>
+                        <% if (!coin.name || !coin.symbol) return; %>
+                        <% validIndex++; %>
+                        {
+                            name: "<%= (coin.name || '').replace(/"/g, '\\"') %>",
+                            symbol: "<%= (coin.symbol || '').replace(/"/g, '\\"') %>",
+                            uri: "<%= (coin.uri || '').replace(/"/g, '\\"') %>",
+                            img_url: "<%= h.getImage(coin).replace(/"/g, '\\"') %>",
+                            pegged_asset: "<%= (coin.pegged_asset || '').replace(/"/g, '\\"') %>",
+                            assetCategory: "<%= (coin.assetCategory || '').replace(/"/g, '\\"') %>",
+                            price: <%= h.safeGet(coin, 'main.price', 0) %>,
+                            circulating_mcap: <%= h.safeGet(coin, 'main.circulating_mcap', 0) %>,
+                            volume_24h: <%= h.safeGet(coin, 'main.volume_24h', 0) %>,
+                            platforms: [
+                                <% if (Array.isArray(coin.platforms)) { %>
+                                    <% coin.platforms.forEach((platform, pIndex) => { %>
+                                        {
+                                            name: "<%= (platform.name || '').replace(/"/g, '\\"') %>",
+                                            circulating_supply: <%= platform.circulating_supply || 0 %>,
+                                            total_supply: <%= platform.total_supply || 0 %>
+                                        }<%= pIndex < coin.platforms.length - 1 ? ',' : '' %>
+                                    <% }); %>
+                                <% } %>
+                            ],
+                            dominantChain: "<%= (coin.dominantChain || '').replace(/"/g, '\\"') %>",
+                            totalCrossChainSupply: <%= coin.totalCrossChainSupply || 0 %>,
+                            chainSupplyBreakdown: <%= JSON.stringify(coin.chainSupplyBreakdown || {}) %>,
+                            conflicts: <%= coin.conflicts ? 'true' : 'false' %>,
+                            rank: <%= validIndex %>,
+                            dominance: <%= h.calculateDominance(h.safeGet(coin, 'main.circulating_mcap', 0), h.safeGet(data.metrics, 'totalMCap', 0)) || 0 %>,
+                            // Formatted strings for display
+                            formatted: {
+                                price: "<%= h.getFormattedPrice(coin, 'main', formatter).replace(/"/g, '\\"') %>",
+                                mcap: "<%= h.getMarketCap(coin, 'main').replace(/"/g, '\\"') %>",
+                                volume: "<%= h.getVolume(coin, 'main').replace(/"/g, '\\"') %>",
+                                dominance: "<%= h.getDominanceDisplay(coin, data.metrics, formatter).replace(/"/g, '\\"') %>",
+                                platforms: "<%= h.getPlatformDisplay(coin.platforms).replace(/"/g, '\\"') %>"
+                            }
+                        }<%= validIndex < data.stablecoins.filter(c => c.name && c.symbol).length ? ',' : '' %>
+                    <% }); %>
+                <% } %>
+            ],
+            metrics: {
+                totalMCap: <%= data.metrics.totalMCap || 0 %>,
+                totalVolume: <%= data.metrics.totalVolume || 0 %>,
+                totalMCap_s: "<%= (data.metrics.totalMCap_s || 'No data').replace(/"/g, '\\"') %>",
+                totalVolume_s: "<%= (data.metrics.totalVolume_s || 'No data').replace(/"/g, '\\"') %>",
+                lastUpdated: "<%= data.metrics.lastUpdated || '' %>"
+            },
+            platforms: [
+                <% if (Array.isArray(data.platform_data)) { %>
+                    <% data.platform_data.forEach((platform, index) => { %>
+                        "<%= (platform.name || '').replace(/"/g, '\\"') %>"<%= index < data.platform_data.length - 1 ? ',' : '' %>
+                    <% }); %>
+                <% } %>
+            ]
+        };
+
+        // Create master copy for filtering operations
+        window.StablecoinData.master = JSON.parse(JSON.stringify(window.StablecoinData.stablecoins));
         
-        // Toggle functionality for fiat-only filter
-        (function() {
-            const fiatOnlyToggle = document.getElementById('fiatOnlyToggle');
-            if (fiatOnlyToggle) {
-                // Load saved preference from localStorage
-                const savedPref = localStorage.getItem('fiatOnlyMode');
-                if (savedPref !== null) {
-                    const shouldFilterFiat = savedPref === 'true';
-                    fiatOnlyToggle.checked = shouldFilterFiat;
-                    // If saved preference differs from current state, update URL
-                    const currentFiatState = new URLSearchParams(window.location.search).get('fiatOnly') === 'true';
-                    if (shouldFilterFiat !== currentFiatState) {
-                        const newUrl = new URL(window.location);
-                        if (shouldFilterFiat) {
-                            newUrl.searchParams.set('fiatOnly', 'true');
-                        } else {
-                            newUrl.searchParams.delete('fiatOnly');
-                        }
-                        window.history.replaceState({}, '', newUrl);
-                        window.location.reload();
-                    }
-                }
-                
-                fiatOnlyToggle.addEventListener('change', function() {
-                    const isChecked = this.checked;
-                    // Save to localStorage
-                    localStorage.setItem('fiatOnlyMode', isChecked.toString());
-                    
-                    // Update URL and reload page
-                    const url = new URL(window.location);
-                    if (isChecked) {
-                        url.searchParams.set('fiatOnly', 'true');
-                    } else {
-                        url.searchParams.delete('fiatOnly');
-                    }
-                    window.location.href = url.toString();
-                });
-            }
-        })();
+        // Extract unique values for filter options
+        window.StablecoinData.filterOptions = {
+            peggedAssets: [...new Set(window.StablecoinData.stablecoins.map(coin => coin.pegged_asset).filter(Boolean))],
+            assetCategories: [...new Set(window.StablecoinData.stablecoins.map(coin => coin.assetCategory).filter(Boolean))],
+            allPlatforms: [...new Set(window.StablecoinData.stablecoins.flatMap(coin => coin.platforms.map(p => p.name)).filter(Boolean))],
+            dominantChains: [...new Set(window.StablecoinData.stablecoins.map(coin => coin.dominantChain).filter(Boolean))]
+        };
+    </script>
+
+    <script>
+        // Legacy fiat-only filter functionality removed
+        // Now handled by the comprehensive filter system
         
         // Header toggle functionality for mobile
         (function() {
