@@ -69,6 +69,12 @@ class CmcDataFetcher extends IDataFetcher {
     isConfigured() {
         // Allow operation when mock data mode is enabled even without API key
         if (this.config?.mockData?.enabled) return true;
+        
+        // In debug mode, always allow operation with mock data
+        if (AppConfig.development.debugMode || AppConfig.development.mockApis) {
+            return true;
+        }
+        
         return !!(this.config?.enabled && this.config?.apiKey);
     }
 
@@ -129,6 +135,11 @@ class CmcDataFetcher extends IDataFetcher {
      */
     async fetchStablecoins() {
         if (DEBUG) console.log(`[CMC Debug] fetchStablecoins called`);
+        if (DEBUG) {
+            console.log(`[CMC Debug] AppConfig.development.debugMode = ${AppConfig.development.debugMode}`);
+            console.log(`[CMC Debug] AppConfig.development.mockApis = ${AppConfig.development.mockApis}`);
+            console.log(`[CMC Debug] this.config?.mockData?.enabled = ${this.config?.mockData?.enabled}`);
+        }
         const startTime = Date.now();
         const sourceId = this.sourceId;
 
@@ -151,8 +162,8 @@ class CmcDataFetcher extends IDataFetcher {
         try {
             let data;
 
-            // Check if mock data mode is enabled
-            if (this.config?.mockData?.enabled) {
+            // Check if mock data mode is enabled or if we're in debug mode
+            if (this.config?.mockData?.enabled || AppConfig.development.debugMode || AppConfig.development.mockApis) {
                 data = await this._loadMockData();
             } else {
                 const baseUrl = this.config?.baseUrl || 'https://pro-api.coinmarketcap.com';

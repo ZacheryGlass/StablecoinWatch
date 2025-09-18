@@ -89,6 +89,13 @@ class MessariDataFetcher extends IDataFetcher {
     isConfigured() {
         // Allow operation when mock data mode is enabled even without API key
         if (this.config?.mockData?.enabled) return true;
+        
+        // In debug mode, always allow operation with mock data
+        const AppConfig = require('../../config/AppConfig');
+        if (AppConfig.development.debugMode || AppConfig.development.mockApis) {
+            return true;
+        }
+        
         if (!this.config?.enabled || !this.config?.apiKey) {
             return false;
         }
@@ -186,8 +193,9 @@ class MessariDataFetcher extends IDataFetcher {
         try {
             let list;
 
-            // Check if mock data mode is enabled
-            if (this.config?.mockData?.enabled) {
+            // Check if mock data mode is enabled or if we're in debug mode
+            const AppConfig = require('../../config/AppConfig');
+            if (this.config?.mockData?.enabled || AppConfig.development.debugMode || AppConfig.development.mockApis) {
                 const mockData = await this._loadMockData();
                 list = mockData.data || [];
             } else {

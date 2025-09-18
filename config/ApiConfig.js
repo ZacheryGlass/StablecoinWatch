@@ -50,7 +50,23 @@ class ApiConfig {
      * @returns {Object|null} API configuration or null if not found
      */
     getApiConfig(sourceId) {
-        return this.registry.getApiConfig(sourceId);
+        const config = this.registry.getApiConfig(sourceId);
+        if (!config) return null;
+        
+        // Deep clone the config
+        const clonedConfig = JSON.parse(JSON.stringify(config));
+        
+        // Runtime check for debug/mock mode
+        try {
+            const debugMode = !!(AppConfig?.development?.debugMode);
+            const mockApis = !!(AppConfig?.development?.mockApis);
+            if (debugMode || mockApis) {
+                if (!clonedConfig.mockData) clonedConfig.mockData = {};
+                clonedConfig.mockData.enabled = true;
+            }
+        } catch (_) { /* best-effort */ }
+        
+        return clonedConfig;
     }
 
     /**
@@ -66,7 +82,26 @@ class ApiConfig {
      * @returns {Array<string>} Array of enabled source IDs
      */
     getEnabledSources() {
-        return this.registry.getEnabledSources();
+        const enabledSources = this.registry.getEnabledSources();
+        
+        // Runtime check for debug/mock mode
+        let inMockMode = false;
+        try {
+            const debugMode = !!(AppConfig?.development?.debugMode);
+            const mockApis = !!(AppConfig?.development?.mockApis);
+            inMockMode = debugMode || mockApis;
+        } catch (_) { /* best-effort */ }
+        
+        if (inMockMode) {
+            // In mock mode, include all configured sources
+            const allSources = this.registry.getAllSources();
+            return allSources.filter(sourceId => {
+                const config = this.registry.getApiConfig(sourceId);
+                return config && (config.enabled || (config.mockData && config.mockData.enabled) || inMockMode);
+            });
+        }
+        
+        return enabledSources;
     }
 
     /**
@@ -83,6 +118,21 @@ class ApiConfig {
      * @returns {boolean} Whether source is ready to use
      */
     isSourceReady(sourceId) {
+        const config = this.registry.getApiConfig(sourceId);
+        if (!config) return false;
+
+        // Runtime check for debug/mock mode
+        let inMockMode = false;
+        try {
+            const debugMode = !!(AppConfig?.development?.debugMode);
+            const mockApis = !!(AppConfig?.development?.mockApis);
+            inMockMode = debugMode || mockApis;
+        } catch (_) { /* best-effort */ }
+
+        // If in mock mode or mock data is enabled for this source, consider it ready
+        if (inMockMode || (config.mockData && config.mockData.enabled)) return true;
+
+        // Otherwise use the registry's standard readiness check
         return this.registry.isSourceReady(sourceId);
     }
 
