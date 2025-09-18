@@ -4,6 +4,8 @@
 const express = require('express');
 const util = require('../app/util');
 const ApiConfig = require('../config/ApiConfig');
+const AssetClassificationConfig = require('../config/AssetClassificationConfig');
+const AssetClassifier = require('../services/domain/AssetClassifier');
 
 // Helper function to calculate data completeness for chain metrics
 function calculateChainDataCompleteness(data) {
@@ -43,22 +45,35 @@ router.get('/', async (req, res) => {
     const svc = services || req.services || {};
     const data = svc.dataService.getData();
     
-    // Calculate data completeness for chain metrics
-    const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
+    // Check if user wants to show only fiat-backed stablecoins
+    const fiatOnly = req.query.fiatOnly === 'true';
     
-    // Provide feature flags and tokenized asset segmentation to the view
-    const AppConfig = require('../config/AppConfig');
-    const featureFlags = AppConfig.featureFlags || { showTokenizedAssets: false };
-
-    // Segment tokenized assets for optional display
-    const tokenizedAssets = Array.isArray(data.stablecoins) ? data.stablecoins.filter(c => c.assetCategory && c.assetCategory.toLowerCase().includes('token')) : [];
+    // Create a copy of data with filtered stablecoins if needed
+    let displayData = data;
+    if (fiatOnly && Array.isArray(data.stablecoins)) {
+        // Initialize classifier for fiat checking
+        const classifier = new AssetClassifier(AssetClassificationConfig.getConfig());
+        
+        displayData = {
+            ...data,
+            stablecoins: data.stablecoins.filter(coin => {
+                // Get pegged asset from either location
+                const peggedAsset = coin.pegged_asset || coin.metadata?.peggedAsset;
+                return classifier.isFiatBacked(peggedAsset);
+            })
+        };
+    }
+    
+    // Calculate data completeness for chain metrics
+    const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(displayData);
+    
+    // No longer need separate tokenized assets list since we're using a single toggle
 
     res.render('home', {
-        data: data,
+        data: displayData,
         dataCompleteness,
         showChainMetrics,
-        featureFlags,
-        tokenizedAssets,
+        fiatOnly,
         active: 'home',
         formatter: {
             formatNumber: util.formatNumber,
@@ -95,16 +110,12 @@ router.get('/status', async (req, res) => {
         mockMode = Object.values(cfgs).some(c => c?.mockData && c.mockData.enabled);
     } catch (_) { mockMode = false; }
 
-    const AppConfig = require('../config/AppConfig');
-    const featureFlags = AppConfig.featureFlags || { showTokenizedAssets: false };
-
     res.render('status', {
         data,
         dataCompleteness,
         showChainMetrics,
         health,
         mockMode,
-        featureFlags,
         active: 'status',
         formatter: {
             formatNumber: require('../app/util').formatNumber,
@@ -145,14 +156,11 @@ router.get('/platforms', async (req, res) => {
     // Calculate data completeness for chain metrics
     const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
     
-    const AppConfig = require('../config/AppConfig');
-    const featureFlags = AppConfig.featureFlags || { showTokenizedAssets: false };
 
     res.render('chains', {
         data: data,
         dataCompleteness,
         showChainMetrics,
-        featureFlags,
         active: 'chains',
         formatter: {
             formatNumber: util.formatNumber,
@@ -178,14 +186,11 @@ router.get('/coins/:symbol', async (req, res) => {
     // Calculate data completeness for chain metrics
     const { dataCompleteness, showChainMetrics } = calculateChainDataCompleteness(data);
     
-    const AppConfig = require('../config/AppConfig');
-    const featureFlags = AppConfig.featureFlags || { showTokenizedAssets: false };
 
     res.render('coins', {
         data: data,
         dataCompleteness,
         showChainMetrics,
-        featureFlags,
         coin: coin,
         active: '',
         formatter: {

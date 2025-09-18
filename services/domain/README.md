@@ -33,6 +33,10 @@ const result = classifier.classify({
 
 console.log(result);
 // Output: { assetCategory: 'Tokenized Asset', peggedAsset: 'Gold' }
+
+// Check if an asset is fiat-backed (for UI filtering)
+const isFiat = classifier.isFiatBacked('USD');  // true
+const isNotFiat = classifier.isFiatBacked('Gold');  // false
 ```
 
 ### Classification Categories
@@ -43,6 +47,7 @@ console.log(result);
 - **Other**: Assets that don't fit the above categories
 
 #### Pegged Asset Types
+- **Fiat Currencies**: USD, EUR, GBP, JPY, etc. (ISO 4217 codes)
 - **Gold**: Gold-backed tokens
 - **Silver**: Silver-backed tokens  
 - **ETF**: Exchange-traded fund tokens
@@ -51,6 +56,24 @@ console.log(result);
 - **Treasury Bills**: Government bond tokens
 - **Commodities**: General commodity-backed tokens
 - **Tokenized Asset**: Generic tokenized asset (fallback)
+
+### Fiat-Backed Asset Detection
+
+The `isFiatBacked(peggedAsset)` method determines if an asset is backed by fiat currency:
+
+```javascript
+// Returns true for fiat currencies
+classifier.isFiatBacked('USD');      // true
+classifier.isFiatBacked('EUR');      // true
+classifier.isFiatBacked(null);       // true (defaults to USD)
+
+// Returns false for non-fiat assets
+classifier.isFiatBacked('Gold');     // false
+classifier.isFiatBacked('Silver');   // false
+classifier.isFiatBacked('Stocks');   // false
+```
+
+This method is used by the UI for filtering to show only fiat-backed stablecoins.
 
 ### Classification Logic
 

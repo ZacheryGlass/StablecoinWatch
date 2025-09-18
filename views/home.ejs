@@ -35,6 +35,41 @@
         }
         .header-toggle:hover { background: rgba(255,255,255,0.3); }
         .header-toggle:focus { outline: 2px solid white; outline-offset: 2px; }
+        
+        .filter-controls {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .filter-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .filter-toggle input[type="checkbox"] {
+            width: 1.2rem;
+            height: 1.2rem;
+            cursor: pointer;
+        }
+        
+        .filter-toggle label {
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: #333;
+            user-select: none;
+        }
+        
+        .filter-info {
+            color: #666;
+            font-size: 0.85rem;
+            margin-left: auto;
+        }
 
         .header-content.collapsed .summary-grid { display: none; }
         .header-content.collapsed .home-header p { display: none; }
@@ -358,6 +393,17 @@
                         <!-- Legend removed: labels are rendered directly on chart slices -->
                     </div>
                 </div>
+                
+                <!-- Filter Controls -->
+                <div class="filter-controls">
+                    <div class="filter-toggle">
+                        <input type="checkbox" id="fiatOnlyToggle" <%= typeof fiatOnly !== 'undefined' && fiatOnly ? 'checked' : '' %>>
+                        <label for="fiatOnlyToggle">Show only fiat-backed stablecoins (USD, EUR, etc.)</label>
+                    </div>
+                    <% if (typeof fiatOnly !== 'undefined' && fiatOnly) { %>
+                        <span class="filter-info">Showing only fiat-backed stablecoins</span>
+                    <% } %>
+                </div>
 
                 <div class="content-section">
                     <h2 class="section-title">Top Stablecoins</h2>
@@ -417,42 +463,6 @@
                         </table>
                     </div>
                 </div>
-                <% /* Optional Tokenized Assets section, feature-flag controlled */ %>
-                <% if (featureFlags && featureFlags.showTokenizedAssets && tokenizedAssets && tokenizedAssets.length) { %>
-                    <div class="content-section" style="margin-top:1.5rem;">
-                        <h2 class="section-title">Tokenized Assets</h2>
-                        <p>Assets tokenized on-chain backed by off-chain assets (stocks, real estate, commodities, etc.).</p>
-                        <table class="coins-table">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Name</th>
-                                    <th>Symbol</th>
-                                    <th>Pegged Asset</th>
-                                    <th>Market Cap</th>
-                                    <th>Volume (24h)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            <% let ti = 0; tokenizedAssets.forEach((t) => { ti++; %>
-                                <tr>
-                                    <td class="rank"><span class="coin-rank"><%= ti %></span></td>
-                                    <td>
-                                        <div class="name-cell">
-                                            <img src="<%= h.getImage(t) %>" alt="<%= t.symbol %>" />
-                                            <a href="/coins/<%= t.uri %>" class="coin-name"><%= t.name %></a>
-                                        </div>
-                                    </td>
-                                    <td class="hide-sm symbol"><%= t.symbol %></td>
-                                    <td class="hide-md"><%= t.pegged_asset || '-' %></td>
-                                    <td data-sort="<%= h.safeGet(t, 'main.circulating_mcap', 0) %>"><%= h.getMarketCap(t, 'main') %></td>
-                                    <td><%= h.getVolume(t, 'main') %></td>
-                                </tr>
-                            <% }); %>
-                            </tbody>
-                        </table>
-                    </div>
-                <% } %>
             <% } else { %>
                 <div class="content-section">
                     <p>No stablecoin data available.</p>
@@ -706,6 +716,46 @@
             }
 
             <% } %>
+        })();
+        
+        // Toggle functionality for fiat-only filter
+        (function() {
+            const fiatOnlyToggle = document.getElementById('fiatOnlyToggle');
+            if (fiatOnlyToggle) {
+                // Load saved preference from localStorage
+                const savedPref = localStorage.getItem('fiatOnlyMode');
+                if (savedPref !== null) {
+                    const shouldFilterFiat = savedPref === 'true';
+                    fiatOnlyToggle.checked = shouldFilterFiat;
+                    // If saved preference differs from current state, update URL
+                    const currentFiatState = new URLSearchParams(window.location.search).get('fiatOnly') === 'true';
+                    if (shouldFilterFiat !== currentFiatState) {
+                        const newUrl = new URL(window.location);
+                        if (shouldFilterFiat) {
+                            newUrl.searchParams.set('fiatOnly', 'true');
+                        } else {
+                            newUrl.searchParams.delete('fiatOnly');
+                        }
+                        window.history.replaceState({}, '', newUrl);
+                        window.location.reload();
+                    }
+                }
+                
+                fiatOnlyToggle.addEventListener('change', function() {
+                    const isChecked = this.checked;
+                    // Save to localStorage
+                    localStorage.setItem('fiatOnlyMode', isChecked.toString());
+                    
+                    // Update URL and reload page
+                    const url = new URL(window.location);
+                    if (isChecked) {
+                        url.searchParams.set('fiatOnly', 'true');
+                    } else {
+                        url.searchParams.delete('fiatOnly');
+                    }
+                    window.location.href = url.toString();
+                });
+            }
         })();
         
         // Header toggle functionality for mobile

@@ -12,12 +12,14 @@ StablecoinWatch v2 is a Node.js web application that aggregates stablecoin data 
 - **Enhanced Platform Coverage**: Supports 134+ blockchain platforms and networks with normalized naming
 - **Rich Cross-Chain Analytics**: Detailed supply breakdowns, percentages, and dominant chain identification across 90+ networks
 
-### Pegged Asset Classification
-- **Fiat + Tokenized Assets**: In addition to fiat‑pegged stablecoins (USD, EUR, etc.), the app classifies tokenized real‑world assets from CMC’s taxonomy (`tokenized-assets`).
-- **Automatic Mapping**: CMC tags map to a human‑readable `peggedAsset`:
-  - `tokenized-gold` → Gold; `tokenized-silver` → Silver; `tokenized-stock` → Stocks; `tokenized-real-estate` → Real Estate; `tokenized-treasury-bills` → Treasury Bills; `tokenized-etfs` → ETF; `tokenized-commodities` → Commodities (refined to Gold/Silver when possible).
-- **DeFiLlama Peg Types**: `pegType` values are normalized (e.g., `peggedXAU` → Gold, `peggedXAG` → Silver). All peg types are allowed by default; see `DEFILLAMA_EXCLUDED_PEG_TYPES` below to exclude specific types (default excludes `peggedBTC`).
-- **Conflict Detection**: If multiple sources disagree on `peggedAsset`, the aggregator logs a red error to the console with per‑source values.
+### Asset Classification & Filtering
+- **Comprehensive Asset Support**: Supports both fiat-pegged stablecoins (USD, EUR, etc.) and tokenized real-world assets (Gold, Silver, Stocks, etc.)
+- **Automatic Classification**: Assets are classified by `peggedAsset` type using data from multiple sources:
+  - **CMC Tags**: `tokenized-gold` → Gold; `tokenized-silver` → Silver; `tokenized-stock` → Stocks; `tokenized-real-estate` → Real Estate; `tokenized-treasury-bills` → Treasury Bills; `tokenized-etfs` → ETF; `tokenized-commodities` → Commodities
+  - **DeFiLlama Peg Types**: `peggedXAU` → Gold, `peggedXAG` → Silver, `peggedUSD` → USD, etc.
+  - **ISO Currency Detection**: Automatic detection of fiat currencies from symbols and names
+- **Fiat-Only Filter**: UI toggle (`?fiatOnly=true`) to show only fiat-backed stablecoins and hide commodity/asset-backed tokens
+- **Conflict Detection**: Logs conflicts when multiple sources disagree on `peggedAsset` classification
 
 
 ### Reliability
@@ -126,9 +128,10 @@ During development you can run entirely against local mock JSON snapshots withou
   - DeFiLlama: `defillama_raw_output.json`
   - CoinGecko: `coingecko_raw_output.json`
 
-### Notes on Tokenized Assets in Mock Data
-- The bundled DeFiLlama mock focuses on fiat‑pegged assets; some tokenized assets (e.g., Gold) may come from CMC classification in development.
-- You can override file names per source with env vars if needed:
+### Mock Data Notes
+- Mock data includes both fiat-pegged and asset-backed tokens for comprehensive testing
+- DeFiLlama mock focuses on fiat-pegged assets while CMC mock includes tokenized assets
+- Override mock file names per source using environment variables:
   - `CMC_MOCK_FILE`, `MESSARI_MOCK_FILE`, `DEFILLAMA_MOCK_FILE`, `COINGECKO_MOCK_FILE`
 
 Example (Windows PowerShell):
@@ -281,6 +284,7 @@ docs/
 
 ### Public Pages
 - **`/`** - Home page with comprehensive stablecoin table (price, market cap, volume, platforms)
+  - **`/?fiatOnly=true`** - Show only fiat-backed stablecoins (USD, EUR, etc.), hiding commodity-backed assets
 - **`/coins/:symbol`** - Detailed coin page with multi-chain breakdown and metrics
 - **`/platforms`** - Platform summary showing all supported blockchains
 - **`/platforms/:name`** - Individual platform details with coin listings

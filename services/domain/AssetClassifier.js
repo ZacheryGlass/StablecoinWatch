@@ -1992,6 +1992,61 @@ class AssetClassifier {
             });
         }
     }
+    
+    /**
+     * Check if a pegged asset represents a fiat currency (not commodity/tokenized)
+     * @param {string|null|undefined} peggedAsset - The pegged asset identifier
+     * @returns {boolean} True if the asset is backed by a fiat currency
+     */
+    isFiatBacked(peggedAsset) {
+        // Null/undefined typically means generic USD stablecoin
+        if (!peggedAsset) {
+            return true;
+        }
+        
+        // Normalize to uppercase for comparison
+        const normalized = String(peggedAsset).toUpperCase().trim();
+        
+        // Check if it's directly an ISO currency code
+        if (this._isoCurrencyCodes.has(normalized)) {
+            return true;
+        }
+        
+        // Check if it maps to an ISO currency through aliases
+        const aliased = this._currencyAliasMap[normalized];
+        if (aliased && this._isoCurrencyCodes.has(aliased.toUpperCase())) {
+            return true;
+        }
+        
+        // Common non-fiat assets to explicitly exclude
+        const nonFiatAssets = [
+            'GOLD', 'SILVER', 'PLATINUM', 'PALLADIUM',
+            'OIL', 'CRUDE', 'PETROLEUM', 'NATURAL GAS',
+            'STOCKS', 'STOCK', 'EQUITY', 'EQUITIES',
+            'ETF', 'ETFS', 'EXCHANGE-TRADED FUND',
+            'REAL ESTATE', 'PROPERTY', 'REIT',
+            'TREASURY BILLS', 'T-BILLS', 'BONDS',
+            'COMMODITIES', 'COMMODITY',
+            'SPECIAL DRAWING RIGHTS', 'XDR', 'SDR',
+            'BITCOIN', 'BTC', 'ETHEREUM', 'ETH', 'CRYPTO'
+        ];
+        
+        // Check if it matches any non-fiat asset
+        if (nonFiatAssets.includes(normalized)) {
+            return false;
+        }
+        
+        // Check if it contains non-fiat keywords
+        const nonFiatKeywords = ['GOLD', 'SILVER', 'STOCK', 'ETF', 'COMMODITY', 'ESTATE', 'TREASURY', 'BITCOIN', 'ETHEREUM'];
+        for (const keyword of nonFiatKeywords) {
+            if (normalized.includes(keyword)) {
+                return false;
+            }
+        }
+        
+        // Default to false for unrecognized assets (conservative approach)
+        return false;
+    }
 }
 
 module.exports = AssetClassifier;

@@ -142,6 +142,12 @@ This document provides a comprehensive tour of the StablecoinWatch codebase: arc
   - Provides `getSystemHealth()` and `getSourceHealth()` overviews
   - Periodic checks and cleanup
 
+- `services/domain/AssetClassifier.js`
+  - Centralized asset classification service for stablecoins and tokenized assets
+  - Provides `isFiatBacked(peggedAsset)` method for UI filtering
+  - Handles conflict detection and resolution across data sources
+  - Supports ISO currency detection and pattern matching
+
 ## Fetchers
 
 - `services/fetchers/CmcDataFetcher.js`
@@ -178,6 +184,7 @@ This document provides a comprehensive tour of the StablecoinWatch codebase: arc
 
 - `routes/routes.js`
   - `/` (home): stablecoin list + basic metrics
+    - `/?fiatOnly=true`: filter to show only fiat-backed stablecoins using `AssetClassifier.isFiatBacked()` method
   - `/status`: app health and system metrics
   - `/platforms`: list of platforms; `/platforms/:name`: platform detail
   - `/coins/:symbol`: stablecoin details
@@ -185,6 +192,7 @@ This document provides a comprehensive tour of the StablecoinWatch codebase: arc
 
 - Views: `views/*.ejs`, partials under `views/partials/`
   - `home.ejs`: ranks by market cap, shows price, mcap, volume, platform
+    - Includes fiat-only filter toggle with localStorage persistence
   - `coins.ejs`: coin detail view (hybrid fields rendered)
   - `chains.ejs`, `platforms.ejs`, `status.ejs`
 
