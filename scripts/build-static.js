@@ -196,6 +196,7 @@ async function main() {
   // Assets used by templates expect root paths like /common.css and /chart.min.js
   await copyFile(path.resolve(__dirname, '..', 'res', 'css', 'common.css'), path.join(outDir, 'common.css'));
   await copyFile(path.resolve(__dirname, '..', 'res', 'js', 'chart.min.js'), path.join(outDir, 'chart.min.js'));
+  await copyFile(path.resolve(__dirname, '..', 'res', 'js', 'filter-system.js'), path.join(outDir, 'filter-system.js'));
 
   // Images at root (default-logo.png and others referenced by templates/logic)
   const imgDir = path.resolve(__dirname, '..', 'res', 'img');
