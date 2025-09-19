@@ -124,13 +124,16 @@ class FilterManager {
             filterToggleBtn.addEventListener('click', () => {
                 const isVisible = filterPanel.style.display === 'block';
                 filterPanel.style.display = isVisible ? 'none' : 'block';
-                filterToggleBtn.textContent = isVisible ? '🎛️ Show Filters' : '🎛️ Hide Filters';
+                
+                // Update button text while preserving structure
+                const buttonText = filterToggleBtn.querySelector('span:nth-child(2)');
+                if (buttonText) {
+                    buttonText.textContent = isVisible ? 'Show Filters' : 'Hide Filters';
+                }
                 filterToggleBtn.setAttribute('aria-expanded', (!isVisible).toString());
                 
-                // Show/hide active filters display when panel is visible
-                if (activeFilters) {
-                    activeFilters.style.display = isVisible ? 'none' : 'block';
-                }
+                // Always show active filters when available
+                this.updateActiveFiltersDisplay();
             });
         }
         
@@ -176,6 +179,7 @@ class FilterManager {
                     this.state.priceRange.enabled = this.state.priceRange.min > 0.50 || this.state.priceRange.max < 2.00;
                     if (priceMin) priceMin.value = this.state.priceRange.min;
                     if (priceMax) priceMax.value = this.state.priceRange.max;
+                    this.updateRangeTrack(priceRangeMin, priceRangeMax);
                     this.debouncedApplyFilters();
                 });
             }
@@ -582,11 +586,23 @@ class FilterManager {
     updateActiveFiltersDisplay() {
         const activeFilters = document.getElementById('activeFilters');
         const filterBadges = document.getElementById('filterBadges');
+        const filterCount = document.getElementById('filterCount');
         
         if (!activeFilters || !filterBadges) return;
         
         const badges = this.generateFilterBadges();
         
+        // Update filter count badge
+        if (filterCount) {
+            if (badges.length > 0) {
+                filterCount.textContent = badges.length;
+                filterCount.style.display = 'inline-block';
+            } else {
+                filterCount.style.display = 'none';
+            }
+        }
+        
+        // Always show active filters display when filters are active
         if (badges.length > 0) {
             activeFilters.style.display = 'block';
             filterBadges.innerHTML = badges.join('');
@@ -777,6 +793,43 @@ class FilterManager {
         // Search filter
         const searchFilter = document.getElementById('searchFilter');
         if (searchFilter) searchFilter.value = this.state.search.query;
+        
+        // Update range track visuals
+        const priceRangeMinUI = document.getElementById('priceRangeMin');
+        const priceRangeMaxUI = document.getElementById('priceRangeMax');
+        if (priceRangeMinUI && priceRangeMaxUI) {
+            this.updateRangeTrack(priceRangeMinUI, priceRangeMaxUI);
+        }
+    }
+    
+    /**
+     * Update visual range track for dual range sliders
+     */
+    updateRangeTrack(minSlider, maxSlider) {
+        if (!minSlider || !maxSlider) return;
+        
+        const container = minSlider.parentElement;
+        let track = container.querySelector('.range-track');
+        
+        // Create track element if it doesn't exist
+        if (!track) {
+            track = document.createElement('div');
+            track.className = 'range-track';
+            container.appendChild(track);
+        }
+        
+        const min = parseFloat(minSlider.min);
+        const max = parseFloat(minSlider.max);
+        const minVal = parseFloat(minSlider.value);
+        const maxVal = parseFloat(maxSlider.value);
+        
+        // Calculate percentages
+        const minPercent = ((minVal - min) / (max - min)) * 100;
+        const maxPercent = ((maxVal - min) / (max - min)) * 100;
+        
+        // Update track position and width
+        track.style.left = minPercent + '%';
+        track.style.width = (maxPercent - minPercent) + '%';
     }
     
     /**

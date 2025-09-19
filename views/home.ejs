@@ -51,7 +51,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 1rem 1.5rem;
-            border-bottom: 1px solid #dee2e6;
+            border-bottom: 1px solid #adb5bd;
             background: #ffffff;
             border-radius: 12px 12px 0 0;
         }
@@ -97,6 +97,33 @@
         .clear-filters-btn:hover {
             background: #c82333;
             transform: translateY(-1px);
+        }
+
+        /* Filter count badge */
+        .filter-count-badge {
+            background: #f56565;
+            color: white;
+            border-radius: 50%;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+            min-width: 1.5rem;
+            text-align: center;
+            display: inline-block;
+        }
+
+        /* Screen reader only class */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
         
         .filter-panel {
@@ -162,7 +189,7 @@
             height: 18px;
             width: 18px;
             background-color: #fff;
-            border: 2px solid #dee2e6;
+            border: 2px solid #adb5bd;
             border-radius: 4px;
             transition: all 0.2s ease;
         }
@@ -206,7 +233,7 @@
         .range-inputs input[type="number"] {
             flex: 1;
             padding: 0.5rem;
-            border: 1px solid #dee2e6;
+            border: 1px solid #adb5bd;
             border-radius: 4px;
             font-size: 0.9rem;
         }
@@ -220,15 +247,39 @@
             position: relative;
             height: 40px;
         }
+
+        /* Visual range track connection */
+        .range-slider-container::before {
+            content: '';
+            position: absolute;
+            top: 17px;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            z-index: 1;
+        }
+
+        .range-slider-container .range-track {
+            position: absolute;
+            top: 17px;
+            height: 6px;
+            background: #667eea;
+            border-radius: 3px;
+            z-index: 2;
+            opacity: 0.3;
+        }
         
         .range-slider {
             position: absolute;
             width: 100%;
             height: 6px;
             border-radius: 3px;
-            background: #dee2e6;
+            background: transparent;
             outline: none;
             -webkit-appearance: none;
+            z-index: 3;
         }
         
         .range-slider::-webkit-slider-thumb {
@@ -256,7 +307,7 @@
         .platform-multiselect {
             width: 100%;
             padding: 0.5rem;
-            border: 1px solid #dee2e6;
+            border: 1px solid #adb5bd;
             border-radius: 4px;
             font-size: 0.9rem;
             min-height: 100px;
@@ -283,7 +334,7 @@
         .count-input {
             width: 80px;
             padding: 0.25rem 0.5rem;
-            border: 1px solid #dee2e6;
+            border: 1px solid #adb5bd;
             border-radius: 4px;
             font-size: 0.9rem;
         }
@@ -291,12 +342,44 @@
         .search-input {
             width: 100%;
             padding: 0.75rem;
-            border: 1px solid #dee2e6;
+            border: 1px solid #adb5bd;
             border-radius: 6px;
             font-size: 0.95rem;
             transition: border-color 0.2s ease;
         }
         
+        /* Universal focus indicator for accessibility */
+        *:focus-visible {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Custom checkbox focus */
+        .filter-checkbox input[type="checkbox"]:focus-visible + .checkmark {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Button focus */
+        .filter-toggle-btn:focus-visible,
+        .clear-filters-btn:focus-visible {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Input focus */
+        input[type="text"]:focus-visible,
+        input[type="number"]:focus-visible,
+        input[type="range"]:focus-visible,
+        select:focus-visible {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
         .search-input:focus {
             outline: none;
             border-color: #667eea;
@@ -306,7 +389,7 @@
         .active-filters {
             padding: 1rem 1.5rem;
             background: #e8f4fd;
-            border-top: 1px solid #dee2e6;
+            border-top: 1px solid #adb5bd;
             border-radius: 0 0 12px 12px;
         }
         
@@ -540,7 +623,7 @@
         .coins-table { width: 100%; border-collapse: collapse; }
         .coins-table th, .coins-table td { padding: 0.75rem; border-bottom: 1px solid #eaeaea; text-align: left; }
         .coins-table th { background: #f8f9fa; color: #333; font-weight: 700; cursor: pointer; position: relative; }
-        .coins-table th:hover { background: #e9ecef; }
+        .coins-table th:hover { background: #d1ecf1; }
         .rank { width: 50px; text-align: center; }
         .name-cell { display: flex; align-items: center; gap: 0.5rem; }
         .name-cell img { width: 22px; height: 22px; border-radius: 4px; }
@@ -843,8 +926,10 @@
                     <div class="filter-header">
                         <h3>Advanced Filters</h3>
                         <div class="filter-header-controls">
-                            <button id="filterToggleBtn" class="filter-toggle-btn" type="button" aria-expanded="false" aria-controls="filterPanel">
-                                🎛️ Show Filters
+                            <button id="filterToggleBtn" class="filter-toggle-btn" type="button" aria-expanded="false" aria-controls="filterPanel" aria-label="Toggle filter options">
+                                <span aria-hidden="true">🎛️</span>
+                                <span>Show Filters</span>
+                                <span class="filter-count-badge" id="filterCount" style="display: none;"></span>
                             </button>
                             <button id="clearFiltersBtn" class="clear-filters-btn" type="button">
                                 Clear All
@@ -858,29 +943,29 @@
                             <h4>Asset Types</h4>
                             <div class="filter-group checkbox-group">
                                 <label class="filter-checkbox">
-                                    <input type="checkbox" id="filter_fiat" value="fiat" checked>
-                                    <span class="checkmark"></span>
-                                    Fiat-backed (USD, EUR, GBP, etc.)
+                                    <input type="checkbox" id="filter_fiat" value="fiat" checked aria-describedby="fiat-description">
+                                    <span class="checkmark" aria-hidden="true"></span>
+                                    <span id="fiat-description">Fiat-backed (USD, EUR, GBP, etc.)</span>
                                 </label>
                                 <label class="filter-checkbox">
-                                    <input type="checkbox" id="filter_commodities" value="commodities" checked>
-                                    <span class="checkmark"></span>
-                                    Commodities (Gold, Silver)
+                                    <input type="checkbox" id="filter_commodities" value="commodities" checked aria-describedby="commodities-description">
+                                    <span class="checkmark" aria-hidden="true"></span>
+                                    <span id="commodities-description">Commodities (Gold, Silver)</span>
                                 </label>
                                 <label class="filter-checkbox">
-                                    <input type="checkbox" id="filter_crypto" value="crypto" checked>
-                                    <span class="checkmark"></span>
-                                    Crypto-backed (BTC, ETH)
+                                    <input type="checkbox" id="filter_crypto" value="crypto" checked aria-describedby="crypto-description">
+                                    <span class="checkmark" aria-hidden="true"></span>
+                                    <span id="crypto-description">Crypto-backed (BTC, ETH)</span>
                                 </label>
                                 <label class="filter-checkbox">
-                                    <input type="checkbox" id="filter_tokenized" value="tokenized" checked>
-                                    <span class="checkmark"></span>
-                                    Tokenized Assets (ETF, Stocks, Real Estate)
+                                    <input type="checkbox" id="filter_tokenized" value="tokenized" checked aria-describedby="tokenized-description">
+                                    <span class="checkmark" aria-hidden="true"></span>
+                                    <span id="tokenized-description">Tokenized Assets (ETF, Stocks, Real Estate)</span>
                                 </label>
                                 <label class="filter-checkbox">
-                                    <input type="checkbox" id="filter_other" value="other" checked>
-                                    <span class="checkmark"></span>
-                                    Other/Unknown
+                                    <input type="checkbox" id="filter_other" value="other" checked aria-describedby="other-description">
+                                    <span class="checkmark" aria-hidden="true"></span>
+                                    <span id="other-description">Other/Unknown</span>
                                 </label>
                             </div>
                         </div>
@@ -890,13 +975,17 @@
                             <h4>Price Range</h4>
                             <div class="filter-group range-group">
                                 <div class="range-inputs">
-                                    <input type="number" id="priceMin" placeholder="Min" step="0.01" min="0" max="2" value="0.90">
+                                    <label for="priceMin" class="sr-only">Minimum price filter</label>
+                                    <input type="number" id="priceMin" placeholder="Min" step="0.01" min="0" max="2" value="0.90" aria-label="Minimum price in dollars">
                                     <span class="range-separator">to</span>
-                                    <input type="number" id="priceMax" placeholder="Max" step="0.01" min="0" max="2" value="1.10">
+                                    <label for="priceMax" class="sr-only">Maximum price filter</label>
+                                    <input type="number" id="priceMax" placeholder="Max" step="0.01" min="0" max="2" value="1.10" aria-label="Maximum price in dollars">
                                 </div>
                                 <div class="range-slider-container">
-                                    <input type="range" id="priceRangeMin" min="0.50" max="2.00" step="0.01" value="0.90" class="range-slider">
-                                    <input type="range" id="priceRangeMax" min="0.50" max="2.00" step="0.01" value="1.10" class="range-slider">
+                                    <label for="priceRangeMin" class="sr-only">Price range minimum slider</label>
+                                    <input type="range" id="priceRangeMin" min="0.50" max="2.00" step="0.01" value="0.90" class="range-slider" aria-label="Minimum price range slider">
+                                    <label for="priceRangeMax" class="sr-only">Price range maximum slider</label>
+                                    <input type="range" id="priceRangeMax" min="0.50" max="2.00" step="0.01" value="1.10" class="range-slider" aria-label="Maximum price range slider">
                                 </div>
                             </div>
                         </div>
@@ -906,14 +995,16 @@
                             <h4>Market Cap Range</h4>
                             <div class="filter-group range-group">
                                 <div class="range-inputs">
-                                    <input type="number" id="mcapMin" placeholder="Min (millions)" step="1" min="0" value="1">
+                                    <label for="mcapMin" class="sr-only">Minimum market cap filter</label>
+                                    <input type="number" id="mcapMin" placeholder="Min (millions)" step="1" min="0" value="1" aria-label="Minimum market cap in millions">
                                     <span class="range-separator">to</span>
-                                    <input type="number" id="mcapMax" placeholder="Max (millions)" step="1" min="0" value="100000">
+                                    <label for="mcapMax" class="sr-only">Maximum market cap filter</label>
+                                    <input type="number" id="mcapMax" placeholder="Max (millions)" step="1" min="0" value="100000" aria-label="Maximum market cap in millions">
                                 </div>
                                 <label class="filter-checkbox">
-                                    <input type="checkbox" id="mcapLogScale" checked>
-                                    <span class="checkmark"></span>
-                                    Logarithmic scale
+                                    <input type="checkbox" id="mcapLogScale" checked aria-describedby="mcap-log-description">
+                                    <span class="checkmark" aria-hidden="true"></span>
+                                    <span id="mcap-log-description">Logarithmic scale</span>
                                 </label>
                             </div>
                         </div>
@@ -923,14 +1014,16 @@
                             <h4>24h Volume Range</h4>
                             <div class="filter-group range-group">
                                 <div class="range-inputs">
-                                    <input type="number" id="volumeMin" placeholder="Min (thousands)" step="1" min="0" value="100">
+                                    <label for="volumeMin" class="sr-only">Minimum volume filter</label>
+                                    <input type="number" id="volumeMin" placeholder="Min (thousands)" step="1" min="0" value="100" aria-label="Minimum 24h volume in thousands">
                                     <span class="range-separator">to</span>
-                                    <input type="number" id="volumeMax" placeholder="Max (thousands)" step="1" min="0" value="10000000">
+                                    <label for="volumeMax" class="sr-only">Maximum volume filter</label>
+                                    <input type="number" id="volumeMax" placeholder="Max (thousands)" step="1" min="0" value="10000000" aria-label="Maximum 24h volume in thousands">
                                 </div>
                                 <label class="filter-checkbox">
-                                    <input type="checkbox" id="volumeLogScale" checked>
-                                    <span class="checkmark"></span>
-                                    Logarithmic scale
+                                    <input type="checkbox" id="volumeLogScale" checked aria-describedby="volume-log-description">
+                                    <span class="checkmark" aria-hidden="true"></span>
+                                    <span id="volume-log-description">Logarithmic scale</span>
                                 </label>
                             </div>
                         </div>
@@ -940,19 +1033,20 @@
                             <h4>Blockchain Platforms</h4>
                             <div class="filter-group">
                                 <div class="platform-filter-controls">
-                                    <select id="platformSelect" multiple class="platform-multiselect">
+                                    <label for="platformSelect" class="sr-only">Select blockchain platforms</label>
+                                    <select id="platformSelect" multiple class="platform-multiselect" aria-label="Select blockchain platforms to filter by">
                                         <option value="">All platforms</option>
                                     </select>
                                 </div>
                                 <div class="platform-options">
                                     <label class="filter-checkbox">
-                                        <input type="checkbox" id="filter_crosschain">
-                                        <span class="checkmark"></span>
-                                        Cross-chain only (2+ blockchains)
+                                        <input type="checkbox" id="filter_crosschain" aria-describedby="crosschain-description">
+                                        <span class="checkmark" aria-hidden="true"></span>
+                                        <span id="crosschain-description">Cross-chain only (2+ blockchains)</span>
                                     </label>
                                     <div class="blockchain-count-filter">
                                         <label for="blockchainCount">Min blockchains:</label>
-                                        <input type="number" id="blockchainCount" min="1" max="50" value="1" class="count-input">
+                                        <input type="number" id="blockchainCount" min="1" max="50" value="1" class="count-input" aria-label="Minimum number of blockchains required">
                                     </div>
                                 </div>
                             </div>
@@ -963,14 +1057,14 @@
                             <h4>Data Quality</h4>
                             <div class="filter-group checkbox-group">
                                 <label class="filter-checkbox">
-                                    <input type="checkbox" id="filter_hideConflicts">
-                                    <span class="checkmark"></span>
-                                    Hide coins with data conflicts
+                                    <input type="checkbox" id="filter_hideConflicts" aria-describedby="hide-conflicts-description">
+                                    <span class="checkmark" aria-hidden="true"></span>
+                                    <span id="hide-conflicts-description">Hide coins with data conflicts</span>
                                 </label>
                                 <label class="filter-checkbox">
-                                    <input type="checkbox" id="filter_completeDataOnly">
-                                    <span class="checkmark"></span>
-                                    Complete data only
+                                    <input type="checkbox" id="filter_completeDataOnly" aria-describedby="complete-data-description">
+                                    <span class="checkmark" aria-hidden="true"></span>
+                                    <span id="complete-data-description">Complete data only</span>
                                 </label>
                             </div>
                         </div>
@@ -979,7 +1073,8 @@
                         <div class="filter-section">
                             <h4>Search</h4>
                             <div class="filter-group">
-                                <input type="text" id="searchFilter" placeholder="Search by name or symbol..." class="search-input">
+                                <label for="searchFilter" class="sr-only">Search stablecoins</label>
+                                <input type="text" id="searchFilter" placeholder="Search by name or symbol..." class="search-input" aria-label="Search stablecoins by name or symbol">
                             </div>
                         </div>
                     </div>
