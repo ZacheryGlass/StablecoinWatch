@@ -47,6 +47,32 @@ StablecoinWatch v2 is a Node.js web application that aggregates stablecoin data 
 - **CoinGecko API** - Secondary market data source with additional coin metadata and logo fallback
 - **DeFiLlama API** - **PRIMARY** for cross-chain supply analytics across 90+ blockchain networks with detailed breakdown, percentages, and historical data  
 
+## Production Deployment
+
+**This application is deployed as a STATIC SITE via GitHub Actions to Azure Static Web Apps.**
+
+### Critical Information for Developers
+- The production site has **NO server-side capabilities** (no Express routes, no dynamic APIs)
+- All data is fetched during the build process and embedded into static HTML
+- Changes are automatically deployed when pushing to `master` branch
+
+### Testing Requirements
+1. **Always test features with `npm run build:static` before pushing**
+2. Test the static build locally by opening `dist/index.html` in a browser
+3. Verify all JavaScript functionality works without server-side support
+
+### Adding New JavaScript Files
+**IMPORTANT**: When adding new JavaScript files to `res/js/`, you MUST:
+1. Add the file to the copy list in `scripts/build-static.js` (around line 198)
+2. Example: `await copyFile(path.resolve(__dirname, '..', 'res', 'js', 'your-file.js'), path.join(outDir, 'your-file.js'));`
+3. Test with `npm run build:static` to ensure the file is copied to `dist/`
+
+### Common Pitfalls to Avoid
+- Adding JS files without updating the build script = broken in production
+- Features that rely on server-side routes will not work in production
+- Client-side code cannot make relative API calls - the static site has no backend
+- Forgetting to test with `npm run build:static` before pushing
+
 ## Quick Start
 
 ### Prerequisites
