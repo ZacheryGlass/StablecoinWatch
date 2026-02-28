@@ -4,72 +4,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Platforms - StablecoinWatch</title>
+    <title><%= platform.name %> - StablecoinWatch</title>
     <link rel="stylesheet" href="/common.css">
+    <style>
+        .platform-hero {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.1));
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        .platform-hero-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .platform-hero-info h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0 0 0.25rem 0;
+        }
+        .platform-hero-info .rank-badge {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--text-accent);
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            text-align: center;
+        }
+        .stat-card .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .stat-card .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+        }
+        .supply-bar {
+            background: rgba(255, 255, 255, 0.05);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .supply-bar-fill {
+            background: var(--gradient-primary);
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        .breakdown-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .breakdown-card {
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .breakdown-card .coin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        .breakdown-card .coin-name {
+            font-weight: 600;
+            color: var(--text-accent);
+        }
+        .breakdown-card .coin-pct {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 0.15rem 0.5rem;
+            border-radius: var(--radius-full);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+            transition: color 0.2s;
+        }
+        .back-link:hover {
+            color: var(--text-accent);
+        }
+    </style>
 </head>
 
 <body>
     <div id="wrapper">
-        <%- include('partials/header', { active: 'platforms' , data: data }); %>
+        <%- include('partials/header', { active: '' , data: data }); %>
 
             <main>
                 <div class="container">
-                    <h2 class="section-title">Top Platforms</h2>
+                    <a href="/platforms" class="back-link">&larr; All Blockchains</a>
 
-                    <div class="glass-card" style="padding: 0; overflow: hidden;">
-                        <div style="overflow-x: auto;">
-                            <table class="glass-table">
-                                <thead>
-                                    <tr>
-                                        <th>Rank</th>
-                                        <th>Platform</th>
-                                        <th class="text-right">Market Cap</th>
-                                        <th class="text-right">Coins</th>
-                                        <th class="text-right">Dominance</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <% if (data && data.platform_data && data.platform_data.length> 0) { %>
-                                        <% data.platform_data.forEach(function(platform, index) { %>
-                                            <tr>
-                                                <td>
-                                                    <span class="text-secondary">#<%= index + 1 %></span>
-                                                </td>
-                                                <td>
-                                                    <div class="flex items-center gap-md">
-                                                        <div style="font-weight: 600;">
-                                                            <%= platform.name %>
+                    <% if (platform.notFound) { %>
+                        <div class="glass-card" style="text-align: center; padding: 3rem;">
+                            <h2 style="color: var(--text-primary); margin-bottom: 0.5rem;">Blockchain Not Found</h2>
+                            <p class="text-secondary">The platform "<%= platform.name %>" was not found or has no stablecoin data.</p>
+                        </div>
+                    <% } else { %>
+                        <!-- Platform Hero -->
+                        <div class="platform-hero">
+                            <img src="https://icons.llamao.fi/icons/chains/rsz_<%= encodeURIComponent(platform.name.toLowerCase()) %>"
+                                alt="<%= platform.name %>"
+                                class="platform-hero-icon"
+                                onerror="this.style.display='none'">
+                            <div class="platform-hero-info">
+                                <h1><%= platform.name %></h1>
+                                <% if (platformIndex >= 0) { %>
+                                    <span class="rank-badge">Rank #<%= platformIndex + 1 %></span>
+                                <% } %>
+                            </div>
+                        </div>
+
+                        <!-- Stats Row -->
+                        <div class="stats-row">
+                            <div class="glass-card stat-card">
+                                <div class="stat-value"><%= h.getPlatformSupplyDisplay(platform, formatter) %></div>
+                                <div class="stat-label">Total Stablecoin Value</div>
+                            </div>
+                            <div class="glass-card stat-card">
+                                <div class="stat-value"><%= h.getPlatformSupplyPercentage(platform) %></div>
+                                <div class="stat-label">Share of Total Supply</div>
+                                <% if (platform.supply_percentage > 0) { %>
+                                    <div class="supply-bar">
+                                        <div class="supply-bar-fill" style="width: <%= Math.min(platform.supply_percentage, 100) %>%"></div>
+                                    </div>
+                                <% } %>
+                            </div>
+                            <div class="glass-card stat-card">
+                                <div class="stat-value"><%= h.getPlatformCoinCount(platform) %></div>
+                                <div class="stat-label">Active Stablecoins</div>
+                            </div>
+                            <% if (platform.dominant_stablecoin) { %>
+                                <div class="glass-card stat-card">
+                                    <div class="stat-value"><%= platform.dominant_stablecoin.name %></div>
+                                    <div class="stat-label">Dominant Stablecoin</div>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <!-- Supply Breakdown -->
+                        <% if (h.hasCrossChainData(platform)) { %>
+                            <h2 class="section-title">Supply Distribution</h2>
+                            <div class="breakdown-grid">
+                                <% platform.supply_breakdown.slice(0, 8).forEach(function(coin) { %>
+                                    <div class="breakdown-card">
+                                        <div class="coin-header">
+                                            <a href="/coins/<%= coin.uri %>" class="coin-name"><%= coin.symbol %></a>
+                                            <span class="coin-pct"><%= coin.percentage %>%</span>
+                                        </div>
+                                        <div class="text-secondary" style="font-size: 0.85rem;"><%= coin.name %></div>
+                                        <div style="font-weight: 600; margin-top: 0.25rem;"><%= formatter.formatSupply(coin.supply) %></div>
+                                        <div class="supply-bar" style="margin-top: 0.5rem;">
+                                            <div class="supply-bar-fill" style="width: <%= Math.min(coin.percentage, 100) %>%"></div>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            </div>
+                            <% if (platform.supply_breakdown.length > 8) { %>
+                                <p class="text-secondary" style="text-align: center; margin-top: 1rem;">
+                                    ... and <%= platform.supply_breakdown.length - 8 %> more stablecoins
+                                </p>
+                            <% } %>
+                        <% } %>
+
+                        <!-- All Stablecoins Table -->
+                        <h2 class="section-title" style="margin-top: 2rem;">All Stablecoins on <%= platform.name %></h2>
+                        <div class="glass-card" style="padding: 0; overflow: hidden;">
+                            <div style="overflow-x: auto;">
+                                <table class="glass-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Rank</th>
+                                            <th>Name</th>
+                                            <th class="text-right">Price</th>
+                                            <th class="text-right">Supply on <%= platform.name %></th>
+                                            <th class="text-right">% of Chain</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% if (platform.stablecoins && platform.stablecoins.length > 0) { %>
+                                            <% platform.stablecoins.forEach(function(coin, index) { %>
+                                                <tr onclick="window.location='/coins/<%= coin.uri %>'" style="cursor: pointer;">
+                                                    <td><span class="text-secondary">#<%= index + 1 %></span></td>
+                                                    <td>
+                                                        <div class="flex items-center gap-md">
+                                                            <% var coinData = (data.stablecoins || []).find(function(c) { return c.symbol === coin.symbol; }); %>
+                                                            <% if (coinData && coinData.img_url) { %>
+                                                                <img src="<%= coinData.img_url %>" alt="<%= coin.name %>" style="width: 28px; height: 28px; border-radius: 50%;">
+                                                            <% } %>
+                                                            <div>
+                                                                <div style="font-weight: 600;"><%= coin.name %></div>
+                                                                <div class="text-secondary" style="font-size: 0.75rem;"><%= coin.symbol %></div>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td class="text-right">
-                                                    <div style="font-weight: 500;">
-                                                        <%= platform.mcap_sum_s %>
-                                                    </div>
-                                                </td>
-                                                <td class="text-right">
-                                                    <span class="badge badge-neutral">
-                                                        <%= platform.coin_count %>
-                                                    </span>
-                                                </td>
-                                                <td class="text-right">
-                                                    <span class="text-primary">
-                                                        <%= platform.supply_percentage_s %>
-                                                    </span>
+                                                    </td>
+                                                    <td class="text-right">
+                                                        <%= coin.price ? formatter.formatPrice(coin.price) : 'No data' %>
+                                                    </td>
+                                                    <td class="text-right">
+                                                        <%= coin.platform_supply ? formatter.formatSupply(coin.platform_supply) : 'No data' %>
+                                                    </td>
+                                                    <td class="text-right">
+                                                        <% if (coin.platform_percentage) { %>
+                                                            <span class="text-primary"><%= formatter.formatPercentage(coin.platform_percentage, 2) %></span>
+                                                        <% } else { %>
+                                                            <span class="text-secondary">No data</span>
+                                                        <% } %>
+                                                    </td>
+                                                </tr>
+                                            <% }); %>
+                                        <% } else { %>
+                                            <tr>
+                                                <td colspan="5" class="text-center" style="padding: 3rem;">
+                                                    <div class="text-secondary">No stablecoin data available for this blockchain.</div>
                                                 </td>
                                             </tr>
-                                            <% }); %>
-                                                <% } else { %>
-                                                    <tr>
-                                                        <td colspan="5" class="text-center" style="padding: 3rem;">
-                                                            <div class="text-secondary">No platform data available</div>
-                                                        </td>
-                                                    </tr>
-                                                    <% } %>
-                                </tbody>
-                            </table>
+                                        <% } %>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
+                    <% } %>
                 </div>
             </main>
 
