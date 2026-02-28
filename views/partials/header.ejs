@@ -1,300 +1,136 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
     .site-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #fff;
-        padding: 1rem 1.5rem;
-        border-radius: 0 0 10px 10px;
-        margin-bottom: 1rem;
-        -webkit-text-size-adjust: 100%;
-        text-size-adjust: 100%;
+        background: rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 100;
     }
     
-    .header-bar {
+    .header-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0.75rem 1.5rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 2rem;
-        flex-wrap: nowrap; /* Keep items on one line */
-    }
-    
-    .header-left {
-        display: flex;
-        align-items: center;
-        gap: 2rem;
-        flex: 1;
-        min-width: 0;
     }
     
     .brand {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        flex-shrink: 0;
+        gap: 1rem;
+        text-decoration: none;
     }
-    .brand img { 
-        height: 48px; 
-        width: auto; 
-        border-radius: 6px; 
+    
+    .brand img {
+        height: 40px;
+        width: auto;
+        border-radius: 8px;
     }
-    .brand .title { 
-        display: none; 
+    
+    .brand-text {
+        font-weight: 700;
+        font-size: 1.25rem;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: none;
+    }
+    
+    @media (min-width: 640px) {
+        .brand-text { display: block; }
     }
 
-    .metrics-inline {
+    .nav-links {
+        display: flex;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.03);
+        padding: 0.25rem;
+        border-radius: var(--radius-full);
+        border: 1px solid var(--border-color);
+    }
+    
+    .nav-link {
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-full);
+        color: var(--text-secondary);
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+    
+    .nav-link:hover {
+        color: var(--text-primary);
+        background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .nav-link.active {
+        background: var(--bg-card-hover);
+        color: var(--text-accent);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .header-metrics {
         display: flex;
         align-items: center;
         gap: 1.5rem;
-        flex-wrap: nowrap;
-        overflow: hidden;
-        flex: 1 1 auto; /* fill available space */
-        max-width: 100%;
-        min-width: 0;
     }
     
-    .metric-inline {
+    .metric-item {
         display: flex;
-        align-items: baseline;
-        gap: 0.5rem;
-        color: rgba(255,255,255,0.95);
-        text-decoration: none;
-        transition: color 0.2s ease;
-        white-space: nowrap;
-        min-width: 0;
-        flex: 0 0 auto; /* don't shrink away */
+        flex-direction: column;
+        align-items: flex-end;
+        line-height: 1.2;
     }
     
-    .metric-inline:hover {
-        color: #fff;
-        text-decoration: none;
+    .metric-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
     
-    .metric-label-inline {
-        font-size: 0.9rem;
-        opacity: 0.85;
-    }
-    
-    .metric-value-inline {
-        font-size: 1rem;
+    .metric-value {
         font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--text-primary);
     }
     
-    .metric-divider {
-        width: 1px;
-        height: 20px;
-        background: rgba(255,255,255,0.3);
-        flex-shrink: 0;
-        min-width: 1px;
-    }
-
-    .nav {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-        flex-shrink: 0;
-    }
-    
-    .nav a {
-        text-decoration: none;
-        color: rgba(255,255,255,0.9);
-        font-weight: 500;
-        font-size: 1rem;
-        padding: 0.5rem 0.75rem;
-        border-bottom: 2px solid transparent;
-        border-radius: 4px 4px 0 0;
-        transition: all 0.2s ease;
-        white-space: nowrap;
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-        line-height: 1;
-    }
-    
-    .nav a:hover { 
-        color: #fff; 
-        border-bottom-color: rgba(255,255,255,0.5);
-        background-color: rgba(255,255,255,0.1);
-    }
-    
-    .nav a.active { 
-        color: #fff; 
-        border-bottom-color: #fff;
-        font-weight: 600;
-        background-color: rgba(255,255,255,0.15);
-    }
-    
-    .nav a:focus-visible {
-        outline: 2px solid #fff;
-        outline-offset: 2px;
-        background-color: rgba(255,255,255,0.2);
-    }
-
-    /* Mobile responsiveness for compact header */
-    @media (max-width: 1200px) {
-        .header-left {
-            gap: 1.5rem;
-        }
-        .metrics-inline {
-            gap: 1rem;
-            max-width: 100%;
-        }
-    }
-    
-    @media (max-width: 900px) {
-        .metrics-inline {
-            gap: 0.75rem;
-            max-width: clamp(100px, calc(100vw - 500px), 400px);
-        }
-    }
-
     @media (max-width: 768px) {
-        .site-header {
-            padding: 0.75rem 1rem;
-        }
-        
-        .header-bar {
-            gap: 1rem;
-        }
-        
-        .header-left {
-            gap: 1rem;
-        }
-        
-        .metrics-inline {
-            display: none; /* Hide all metrics to prevent wrapping */
-        }
-        
-        .nav {
-            gap: 1rem;
-        }
-        
-        .nav a {
-            font-size: 0.95rem;
-        }
-    }
-
-    @media (max-width: 640px) {
-        .site-header {
-            padding: 0.75rem 1rem;
-        }
-        
-        .header-bar {
-            /* Keep horizontal layout and prevent wrapping */
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem;
-            flex-wrap: nowrap;
-        }
-        
-        .header-left {
-            width: auto;
-            justify-content: flex-start;
-            gap: 0.75rem;
-        }
-        
-        .brand img {
-            height: 40px;
-        }
-        
-        .nav {
-            gap: 1.25rem;
-        }
-        
-        .nav a {
-            padding: 0.35rem 0.5rem; /* Reduce button height */
-        }
-    }
-
-    @media (max-width: 480px) {
-        .site-header {
-            padding: 0.5rem 0.75rem;
-            margin-bottom: 0.75rem;
-        }
-        
-        .header-bar {
-            gap: 0.5rem;
-        }
-        
-        .brand img {
-            height: 36px;
-        }
-        
-        .nav {
-            gap: 1.5rem;
-        }
-        
-        .nav a {
-            font-size: 0.9rem;
-            display: inline-block; /* ensure exact height control */
-            height: 32px; min-height: 32px; max-height: 32px; /* lock height */
-            line-height: 32px; /* vertically center text */
-            padding: 0 0.5rem; /* horizontal padding only */
-            box-sizing: border-box;
-            -webkit-text-size-adjust: 100%;
-            text-size-adjust: 100%;
-        }
-    }
-
-    @media (max-width: 360px) {
-        .site-header {
-            padding: 0.5rem;
-        }
-        
-        .brand img {
-            height: 32px;
-        }
-        
-        .nav {
-            gap: 1rem;
-        }
-        
-        .nav a {
-            font-size: 0.85rem;
-            display: inline-block; /* ensure exact height control */
-            height: 32px; min-height: 32px; max-height: 32px; /* keep fixed */
-            line-height: 32px;
-            padding: 0 0.4rem; /* horizontal only */
-            box-sizing: border-box;
-        }
+        .header-metrics { display: none; }
     }
 </style>
 
-<div class="site-header">
-    <div class="header-bar">
-        <div class="header-left">
-            <a class="brand" href="/">
-                <img src="/site_logo.PNG" alt="Stablecoin Watch" />
+<header class="site-header">
+    <div class="header-container">
+        <div class="flex items-center gap-lg">
+            <a href="/" class="brand">
+                <img src="/site_logo.PNG" alt="StablecoinWatch">
+                <span class="brand-text">StablecoinWatch</span>
             </a>
             
-            <div class="metrics-inline">
-                <a class="metric-inline" href="/?sort=mcap&dir=desc" aria-label="View market cap details and sort by market cap">
-                    <span class="metric-label-inline">Market Cap:</span>
-                    <span class="metric-value-inline"><%= (data && data.metrics && data.metrics.totalMCap_s) || 'No data' %></span>
-                </a>
-                
-                <div class="metric-divider"></div>
-                
-                <a class="metric-inline" href="/?sort=volume&dir=desc" aria-label="View 24 hour volume and sort by volume">
-                    <span class="metric-label-inline">24h Volume:</span>
-                    <span class="metric-value-inline"><%= (data && data.metrics && data.metrics.totalVolume_s) || 'No data' %></span>
-                </a>
-                
+            <div class="header-metrics">
+                <div class="metric-item">
+                    <span class="metric-label">Market Cap</span>
+                    <span class="metric-value"><%= (data && data.metrics && data.metrics.totalMCap_s) || '-' %></span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">24h Volume</span>
+                    <span class="metric-value"><%= (data && data.metrics && data.metrics.totalVolume_s) || '-' %></span>
+                </div>
             </div>
         </div>
-        
-        <nav class="nav" role="tablist" aria-label="Main navigation">
-            <a href="/" 
-               class="<%= active === 'home' ? 'active' : '' %>" 
-               role="tab" 
-               aria-selected="<%= active === 'home' ? 'true' : 'false' %>"
-               aria-controls="content"
-               id="tab-stablecoins">Stablecoins</a>
-            <a href="/platforms" 
-               class="<%= active === 'chains' ? 'active' : '' %>" 
-               role="tab" 
-               aria-selected="<%= active === 'chains' ? 'true' : 'false' %>"
-               aria-controls="content"
-               id="tab-blockchains">Blockchains</a>
+
+        <nav class="nav-links">
+            <a href="/" class="nav-link <%= active === 'home' ? 'active' : '' %>">Stablecoins</a>
+            <a href="/platforms" class="nav-link <%= active === 'chains' ? 'active' : '' %>">Blockchains</a>
         </nav>
     </div>
-</div>
+</header>

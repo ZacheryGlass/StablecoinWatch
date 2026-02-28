@@ -1,460 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <meta charset="utf-8" />
-    <title><%= platform.name %> - Stablecoin Watch</title>
-    <link rel="stylesheet" type="text/css" href="/common.css" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
-        .platform-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-
-        .platform-header h1 {
-            margin: 0 0 1rem 0;
-            font-size: 2.5rem;
-        }
-
-        .platform-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin: 1.5rem 0;
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 1rem;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            display: block;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-
-        .platform-rank {
-            background: rgba(255, 255, 255, 0.18);
-            color: #ffffff;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            display: inline-block;
-            margin: 0.5rem 0;
-        }
-
-        .platform-toggle {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            margin-top: 0.5rem;
-            transition: background 0.2s ease;
-            display: none;
-        }
-        .platform-toggle:hover { background: rgba(255,255,255,0.3); }
-        .platform-toggle:focus { outline: 2px solid white; outline-offset: 2px; }
-
-        .platform-content.collapsed .platform-stats { display: none; }
-        .platform-content.collapsed .platform-rank { display: none; }
-        .platform-content.collapsed .comparison-bar { display: none; }
-        .platform-content.collapsed .platform-header p { display: none; }
-
-        .content-section {
-            background: white;
-            margin: 2rem 0;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .section-title {
-            color: #333;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .breakdown-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-            margin: 1.5rem 0;
-        }
-
-        .breakdown-item {
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 1rem;
-            transition: box-shadow 0.2s ease;
-        }
-
-        .breakdown-item:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .coin-symbol {
-            font-weight: bold;
-            color: #667eea;
-            font-size: 1.1rem;
-        }
-
-        .coin-percentage {
-            background: #f0f0f0;
-            padding: 0.2rem 0.5rem;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            margin-left: 0.5rem;
-        }
-
-        .stablecoins-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1rem 0;
-        }
-
-        .stablecoins-table th,
-        .stablecoins-table td {
-            padding: 0.8rem;
-            text-align: left;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .stablecoins-table th {
-            background: #f8f9fa;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .stablecoins-table tr:hover {
-            background: #f8f9fa;
-        }
-
-        .dominant-coin {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: #fff;
-            padding: 1rem;
-            border-radius: 8px;
-            text-align: center;
-            margin: 1rem 0;
-        }
-
-        .not-found {
-            text-align: center;
-            padding: 3rem;
-            color: #666;
-        }
-
-        .comparison-bar {
-            background: #f0f0f0;
-            height: 20px;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 0.5rem 0;
-        }
-
-        .comparison-fill {
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            height: 100%;
-            transition: width 0.3s ease;
-        }
-
-        .coin-logo {
-            width: 20px;
-            height: 20px;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-
-        /* Mobile responsiveness */
-        @media only screen and (max-width: 767px) {
-            .platform-header {
-                padding: 1rem;
-            }
-            
-            .platform-header h1 {
-                font-size: 1.8rem;
-                margin: 0 0 0.5rem 0;
-            }
-            
-            .platform-stats {
-                grid-template-columns: 1fr 1fr;
-                gap: 0.5rem;
-            }
-            
-            .platform-toggle {
-                display: inline-block;
-            }
-            
-            .platform-content.collapsed {
-                padding-bottom: 0.5rem;
-            }
-            
-            .content-section {
-                margin: 1rem 0;
-                padding: 1rem;
-            }
-            
-            .breakdown-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-            
-            .stablecoins-table {
-                font-size: 0.9rem;
-            }
-            
-            .stablecoins-table th,
-            .stablecoins-table td {
-                padding: 0.5rem;
-            }
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platforms - StablecoinWatch</title>
+    <link rel="stylesheet" href="/common.css">
 </head>
+
 <body>
     <div id="wrapper">
-        <!-- Header -->
-        <%- include('partials/header') %>
-        <!-- Header -->
+        <%- include('partials/header', { active: 'platforms' , data: data }); %>
 
-        <main>
-            <% if (platform.notFound) { %>
-                <div class="not-found">
-                    <h1>Blockchain Not Found</h1>
-                    <p>The platform "<%= platform.name %>" was not found or has no stablecoin data.</p>
-                    <p><a href="/platforms">← Back to all platforms</a></p>
-                </div>
-            <% } else { %>
-                <!-- Platform Header -->
-                <div class="platform-header">
-                    <div class="platform-content" id="platformContent">
-                        <h1><%= platform.name %></h1>
-                        <% if (platformIndex >= 0) { %>
-                            <div class="platform-rank">
-                                <%= h.getPlatformRank(platformIndex, 'supply') %>
-                            </div>
-                        <% } %>
-                        
-                        <div class="platform-stats">
-                            <div class="stat-card">
-                                <span class="stat-value"><%= h.getPlatformSupplyDisplay(platform, formatter) %></span>
-                                <span class="stat-label">Total Stablecoin Value</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="stat-value"><%= h.getPlatformSupplyPercentage(platform) %></span>
-                                <span class="stat-label">% of Total Stablecoin Supply</span>
-                            </div>
-                            <div class="stat-card">
-                                <span class="stat-value"><%= h.getPlatformCoinCount(platform) %></span>
-                                <span class="stat-label">Stablecoins</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Supply percentage visualization -->
-                        <% if (platform.supply_percentage > 0) { %>
-                            <div class="comparison-bar">
-                                <div class="comparison-fill" style="width: <%= Math.min(platform.supply_percentage, 100) %>%"></div>
-                            </div>
-                            <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">
-                                <%= platform.name %> represents <%= h.getPlatformSupplyPercentage(platform) %> of the total stablecoin market
-                            </p>
-                        <% } %>
-                        
-                        <button class="platform-toggle" id="platformToggle" type="button" aria-expanded="true" aria-controls="platformContent">
-                            📊 Show Stats
-                        </button>
-                    </div>
-                </div>
+            <main>
+                <div class="container">
+                    <h2 class="section-title">Top Platforms</h2>
 
-                <!-- Dominant Stablecoin -->
-                <% if (platform.dominant_stablecoin) { %>
-                    <div class="content-section">
-                        <h2 class="section-title">Dominant Stablecoin</h2>
-                        <div class="dominant-coin">
-                            <strong><%= platform.dominant_stablecoin.symbol %></strong> 
-                            (<%= platform.dominant_stablecoin.name %>) leads on <%= platform.name %>
-                            <br>
-                            <span style="font-size: 0.9rem; opacity: 0.8;">
-                                <%= h.getDominantStablecoin(platform, formatter) %>
-                            </span>
-                        </div>
-                    </div>
-                <% } %>
-
-                <!-- Supply Breakdown -->
-                <% if (h.hasCrossChainData(platform)) { %>
-                    <div class="content-section">
-                        <h2 class="section-title">Supply Distribution</h2>
-                        <p>Breakdown of stablecoin supply on <%= platform.name %>:</p>
-                        
-                        <div class="breakdown-grid">
-                            <% platform.supply_breakdown.forEach((coin, index) => { %>
-                                <% if (index < 6) { %>
-                                    <div class="breakdown-item">
-                                        <div>
-                                            <span class="coin-symbol">
-                                                <a href="/coins/<%= coin.uri %>"><%= coin.symbol %></a>
-                                            </span>
-                                            <span class="coin-percentage"><%= coin.percentage %>%</span>
-                                        </div>
-                                        <div style="margin: 0.5rem 0; font-size: 0.9rem; color: #666;">
-                                            <%= coin.name %>
-                                        </div>
-                                        <div style="font-weight: bold;">
-                                            <%= formatter.formatSupply(coin.supply) %>
-                                        </div>
-                                        <div class="comparison-bar" style="margin-top: 0.5rem;">
-                                            <div class="comparison-fill" style="width: <%= Math.min(coin.percentage, 100) %>%"></div>
-                                        </div>
-                                    </div>
-                                <% } %>
-                            <% }); %>
-                        </div>
-                        
-                        <% if (platform.supply_breakdown.length > 6) { %>
-                            <p style="text-align: center; margin-top: 1rem; color: #666;">
-                                ... and <%= platform.supply_breakdown.length - 6 %> more stablecoins
-                            </p>
-                        <% } %>
-                    </div>
-                <% } %>
-
-                <!-- Stablecoins Table -->
-                <div class="content-section">
-                    <h2 class="section-title">All Stablecoins on <%= platform.name %></h2>
-                    
-                    <% if (platform.stablecoins && platform.stablecoins.length > 0) { %>
-                        <table class="stablecoins-table">
-                            <thead>
-                                <tr>
-                                    <th>Rank</th>
-                                    <th>Name</th>
-                                    <th>Symbol</th>
-                                    <th>Price</th>
-                                    <th>Supply on <%= platform.name %></th>
-                                    <th>% of Blockchain</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% platform.stablecoins.forEach((coin, index) => { %>
+                    <div class="glass-card" style="padding: 0; overflow: hidden;">
+                        <div style="overflow-x: auto;">
+                            <table class="glass-table">
+                                <thead>
                                     <tr>
-                                        <td><%= index + 1 %></td>
-                                        <td>
-                                            <a href="/coins/<%= coin.uri %>">
-                                                <%= coin.name %>
-                                            </a>
-                                        </td>
-                                        <td><strong><%= coin.symbol %></strong></td>
-                                        <td>
-                                            <%= coin.price ? formatter.formatPrice(coin.price) : 'No data' %>
-                                        </td>
-                                        <td>
-                                            <%= coin.platform_supply ? formatter.formatSupply(coin.platform_supply) : 'No data' %>
-                                        </td>
-                                        <td>
-                                            <%= coin.platform_percentage ? formatter.formatPercentage(coin.platform_percentage, 2) : 'No data' %>
-                                        </td>
+                                        <th>Rank</th>
+                                        <th>Platform</th>
+                                        <th class="text-right">Market Cap</th>
+                                        <th class="text-right">Coins</th>
+                                        <th class="text-right">Dominance</th>
                                     </tr>
-                                <% }); %>
-                            </tbody>
-                        </table>
-                    <% } else { %>
-                        <p>No stablecoin data available for this blockchain.</p>
-                    <% } %>
-                </div>
-
-                <!-- Blockchain Analysis -->
-                <div class="content-section">
-                    <h2 class="section-title">Blockchain Analysis</h2>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                        <div style="text-align: center; padding: 1rem; border: 1px solid #e0e0e0; border-radius: 8px;">
-                            <strong>Market Position</strong><br>
-                            <span style="color: #667eea; font-size: 1.2rem;">
-                                <% if (platformIndex >= 0) { %>
-                                    Rank #<%= platformIndex + 1 %>
-                                <% } else { %>
-                                    Not ranked
-                                <% } %>
-                            </span>
+                                </thead>
+                                <tbody>
+                                    <% if (data && data.platform_data && data.platform_data.length> 0) { %>
+                                        <% data.platform_data.forEach(function(platform, index) { %>
+                                            <tr>
+                                                <td>
+                                                    <span class="text-secondary">#<%= index + 1 %></span>
+                                                </td>
+                                                <td>
+                                                    <div class="flex items-center gap-md">
+                                                        <div style="font-weight: 600;">
+                                                            <%= platform.name %>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="text-right">
+                                                    <div style="font-weight: 500;">
+                                                        <%= platform.mcap_sum_s %>
+                                                    </div>
+                                                </td>
+                                                <td class="text-right">
+                                                    <span class="badge badge-neutral">
+                                                        <%= platform.coin_count %>
+                                                    </span>
+                                                </td>
+                                                <td class="text-right">
+                                                    <span class="text-primary">
+                                                        <%= platform.supply_percentage_s %>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            <% }); %>
+                                                <% } else { %>
+                                                    <tr>
+                                                        <td colspan="5" class="text-center" style="padding: 3rem;">
+                                                            <div class="text-secondary">No platform data available</div>
+                                                        </td>
+                                                    </tr>
+                                                    <% } %>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
+            </main>
 
-                <!-- Navigation -->
-                <div style="text-align: center; margin: 2rem 0;">
-                    <a href="/platforms" style="
-                        background: #667eea;
-                        color: white;
-                        padding: 0.8rem 1.5rem;
-                        text-decoration: none;
-                        border-radius: 5px;
-                        display: inline-block;
-                        transition: background 0.2s ease;
-                    " onmouseover="this.style.background='#764ba2'" 
-                       onmouseout="this.style.background='#667eea'">
-                        ← View All Blockchains
-                    </a>
-                </div>
-            <% } %>
-        </main>
-
-        <!-- Footer -->
-        <%- include('partials/footer') %>
-        <!-- Footer -->
+            <%- include('partials/footer'); %>
     </div>
-    
-    <script>
-        // Platform header toggle functionality for mobile
-        (function() {
-            const platformToggle = document.getElementById('platformToggle');
-            const platformContent = document.getElementById('platformContent');
-            
-            if (platformToggle && platformContent) {
-                platformToggle.addEventListener('click', function() {
-                    const isCollapsed = platformContent.classList.contains('collapsed');
-                    
-                    if (isCollapsed) {
-                        platformContent.classList.remove('collapsed');
-                        platformToggle.textContent = '📈 Hide Stats';
-                        platformToggle.setAttribute('aria-expanded', 'true');
-                    } else {
-                        platformContent.classList.add('collapsed');
-                        platformToggle.textContent = '📊 Show Stats';
-                        platformToggle.setAttribute('aria-expanded', 'false');
-                    }
-                });
-                
-                // Initialize collapsed state on small screens
-                function checkScreenSize() {
-                    if (window.innerWidth <= 767) {
-                        platformContent.classList.add('collapsed');
-                        platformToggle.textContent = '📊 Show Stats';
-                        platformToggle.setAttribute('aria-expanded', 'false');
-                    } else {
-                        platformContent.classList.remove('collapsed');
-                        platformToggle.textContent = '📈 Hide Stats';
-                        platformToggle.setAttribute('aria-expanded', 'true');
-                    }
-                }
-                
-                checkScreenSize();
-                window.addEventListener('resize', checkScreenSize);
-            }
-        })();
-    </script>
 </body>
+
 </html>

@@ -20,9 +20,9 @@ const CONFIG = {
     DEFAULT_DEVICE: 'desktop',
     PAGES: [
         // Updated selectors to match v2 templates
-        { name: 'home', path: '/', waitFor: '#coinsTable' },
-        { name: 'platforms', path: '/platforms', waitFor: '.summary-card' },
-        { name: 'status', path: '/status', waitFor: '.summary-card' }
+        { name: 'home', path: '/', waitFor: '.glass-table' },
+        { name: 'platforms', path: '/platforms', waitFor: '.glass-table' },
+        { name: 'status', path: '/status', waitFor: '.glass-card' }
     ]
 };
 

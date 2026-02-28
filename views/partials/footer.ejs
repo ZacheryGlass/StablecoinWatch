@@ -1,77 +1,52 @@
 <style>
     .site-footer {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        width: 100%;
-        z-index: 1000;
+        margin-top: auto;
+        padding: var(--space-xl) 0;
+        border-top: 1px solid var(--border-color);
+        background: rgba(15, 23, 42, 0.4);
+    }
 
-        margin-top: 2rem;
-        background: #0f172a;
-        color: #cbd5e1;
-        padding: 0.6rem 1rem;
-        border-radius: 10px 10px 0 0;
-        -webkit-text-size-adjust: 100%;
-        text-size-adjust: 100%;
-    }
-    .footer-row {
+    .footer-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 var(--space-md);
         display: flex;
-        align-items: center;
         justify-content: space-between;
-        flex-wrap: nowrap; /* keep items on one line */
-        gap: 0.75rem;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--space-lg);
     }
+
     .footer-links {
         display: flex;
-        gap: 0.75rem;
-        flex-wrap: nowrap; /* keep links on one line */
-        align-items: center;
-        margin-right: 1rem;
+        gap: var(--space-lg);
     }
-    .footer-links a {
-        color: #e2e8f0;
-        text-decoration: none;
-        background: rgba(255,255,255,0.06);
-        padding: 0.4rem 0.7rem;
-        border-radius: 6px;
-        transition: background 0.2s ease;
-        display: inline-flex;
-        align-items: center;
-        line-height: 1;
-        white-space: nowrap;
+
+    .footer-link {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        transition: color 0.2s;
     }
-    .footer-links a:hover { background: rgba(255,255,255,0.12); }
-    .copyright { font-size: 0.85rem; opacity: 0.8; }
-    @media (max-width: 640px) {
-        .site-footer { padding: 0.5rem 0.75rem; }
-        .footer-row { gap: 0.5rem; }
-        .footer-links { gap: 0.5rem; }
-        .footer-links a { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
-        .copyright { width: 100%; text-align: center; font-size: 0.75rem; } 
-        .footer-links { width: 100%; justify-content: center; }
+
+    .footer-link:hover {
+        color: var(--text-accent);
     }
-    @media (max-width: 480px) {
-        .footer-links a {
-            display: inline-block; /* exact height control */
-            height: 32px; min-height: 32px; max-height: 32px; /* lock height */
-            line-height: 32px; /* center text */
-            padding: 0 0.5rem; /* horizontal only */
-            box-sizing: border-box;
-            -webkit-text-size-adjust: 100%;
-            text-size-adjust: 100%;
-        }
+
+    .footer-copy {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
     }
 </style>
+
 <footer class="site-footer">
-    <div class="footer-row">
-        <div class="copyright">&copy; <%= new Date().getFullYear() %> Stablecoin Watch</div>
+    <div class="footer-content">
+        <div class="footer-copy">
+            &copy; <%= new Date().getFullYear() %> StablecoinWatch. All rights reserved.
+        </div>
         <div class="footer-links">
-            <a href="https://twitter.com/Zach_Glass" target="_blank" rel="noopener">Twitter</a>
-            <a href="https://github.com/ZacheryGlass/StablecoinWatch" target="_blank" rel="noopener">GitHub</a>
-            <a href="/status">Status</a>
+            <a href="https://github.com/ZacheryGlass/StablecoinWatch" target="_blank" class="footer-link">GitHub</a>
+            <a href="/api-docs" class="footer-link">API</a>
+            <a href="/status" class="footer-link">Status</a>
         </div>
     </div>
 </footer>
-
-

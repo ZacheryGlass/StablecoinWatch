@@ -195,6 +195,8 @@ async function main() {
   console.log('Copying static assets...');
   // Assets used by templates expect root paths like /common.css and /chart.min.js
   await copyFile(path.resolve(__dirname, '..', 'res', 'css', 'common.css'), path.join(outDir, 'common.css'));
+  await copyFile(path.resolve(__dirname, '..', 'res', 'css', 'design-system.css'), path.join(outDir, 'design-system.css'));
+  await copyFile(path.resolve(__dirname, '..', 'res', 'css', 'components.css'), path.join(outDir, 'components.css'));
   await copyFile(path.resolve(__dirname, '..', 'res', 'js', 'chart.min.js'), path.join(outDir, 'chart.min.js'));
   await copyFile(path.resolve(__dirname, '..', 'res', 'js', 'filter-system.js'), path.join(outDir, 'filter-system.js'));
 

@@ -26,7 +26,7 @@ class HybridTransformer extends IViewModelTransformer {
         this.stablecoins = [];
         this.metrics = { totalMCap: 0, totalVolume: 0, lastUpdated: null };
         this.config = config;
-        
+
         // Initialize formatter dependencies
         this.dataFormatter = new DataFormatter();
         this.platformNormalizer = new PlatformNormalizer();
@@ -74,7 +74,7 @@ class HybridTransformer extends IViewModelTransformer {
         }
 
         const sc = new Stablecoin();
-        
+
         // Basic identification
         sc.name = hybrid.name || '';
         sc.symbol = hybrid.symbol || '';
@@ -82,8 +82,8 @@ class HybridTransformer extends IViewModelTransformer {
         sc.img_url = this.sourceDataPopulator.getCoinImageUrl(hybrid);
         // Pegged asset (e.g., USD, EUR, Gold)
         sc.pegged_asset = hybrid.pegged_asset || null;
-    // Asset classification (Stablecoin, Tokenized Asset, etc.)
-    sc.assetCategory = hybrid.assetCategory || hybrid.asset_category || null;
+        // Asset classification (Stablecoin, Tokenized Asset, etc.)
+        sc.assetCategory = hybrid.assetCategory || hybrid.asset_category || null;
 
         // Platform extraction (now prioritizes DeFiLlama data)
         sc.platforms = this.platformNormalizer.extractPlatformsFromHybrid(hybrid);
@@ -99,8 +99,20 @@ class HybridTransformer extends IViewModelTransformer {
         sc.cmc = containers.cmc;
         sc.cgko = containers.cgko;
 
-    // Propagate any structured conflicts detected during aggregation
-    sc.conflicts = hybrid.conflicts || hybrid.metadata?.conflicts || null;
+        // Add view-friendly formatted properties for EJS templates
+        sc.price_s = DataFormatter.formatNumber(sc.main.price);
+        sc.mcap_s = sc.main.circulating_mcap_s;
+        sc.vol_s = sc.main.volume_s;
+        // Use supply data from hybrid or scw container
+        const supply = hybrid.supplyData?.circulating ?? hybrid.circulating_supply ?? sc.scw.circulating_supply;
+        sc.supply_s = DataFormatter.formatNumber(supply, false);
+
+        // Add percentage changes
+        sc.change_1d = hybrid.percent_change_24h ?? hybrid.marketData?.percentChange24h ?? 0;
+        sc.change_7d = hybrid.percent_change_7d ?? hybrid.marketData?.percentChange7d ?? 0;
+
+        // Propagate any structured conflicts detected during aggregation
+        sc.conflicts = hybrid.conflicts || hybrid.metadata?.conflicts || null;
 
         return sc;
     }
@@ -116,7 +128,7 @@ class HybridTransformer extends IViewModelTransformer {
      */
     _populateCrossChainData(stablecoin, hybrid) {
         const defillamaData = hybrid.defillamaData || hybrid.metadata?.defillamaData;
-        
+
         if (!defillamaData?.rawChainCirculating) {
             return; // No DeFiLlama data available
         }
@@ -134,15 +146,15 @@ class HybridTransformer extends IViewModelTransformer {
         for (const [chainName, chainData] of Object.entries(chainCirculating)) {
             if (!chainData?.current) continue;
 
-            const chainSupply = chainData.current.peggedUSD || 
-                              chainData.current.peggedEUR || 
-                              Object.values(chainData.current)[0] || 
-                              null;
+            const chainSupply = chainData.current.peggedUSD ||
+                chainData.current.peggedEUR ||
+                Object.values(chainData.current)[0] ||
+                null;
 
             if (!chainSupply || chainSupply <= 0) continue;
 
             const normalizedChainName = this.platformNormalizer.normalizePlatformName(chainName);
-            
+
             breakdown[normalizedChainName] = {
                 supply: chainSupply,
                 percentage: 0, // Will be calculated after totalSupply is known
@@ -208,7 +220,7 @@ class HybridTransformer extends IViewModelTransformer {
      */
     calculatePlatformData() {
         const platformMap = new Map();
-        
+
         for (const sc of this.stablecoins) {
             if (!sc?.platforms || !sc?.main?.circulating_mcap) continue;
             // Compute total cross-chain supply for this coin across all known platforms
@@ -216,12 +228,12 @@ class HybridTransformer extends IViewModelTransformer {
                 const ps = p.total_supply || p.circulating_supply || 0;
                 return sum + (typeof ps === 'number' ? ps : 0);
             }, 0);
-            
+
             for (const platform of sc.platforms) {
                 if (!platformMap.has(platform.name)) {
-                    platformMap.set(platform.name, { 
-                        name: platform.name, 
-                        mcap_sum: 0, 
+                    platformMap.set(platform.name, {
+                        name: platform.name,
+                        mcap_sum: 0,
                         coin_count: 0,
                         total_supply: 0,
                         stablecoins: [],
@@ -229,7 +241,7 @@ class HybridTransformer extends IViewModelTransformer {
                         dominant_stablecoin: { name: '', supply: 0 }
                     });
                 }
-                
+
                 const entry = platformMap.get(platform.name);
                 // Allocate only the proportional share of market cap to this platform
                 const platformSupply = platform.total_supply || platform.circulating_supply || 0;
@@ -245,12 +257,12 @@ class HybridTransformer extends IViewModelTransformer {
                 }
                 entry.mcap_sum += allocatedMcap;
                 entry.coin_count += 1;
-                
+
                 // Enhanced supply aggregation using cross-chain data
                 // Reuse computed platformSupply
                 if (platformSupply > 0) {
                     entry.total_supply += platformSupply;
-                    
+
                     // Track individual stablecoin supplies on this platform
                     if (!entry.supply_breakdown.has(sc.symbol)) {
                         entry.supply_breakdown.set(sc.symbol, {
@@ -261,10 +273,10 @@ class HybridTransformer extends IViewModelTransformer {
                             uri: sc.uri
                         });
                     }
-                    
+
                     const coinEntry = entry.supply_breakdown.get(sc.symbol);
                     coinEntry.supply += platformSupply;
-                    
+
                     // Track dominant stablecoin on this platform
                     if (coinEntry.supply > entry.dominant_stablecoin.supply) {
                         entry.dominant_stablecoin = {
@@ -275,7 +287,7 @@ class HybridTransformer extends IViewModelTransformer {
                         };
                     }
                 }
-                
+
                 // Track unique stablecoins on this platform
                 if (!entry.stablecoins.find(coin => coin.symbol === sc.symbol)) {
                     entry.stablecoins.push({
@@ -303,7 +315,7 @@ class HybridTransformer extends IViewModelTransformer {
                 const supplyBreakdownArray = Array.from(platform.supply_breakdown.values())
                     .map(coin => ({
                         ...coin,
-                        percentage: platform.total_supply > 0 ? 
+                        percentage: platform.total_supply > 0 ?
                             Math.round((coin.supply / platform.total_supply) * 10000) / 100 : 0
                     }))
                     .sort((a, b) => b.supply - a.supply);
@@ -316,7 +328,7 @@ class HybridTransformer extends IViewModelTransformer {
                     coin_count: platform.coin_count,
                     total_supply: platform.total_supply,
                     total_supply_s: DataFormatter.formatNumber(platform.total_supply, false),
-                    supply_percentage: totalSupplyAllPlatforms > 0 ? 
+                    supply_percentage: totalSupplyAllPlatforms > 0 ?
                         Math.round((platform.total_supply / totalSupplyAllPlatforms) * 10000) / 100 : 0,
                     supply_percentage_s: totalSupplyAllPlatforms > 0 ?
                         `${Math.round((platform.total_supply / totalSupplyAllPlatforms) * 10000) / 100}%` : '0%',
@@ -420,7 +432,7 @@ class HybridTransformer extends IViewModelTransformer {
      * @memberof HybridTransformer
      */
     validateInputData(data) {
-        return Array.isArray(data) && data.every(item => 
+        return Array.isArray(data) && data.every(item =>
             item && typeof item === 'object' && (item.name || item.symbol)
         );
     }

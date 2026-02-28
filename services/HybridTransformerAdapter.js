@@ -24,6 +24,7 @@ class HybridTransformerAdapter extends IViewModelTransformer {
             return;
         }
         const hybridInput = aggregatedList.map((agg) => this._fromAggregatedToHybrid(agg)).filter(Boolean);
+        console.log(`[HybridAdapter] Converted ${aggregatedList.length} aggregated items to ${hybridInput.length} hybrid items.`);
         this.impl.transformData(hybridInput);
     }
 

@@ -1,297 +1,118 @@
 ﻿/****************************************
                 Common
 *****************************************/
+@import url('design-system.css');
+@import url('components.css');
 
+/* Reset & Base Styles */
 html,
 body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  background: #e3e3e3;
-  font-family: 'Open Sans', sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg-body);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
 }
 
 #wrapper {
-    min-height: 100%;
-    position: relative;
-    padding-bottom: 120px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 main {
-    max-width: 80%;
-    margin: auto;
-    padding: 0 1rem 40px 1rem;
-}
-
-.tbl_wrapper {
+    flex: 1;
     width: 100%;
-    max-width: 1000px;
-    min-height: 100px;
-    margin: 20px auto;
-    padding: 0;
-    background: rgba(34, 31, 31, 0.603);
-    color: rgba(255, 255, 255, 0.9);
-    overflow: auto;
-    position: relative;
-    margin-top: 5px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-md);
 }
 
-.type1         { border-left: #1c616c 5px solid; }
-.type1:hover   { border-left: #4fc0d2 5px solid; }
-.type1 a       { color:       #4fc0d2;           }
-.type1 a:hover { color:       #268695;           }
-
-.type2         { border-left: #1d6e4b 5px solid; }
-.type2:hover   { border-left: #52d29a 5px solid; }
-.type2 a       { color:       #52d29a;           }
-.type2 a:hover { color:       #279766;           }
-
-.type3         { border-left: #3730a3 5px solid; }
-.type3:hover   { border-left: #818cf8 5px solid; }
-.type3 a       { color:       #818cf8;           }
-.type3 a:hover { color:       #4f46e5;           }
-
-.type4         { border-left: #952f12 5px solid; }
-.type4:hover   { border-left: #eb7655 5px solid; }
-.type4 a       { color:       #eb7655;           }
-.type4 a:hover { color:       #c33d17;           }
-
-
-p { margin: 0; }
-
-main.title {
-    font-size: 0;
-    font-weight: bold;
-    background-color: rgba(34, 31, 31, 0.603);
-    border-left: 5px solid rgba(255, 255, 255, 0.603);
+/* Links */
+a {
+    color: var(--text-accent);
+    text-decoration: none;
+    transition: var(--transition-fast);
 }
 
-.row {
-    padding: 10px 0;
-    height: auto;
-    font-size: 0;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.2s ease-out;
-    border-top: 1px solid rgba(0, 0, 0, 0.603);
-    background-color: rgba(34, 31, 31, 0.603);
+a:hover {
+    color: #fff;
 }
 
-.row:hover {
-    background-color: rgba(26, 26, 26, 0.9);
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: 0 0 var(--space-md) 0;
+    font-weight: 700;
+    line-height: 1.2;
 }
 
-.row ul {
-    margin: 0;
-    padding: 0;
+p {
+    margin-bottom: var(--space-md);
+    color: var(--text-secondary);
 }
 
-/****************************************
-        Mobile Support
-*****************************************/
+/* Utility Classes */
+.text-right {
+    text-align: right;
+}
 
-/* Large tablets and small desktops */
-@media only screen and (max-width: 1024px) {
+.text-center {
+    text-align: center;
+}
+
+.text-accent {
+    color: var(--text-accent);
+}
+
+.text-secondary {
+    color: var(--text-secondary);
+}
+
+.flex {
+    display: flex;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.gap-sm {
+    gap: var(--space-sm);
+}
+
+.gap-md {
+    gap: var(--space-md);
+}
+
+.gap-lg {
+    gap: var(--space-lg);
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.mt-lg {
+    margin-top: var(--space-lg);
+}
+
+.mb-lg {
+    margin-bottom: var(--space-lg);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
     main {
-        max-width: 100%;
-        padding: 0 1.5rem 40px 1.5rem;
-    }
-    
-    .tbl_wrapper {
-        max-width: 100%;
-        margin: 15px 0;
+        padding: var(--space-md);
     }
 }
-
-/* Tablets */
-@media only screen and (max-width: 768px) {
-    main {
-        padding: 0 1rem 30px 1rem;
-    }
-    
-    .tbl_wrapper {
-        margin: 10px 0;
-        border-radius: 8px;
-    }
-    
-    .title ul li {
-        font-size: 14px !important;
-    }
-    
-    /* Hide less important columns on tablets */
-    .hide-md {
-        display: none !important;
-    }
-    
-    /* Table responsiveness */
-    .table-container {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        border-radius: 8px;
-    }
-    
-    .table-container table {
-        min-width: 600px;
-    }
-}
-
-/* Small tablets and large phones */
-@media only screen and (max-width: 640px) {
-    main {
-        padding: 0 0.75rem 25px 0.75rem;
-    }
-    
-    .row {
-        padding: 8px 0.5rem;
-    }
-    
-    /* Enhanced table responsiveness */
-    .table-container table {
-        min-width: 500px;
-        font-size: 0.9rem;
-    }
-    
-    .table-container th,
-    .table-container td {
-        padding: 0.5rem 0.25rem;
-        white-space: nowrap;
-    }
-}
-
-/* Large phones */
-@media only screen and (max-width: 480px) {
-    main {
-        padding: 0 0.5rem 20px 0.5rem;
-    }
-    
-    .row {
-        padding: 6px 0.5rem;
-        font-size: 0.9rem;
-    }
-    
-    .tbl_wrapper {
-        margin: 8px 0;
-        border-radius: 6px;
-    }
-    
-    /* Hide more columns on small phones */
-    .hide-sm {
-        display: none !important;
-    }
-    
-    /* Compact table styling */
-    .table-container table {
-        min-width: 400px;
-        font-size: 0.85rem;
-    }
-    
-    .table-container th,
-    .table-container td {
-        padding: 0.4rem 0.2rem;
-    }
-    
-    /* Touch-friendly interactive elements */
-    button, .btn, a {
-        min-height: 44px;
-        min-width: 44px;
-    }
-    
-    /* Improved tap targets */
-    .coins-table th {
-        padding: 0.75rem 0.25rem;
-    }
-}
-
-/* Small phones */
-@media only screen and (max-width: 360px) {
-    main {
-        padding: 0 0.25rem 15px 0.25rem;
-    }
-    
-    .row {
-        padding: 4px 0.25rem;
-        font-size: 0.8rem;
-    }
-    
-    .tbl_wrapper {
-        margin: 5px 0;
-        border-radius: 4px;
-    }
-    
-    /* Very compact table styling */
-    .table-container table {
-        min-width: 320px;
-        font-size: 0.8rem;
-    }
-    
-    .table-container th,
-    .table-container td {
-        padding: 0.3rem 0.1rem;
-    }
-    
-    /* Hide even more columns on very small phones */
-    .hide-xs {
-        display: none !important;
-    }
-    
-    /* Ensure minimum touch targets */
-    button, .btn, a {
-        min-height: 40px;
-        padding: 0.5rem;
-    }
-}
-
-/* Extra responsive utilities */
-.mobile-only {
-    display: none;
-}
-
-.desktop-only {
-    display: block;
-}
-
-@media only screen and (max-width: 768px) {
-    .mobile-only {
-        display: block;
-    }
-    
-    .desktop-only {
-        display: none;
-    }
-    
-    /* Mobile-friendly text sizing */
-    h1 {
-        font-size: 1.8rem;
-    }
-    
-    h2 {
-        font-size: 1.5rem;
-    }
-    
-    h3 {
-        font-size: 1.3rem;
-    }
-}
-
-@media only screen and (max-width: 480px) {
-    /* Even smaller text on small phones */
-    h1 {
-        font-size: 1.6rem;
-    }
-    
-    h2 {
-        font-size: 1.3rem;
-    }
-    
-    h3 {
-        font-size: 1.1rem;
-    }
-    
-    /* Improved line height for readability */
-    body {
-        line-height: 1.5;
-    }
-}
-
-
-

@@ -1,197 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>System Status - Stablecoin Watch</title>
-    <link rel="stylesheet" type="text/css" href="/common.css" />
-    <style>
-        /* Align layout with other pages (no outer body margins) */
-        main { max-width: 80%; margin: auto; padding: 0 10px; }
-        .page-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:#fff; padding: 1.5rem; border-radius:10px; margin-bottom: 1rem; }
-        .page-header h1 { margin: 0 0 0.5rem 0; }
-        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; }
-        .summary-card { background: rgba(255,255,255,0.12); padding: 0.9rem; border-radius: 8px; text-align:center; }
-        .summary-value { font-weight: 700; font-size: 1.1rem; display: block; }
-        .summary-label { font-size: 0.9rem; opacity: 0.9; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Status - StablecoinWatch</title>
+    <link rel="stylesheet" href="/common.css">
+</head>
 
-        .content-section { background: #fff; padding: 1.25rem 1.25rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin: 1rem 0; }
-        .section-title { color:#333; border-bottom: 2px solid #667eea; padding-bottom: 0.5rem; margin-bottom: 1rem; }
-
-        .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-weight: bold; color: #fff; }
-        .healthy { background: #16a34a; }
-        .degraded { background: #a78bfa; color: #fff; }
-        .critical, .down { background: #dc2626; }
-
-        .source-table { width: 100%; border-collapse: collapse; }
-        .source-table th, .source-table td { padding: 0.75rem; border-bottom: 1px solid #eaeaea; text-align: left; }
-        .source-table th { background: #f8f9fa; font-weight: 700; color: #333; }
-        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-        .note { color: #6b7280; font-size: 0.9em; }
-
-        @media (max-width: 700px) { .source-table { font-size: 14px; } }
-    </style>
-    </head>
 <body>
-<div id="wrapper">
-    <%- include('partials/header') %>
+    <div id="wrapper">
+        <%- include('partials/header', { active: 'status', data: data }); %>
 
-    <main>
-        <% function badgeClass(s) { const map = { healthy: 'healthy', degraded: 'degraded', critical: 'critical', down: 'down' }; return map[s] || 'degraded'; } %>
+        <main>
+            <div class="container">
+                <h2 class="section-title">System Status</h2>
 
-        <div class="page-header">
-            <h1>System Status <% if (typeof mockMode !== 'undefined' && mockMode) { %><span class="badge degraded" style="margin-left:8px;">Mock Data Mode</span><% } %></h1>
-            <% if (health && !health.error) { %>
-                <div class="summary-grid">
-                    <div class="summary-card">
-                        <span class="summary-value"><span class="badge <%= badgeClass(health.status) %>"><%= health.status.toUpperCase() %></span></span>
-                        <span class="summary-label">Overall Status</span>
+                <div class="grid-dashboard">
+                    <div class="glass-card">
+                        <h3 class="text-secondary"
+                            style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Overall
+                            Health</h3>
+                        <div class="flex items-center gap-md" style="margin-top: 0.5rem;">
+                            <% if (health && !health.error && health.status === 'healthy') { %>
+                                <span class="badge badge-success"
+                                    style="font-size: 1rem; padding: 0.5rem 1rem;">Operational</span>
+                            <% } else { %>
+                                <span class="badge badge-error"
+                                    style="font-size: 1rem; padding: 0.5rem 1rem;">Issues Detected</span>
+                            <% } %>
+                        </div>
                     </div>
-                    <div class="summary-card">
-                        <span class="summary-value"><%= health.overallScore %></span>
-                        <span class="summary-label">Overall Score</span>
-                    </div>
-                    <div class="summary-card">
-                        <span class="summary-value"><%= health.metrics.healthySourceCount %>/<%= health.metrics.sourceCount %></span>
-                        <span class="summary-label">Healthy Sources</span>
-                    </div>
-                    <div class="summary-card">
-                        <span class="summary-value"><%= health.uptime %></span>
-                        <span class="summary-label">Uptime</span>
-                    </div>
-                    <div class="summary-card">
-                        <span class="summary-value"><span class="badge <%= (mockMode ? 'degraded' : 'healthy') %>"><%= mockMode ? 'Mock Data' : 'Live APIs' %></span></span>
-                        <span class="summary-label">Data Mode</span>
-                    </div>
-                </div>
-                <p class="note" style="margin-top:0.75rem;">Last updated: <%= new Date(data && data.metrics && data.metrics.lastUpdated || Date.now()).toLocaleString() %></p>
-            <% } else { %>
-                <p class="note">Health data unavailable: <%= (health && health.error) ? health.error : 'no data' %></p>
-            <% } %>
-        </div>
 
-        <section class="content-section">
-            <h2 class="section-title">Data Sources</h2>
-            <% if (health && health.sources && health.sources.length) { %>
-                <div style="overflow-x:auto;">
-                    <table class="source-table">
-                        <thead>
-                            <tr>
-                                <th>Source</th>
-                                <th>Status</th>
-                                <th>Health</th>
-                                <th>Success Rate</th>
-                                <th>Error Rate</th>
-                                <th>Avg Response</th>
-                                <th>Consec Fail</th>
-                                <th>Last Error</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        <% health.sources.forEach(s => { %>
-                            <tr>
-                                <td><strong><%= s.sourceName %></strong> <span class="note mono">(<%= s.sourceId %>)</span></td>
-                                <td><span class="badge <%= badgeClass(s.status) %>"><%= s.status.toUpperCase() %></span></td>
-                                <td><%= s.healthScore %></td>
-                                <td><%= s.errorMetrics && s.errorMetrics.errorRate !== undefined ? (100 - (s.errorMetrics.errorRate * 100)).toFixed(1) : '—' %>%</td>
-                                <td><%= s.errorMetrics && s.errorMetrics.errorRate !== undefined ? (s.errorMetrics.errorRate * 100).toFixed(1) : '—' %>%</td>
-                                <td><%= s.responseTime && s.responseTime.average ? Math.round(s.responseTime.average) : 0 %> ms</td>
-                                <td><%= s.consecutiveFailures || 0 %></td>
-                                <td class="note"><%= s.lastError || '' %></td>
-                            </tr>
-                        <% }) %>
-                        </tbody>
-                    </table>
-                </div>
-            <% } else { %>
-                <p class="note">No source health data available.</p>
-            <% } %>
-        </section>
+                    <div class="glass-card">
+                        <h3 class="text-secondary"
+                            style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Last
+                            Updated</h3>
+                        <div class="flex items-center gap-md" style="margin-top: 0.5rem;">
+                            <span style="font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">
+                                <%= (data && data.metrics && data.metrics.lastUpdated) ? new Date(data.metrics.lastUpdated).toLocaleString() : 'Unknown' %>
+                            </span>
+                        </div>
+                    </div>
 
-        <% if (health && health.activeAlerts && health.activeAlerts.length) { %>
-        <section class="content-section">
-            <h2 class="section-title">Active Alerts</h2>
-            <ul>
-                <% health.activeAlerts.forEach(a => { %>
-                    <li style="margin-bottom: 0.4rem;">
-                        <span class="badge <%= (a.level==='critical')?'critical':(a.level==='error')?'critical':(a.level==='warning')?'degraded':'healthy' %>"><%= a.level.toUpperCase() %></span>
-                        <strong><%= a.title %></strong> — <%= a.description %>
-                        <span class="note">(<%= new Date(a.timestamp).toLocaleString() %>)</span>
-                    </li>
-                <% }) %>
-            </ul>
-        </section>
-        <% } %>
+                    <% if (typeof mockMode !== 'undefined' && mockMode) { %>
+                    <div class="glass-card">
+                        <h3 class="text-secondary"
+                            style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Data
+                            Mode</h3>
+                        <div class="flex items-center gap-md" style="margin-top: 0.5rem;">
+                            <span class="badge badge-warning" style="font-size: 1rem; padding: 0.5rem 1rem;">Mock Data</span>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
 
-        <% if (health && health.conflicts) { %>
-        <section class="content-section">
-            <h2 class="section-title">Data Quality & Conflicts</h2>
-            <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-bottom: 1rem;">
-                <div class="summary-card" style="background: rgba(102, 126, 234, 0.1); color: #333; border: 1px solid rgba(102, 126, 234, 0.2);">
-                    <span class="summary-value"><span class="badge <%= (health.conflicts.status === 'healthy') ? 'healthy' : (health.conflicts.status === 'elevated') ? 'degraded' : 'critical' %>"><%= health.conflicts.status.toUpperCase() %></span></span>
-                    <span class="summary-label">Conflict Status</span>
-                </div>
-                <div class="summary-card" style="background: rgba(102, 126, 234, 0.1); color: #333; border: 1px solid rgba(102, 126, 234, 0.2);">
-                    <span class="summary-value"><%= health.conflicts.totalConflicts || 0 %></span>
-                    <span class="summary-label">Total Conflicts</span>
-                </div>
-                <div class="summary-card" style="background: rgba(102, 126, 234, 0.1); color: #333; border: 1px solid rgba(102, 126, 234, 0.2);">
-                    <span class="summary-value"><%= health.conflicts.conflictRate || 0 %>/hr</span>
-                    <span class="summary-label">Conflict Rate</span>
-                </div>
-                <div class="summary-card" style="background: rgba(102, 126, 234, 0.1); color: #333; border: 1px solid rgba(102, 126, 234, 0.2);">
-                    <span class="summary-value"><%= health.conflicts.assetConflictCount || 0 %></span>
-                    <span class="summary-label">Assets with Conflicts</span>
-                </div>
-                <div class="summary-card" style="background: rgba(102, 126, 234, 0.1); color: #333; border: 1px solid rgba(102, 126, 234, 0.2);">
-                    <span class="summary-value"><%= health.conflicts.fieldConflictCount || 0 %></span>
-                    <span class="summary-label">Field Types</span>
+                <h3 class="section-title" style="font-size: 1.25rem;">Data Sources</h3>
+                <div class="glass-card" style="padding: 0; overflow: hidden;">
+                    <div style="overflow-x: auto;">
+                        <table class="glass-table">
+                            <thead>
+                                <tr>
+                                    <th>Source</th>
+                                    <th>Status</th>
+                                    <th class="text-right">Health Score</th>
+                                    <th class="text-right">Success Rate</th>
+                                    <th class="text-right">Avg Response</th>
+                                    <th>Last Error</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (health && !health.error && health.sources && health.sources.length > 0) { %>
+                                    <% health.sources.forEach(function(source) { %>
+                                        <tr>
+                                            <td style="font-weight: 600;"><%= source.sourceName || source.sourceId %></td>
+                                            <td>
+                                                <% if (source.status === 'healthy') { %>
+                                                    <span class="badge badge-success">UP</span>
+                                                <% } else if (source.status === 'degraded') { %>
+                                                    <span class="badge badge-warning">DEGRADED</span>
+                                                <% } else { %>
+                                                    <span class="badge badge-error">DOWN</span>
+                                                <% } %>
+                                            </td>
+                                            <td class="text-right text-secondary"><%= source.healthScore || '-' %></td>
+                                            <td class="text-right text-secondary">
+                                                <%= (source.errorMetrics && source.errorMetrics.errorRate !== undefined) ? (100 - source.errorMetrics.errorRate * 100).toFixed(1) + '%' : '-' %>
+                                            </td>
+                                            <td class="text-right text-secondary">
+                                                <%= (source.responseTime && source.responseTime.average) ? Math.round(source.responseTime.average) + ' ms' : '-' %>
+                                            </td>
+                                            <td class="text-secondary" style="font-size: 0.8rem; max-width: 300px; overflow: hidden; text-overflow: ellipsis;">
+                                                <%= source.lastError || '-' %>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="6" class="text-center" style="padding: 2rem;">
+                                            <div class="text-secondary">No source data available</div>
+                                        </td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+        </main>
 
-            <% if (health.conflicts.conflictsByField && Object.keys(health.conflicts.conflictsByField).length > 0) { %>
-            <div style="margin-bottom: 1rem;">
-                <h3 style="margin-bottom: 0.5rem; color: #374151;">Conflicts by Field Type</h3>
-                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                    <% Object.entries(health.conflicts.conflictsByField).forEach(([field, count]) => { %>
-                        <span class="badge degraded" style="background: #6b7280;"><%= field %> (<%= count %>)</span>
-                    <% }) %>
-                </div>
-            </div>
-            <% } %>
-
-            <% if (health.conflicts.conflictsByAsset && Object.keys(health.conflicts.conflictsByAsset).length > 0) { %>
-            <div style="margin-bottom: 1rem;">
-                <h3 style="margin-bottom: 0.5rem; color: #374151;">Top Conflicting Assets</h3>
-                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                    <% 
-                    const topAssets = Object.entries(health.conflicts.conflictsByAsset)
-                        .sort((a, b) => b[1] - a[1])
-                        .slice(0, 10);
-                    topAssets.forEach(([asset, count]) => { 
-                    %>
-                        <span class="badge <%= (count >= 3) ? 'critical' : 'degraded' %>"><%= asset %> (<%= count %>)</span>
-                    <% }) %>
-                </div>
-            </div>
-            <% } %>
-
-            <% if (health.conflicts.thresholds) { %>
-            <div class="note">
-                <strong>Thresholds:</strong> 
-                Max conflicts/hour: <%= health.conflicts.thresholds.maxConflictsPerHour %>, 
-                Max conflicts/asset: <%= health.conflicts.thresholds.maxConflictsPerAsset %>, 
-                Alert threshold: <%= (health.conflicts.thresholds.alertThreshold * 100).toFixed(1) %>% of assets
-                <% if (health.conflicts.lastConflictTime) { %>
-                <br><strong>Last conflict:</strong> <%= new Date(health.conflicts.lastConflictTime).toLocaleString() %>
-                <% } %>
-            </div>
-            <% } %>
-        </section>
-        <% } %>
-    </main>
-
-    <%- include('partials/footer') %>
-</div>
+        <%- include('partials/footer'); %>
+    </div>
 </body>
+
 </html>
