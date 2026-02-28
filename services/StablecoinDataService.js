@@ -449,6 +449,11 @@ class StablecoinDataService extends IStablecoinDataService {
         };
         this._lastRefresh = Date.now();
 
+        // Compute top-coin dominance (highest mcap coin / total mcap)
+        const topCoinMcap = viewStablecoins.length > 0 ? (viewStablecoins[0].main?.circulating_mcap || 0) : 0;
+        const totalMcap = this._metrics.totalMarketCap;
+        const dominanceValue = totalMcap > 0 ? (topCoinMcap / totalMcap) * 100 : 0;
+
         // Build view model for routes using legacy shape
         this._viewModel = {
             stablecoins: viewStablecoins,
@@ -457,6 +462,7 @@ class StablecoinDataService extends IStablecoinDataService {
                 totalMCap_s: DataFormatter.formatNumber(this._metrics.totalMarketCap),
                 totalVolume: this._metrics.totalVolume,
                 totalVolume_s: DataFormatter.formatNumber(this._metrics.totalVolume),
+                dominance: DataFormatter.formatPercentage(dominanceValue, 1),
                 lastUpdated: new Date(this._metrics.lastUpdated || Date.now()).toISOString()
             },
             platform_data: platformData

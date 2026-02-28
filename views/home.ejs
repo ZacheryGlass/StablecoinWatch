@@ -71,7 +71,7 @@
                                 <tbody>
                                     <% if (data && data.stablecoins && data.stablecoins.length> 0) { %>
                                         <% data.stablecoins.forEach(function(coin, index) { %>
-                                            <tr onclick="window.location='/coin/<%= coin.symbol %>'"
+                                            <tr onclick="window.location='/coins/<%= coin.uri %>'"
                                                 style="cursor: pointer;">
                                                 <td>
                                                     <span class="text-secondary">#<%= index + 1 %></span>

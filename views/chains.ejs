@@ -6,6 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blockchains - StablecoinWatch</title>
     <link rel="stylesheet" href="/common.css">
+    <style>
+        .chains-table th,
+        .chains-table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+        .chains-table th:nth-child(2),
+        .chains-table td:nth-child(2),
+        .chains-table th:nth-child(3),
+        .chains-table td:nth-child(3) {
+            text-align: left;
+        }
+    </style>
 </head>
 
 <body>
@@ -18,42 +31,60 @@
 
                     <div class="glass-card" style="padding: 0; overflow: hidden;">
                         <div style="overflow-x: auto;">
-                            <table class="glass-table">
+                            <table class="glass-table chains-table">
                                 <thead>
                                     <tr>
                                         <th>Rank</th>
                                         <th>Chain</th>
-                                        <th class="text-right">Market Cap</th>
-                                        <th class="text-right">Coins</th>
-                                        <th class="text-right">Dominance</th>
+                                        <th>Dominant Coin</th>
+                                        <th>Market Cap</th>
+                                        <th>Coins</th>
+                                        <th>Dominance</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <% if (data && data.platform_data && data.platform_data.length> 0) { %>
                                         <% data.platform_data.forEach(function(chain, index) { %>
-                                            <tr onclick="window.location='/chain/<%= chain.name %>'"
+                                            <tr onclick="window.location='/platforms/<%= chain.uri %>'"
                                                 style="cursor: pointer;">
                                                 <td>
                                                     <span class="text-secondary">#<%= index + 1 %></span>
                                                 </td>
                                                 <td>
                                                     <div class="flex items-center gap-md">
+                                                        <img src="https://icons.llamao.fi/icons/chains/rsz_<%= encodeURIComponent(chain.name.toLowerCase()) %>"
+                                                            alt="<%= chain.name %>"
+                                                            style="width: 32px; height: 32px; border-radius: 50%;"
+                                                            onerror="this.style.display='none'">
                                                         <div style="font-weight: 600;">
                                                             <%= chain.name %>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td class="text-right">
+                                                <td>
+                                                    <% if (chain.dominant_stablecoin) { %>
+                                                        <% var domCoin = (data.stablecoins || []).find(function(c) { return c.symbol === chain.dominant_stablecoin.symbol; }); %>
+                                                        <div class="flex items-center gap-sm">
+                                                            <% if (domCoin && domCoin.img_url) { %>
+                                                                <img src="<%= domCoin.img_url %>" alt="<%= chain.dominant_stablecoin.name %>" style="width: 24px; height: 24px; border-radius: 50%;">
+                                                            <% } %>
+                                                            <span style="font-weight: 500;"><%= chain.dominant_stablecoin.name %></span>
+                                                        </div>
+                                                    <% } else { %>
+                                                        <span class="text-secondary">-</span>
+                                                    <% } %>
+                                                </td>
+                                                <td>
                                                     <div style="font-weight: 500;">
                                                         <%= chain.mcap_sum_s %>
                                                     </div>
                                                 </td>
-                                                <td class="text-right">
+                                                <td>
                                                     <span class="badge badge-neutral">
                                                         <%= chain.coin_count %>
                                                     </span>
                                                 </td>
-                                                <td class="text-right">
+                                                <td>
                                                     <span class="text-primary">
                                                         <%= chain.supply_percentage_s %>
                                                     </span>
@@ -62,7 +93,7 @@
                                             <% }); %>
                                                 <% } else { %>
                                                     <tr>
-                                                        <td colspan="5" class="text-center" style="padding: 3rem;">
+                                                        <td colspan="6" class="text-center" style="padding: 3rem;">
                                                             <div class="text-secondary">No blockchain data available
                                                             </div>
                                                         </td>
