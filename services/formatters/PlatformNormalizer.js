@@ -102,8 +102,12 @@ class PlatformNormalizer {
         if (name.includes('zksync')) return 'zkSync Era';
         if (name.includes('cosmos')) return 'Cosmos Hub';
         
+        // Keep names that already carry their own casing (e.g. "OP Mainnet", "Hyperliquid L1")
+        const trimmed = rawName.trim();
+        if (/[A-Z]/.test(trimmed)) return trimmed;
+
         // Default capitalization
-        return rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
+        return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
     }
 
     /**

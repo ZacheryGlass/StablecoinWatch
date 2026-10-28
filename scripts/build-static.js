@@ -104,6 +104,7 @@ async function main() {
       formatSupply: utilFmt.formatSupply,
     },
     featureFlags: AppConfig.featureFlags,
+    systemStatus: health && !health.error ? (health.status || null) : null,
   };
 
   console.log('Rendering pages...');
@@ -129,6 +130,11 @@ async function main() {
       health,
       mockMode: false,
       active: 'status',
+      thresholds: {
+        errorRate: AppConfig.health.errorRateThreshold,
+        responseTimeMs: AppConfig.health.responseTimeThreshold,
+      },
+      healthApiPath: '/api-health.json',
       ...commonLocals,
     });
     await ensureDir(path.join(outDir, 'status'));
@@ -199,6 +205,7 @@ async function main() {
   await copyFile(path.resolve(__dirname, '..', 'res', 'css', 'components.css'), path.join(outDir, 'components.css'));
   await copyFile(path.resolve(__dirname, '..', 'res', 'js', 'chart.min.js'), path.join(outDir, 'chart.min.js'));
   await copyFile(path.resolve(__dirname, '..', 'res', 'js', 'filter-system.js'), path.join(outDir, 'filter-system.js'));
+  await copyFile(path.resolve(__dirname, '..', 'res', 'js', 'table-tools.js'), path.join(outDir, 'table-tools.js'));
 
   // Images at root (default-logo.png and others referenced by templates/logic)
   const imgDir = path.resolve(__dirname, '..', 'res', 'img');

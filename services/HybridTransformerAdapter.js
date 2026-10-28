@@ -123,6 +123,16 @@ class HybridTransformerAdapter extends IViewModelTransformer {
             circulating_supply: sd.circulating ?? null,
             total_supply: sd.total ?? null,
             networkBreakdown,
+            // Raw DeFiLlama payload: chain supply, peg type and supply history
+            defillamaData: meta.defillamaData || null,
+            // Each source's own figures plus which source the merged value came from
+            source_snapshots: agg.sourceSnapshots || {},
+            value_sources: {
+                price: md.priceSource || null,
+                marketCap: md.marketCapSource || null,
+                volume: md.volumeSource || null,
+                circulating: sd.circulatingSource || null
+            },
             tags: Array.isArray(meta.tags) ? meta.tags : ['stablecoin'],
             source: 'aggregated',
             _cmc: cmcContainer,

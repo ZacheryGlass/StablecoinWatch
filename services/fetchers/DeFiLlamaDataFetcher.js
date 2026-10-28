@@ -435,6 +435,10 @@ class DeFiLlamaDataFetcher extends IDataFetcher {
                         id: coin.id,
                         rawChainCirculating: coin.chainCirculating,
                         rawCirculating: coin.circulating,
+                        rawCirculatingPrevDay: coin.circulatingPrevDay || null,
+                        rawCirculatingPrevWeek: coin.circulatingPrevWeek || null,
+                        rawCirculatingPrevMonth: coin.circulatingPrevMonth || null,
+                        price: typeof currentPrice === 'number' ? currentPrice : null,
                     }
                 },
                 assetCategory: classification.assetCategory,

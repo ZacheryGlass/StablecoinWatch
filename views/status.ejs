@@ -9,101 +9,156 @@
 </head>
 
 <body>
+    <%
+        var healthOk = health && !health.error;
+        var allSources = (healthOk && Array.isArray(health.sources)) ? health.sources : [];
+        var dataSources = allSources.filter(function (s) { return s.sourceId !== 'app'; });
+        var appSource = allSources.find(function (s) { return s.sourceId === 'app'; });
+        var upCount = dataSources.filter(function (s) { return s.status === 'healthy'; }).length;
+        var overall = healthOk ? health.status : null;
+        var limits = typeof thresholds !== 'undefined' && thresholds ? thresholds : {};
+        var errorPct = typeof limits.errorRate === 'number' ? Math.round(limits.errorRate * 100) : null;
+        var slowSeconds = typeof limits.responseTimeMs === 'number' ? limits.responseTimeMs / 1000 : null;
+        var apiPath = typeof healthApiPath !== 'undefined' && healthApiPath ? healthApiPath : '/api/health';
+        var statusBadge = function (status) {
+            if (status === 'healthy') return { cls: 'badge-success', text: 'UP' };
+            if (status === 'degraded') return { cls: 'badge-warning', text: 'DEGRADED' };
+            return { cls: 'badge-error', text: 'DOWN' };
+        };
+    %>
     <div id="wrapper">
-        <%- include('partials/header', { active: 'status', data: data }); %>
+        <%- include('partials/header', { active: 'status', data: data, systemStatus: overall }); %>
 
         <main>
             <div class="container">
-                <h2 class="section-title">System Status</h2>
+                <h1 class="section-title">System Status</h1>
+
+                <% if (typeof mockMode !== 'undefined' && mockMode) { %>
+                    <div class="glass-card section" role="note" style="border-color: rgba(234, 179, 8, 0.2); background: rgba(234, 179, 8, 0.1);">
+                        <strong class="text-warning">Mock data mode.</strong>
+                        Every figure on the site comes from local snapshot files, not the live APIs.
+                    </div>
+                <% } %>
 
                 <div class="grid-dashboard">
                     <div class="glass-card">
-                        <h3 class="text-secondary"
-                            style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Overall
-                            Health</h3>
-                        <div class="flex items-center gap-md" style="margin-top: 0.5rem;">
-                            <% if (health && !health.error && health.status === 'healthy') { %>
-                                <span class="badge badge-success"
-                                    style="font-size: 1rem; padding: 0.5rem 1rem;">Operational</span>
+                        <h2 class="kpi-label">Overall Health</h2>
+                        <div style="margin-top: 0.75rem;">
+                            <% if (overall === 'healthy') { %>
+                                <span class="badge badge-success" style="font-size: 1rem; padding: 0.5rem 1rem;">All systems operational</span>
+                            <% } else if (overall === 'degraded') { %>
+                                <span class="badge badge-warning" style="font-size: 1rem; padding: 0.5rem 1rem;">Degraded</span>
                             <% } else { %>
-                                <span class="badge badge-error"
-                                    style="font-size: 1rem; padding: 0.5rem 1rem;">Issues Detected</span>
+                                <span class="badge badge-error" style="font-size: 1rem; padding: 0.5rem 1rem;">Issues Detected</span>
                             <% } %>
                         </div>
+                        <% if (dataSources.length > 0) { %>
+                            <p class="kpi-sub" style="margin-bottom: 0;">
+                                <%= upCount %> of <%= dataSources.length %> data sources up<% if (appSource) { %> &middot; web app <%= appSource.status === 'healthy' ? 'up' : 'having issues' %><% } %>
+                            </p>
+                        <% } %>
                     </div>
 
                     <div class="glass-card">
-                        <h3 class="text-secondary"
-                            style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Last
-                            Updated</h3>
-                        <div class="flex items-center gap-md" style="margin-top: 0.5rem;">
-                            <span style="font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">
-                                <%= (data && data.metrics && data.metrics.lastUpdated) ? new Date(data.metrics.lastUpdated).toLocaleString() : 'Unknown' %>
-                            </span>
+                        <h2 class="kpi-label">Last Updated</h2>
+                        <div style="margin-top: 0.75rem; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">
+                            <%= h.formatUtc(data && data.metrics && data.metrics.lastUpdated, true) %>
                         </div>
+                        <p class="kpi-sub" style="margin-bottom: 0;">Data mode: <%= typeof mockMode !== 'undefined' && mockMode ? 'Mock snapshots' : 'Live APIs' %></p>
                     </div>
-
-                    <% if (typeof mockMode !== 'undefined' && mockMode) { %>
-                    <div class="glass-card">
-                        <h3 class="text-secondary"
-                            style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Data
-                            Mode</h3>
-                        <div class="flex items-center gap-md" style="margin-top: 0.5rem;">
-                            <span class="badge badge-warning" style="font-size: 1rem; padding: 0.5rem 1rem;">Mock Data</span>
-                        </div>
-                    </div>
-                    <% } %>
                 </div>
 
-                <h3 class="section-title" style="font-size: 1.25rem;">Data Sources</h3>
-                <div class="glass-card" style="padding: 0; overflow: hidden;">
-                    <div style="overflow-x: auto;">
-                        <table class="glass-table">
-                            <thead>
-                                <tr>
-                                    <th>Source</th>
-                                    <th>Status</th>
-                                    <th class="text-right">Health Score</th>
-                                    <th class="text-right">Success Rate</th>
-                                    <th class="text-right">Avg Response</th>
-                                    <th>Last Error</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% if (health && !health.error && health.sources && health.sources.length > 0) { %>
-                                    <% health.sources.forEach(function(source) { %>
+                <section class="section" aria-labelledby="sources-title">
+                    <h2 id="sources-title" class="section-title" style="font-size: 1.25rem;">Data Sources</h2>
+                    <div class="glass-card table-card">
+                        <div class="table-scroll">
+                            <table class="glass-table" style="min-width: 860px;">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Source</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col" class="text-right">Health</th>
+                                        <th scope="col" class="text-right">Success Rate</th>
+                                        <th scope="col" class="text-right">Avg Response</th>
+                                        <th scope="col">Last Error</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (dataSources.length > 0) { %>
+                                        <% dataSources.forEach(function(source) { var badge = statusBadge(source.status); %>
+                                            <tr>
+                                                <th scope="row">
+                                                    <div style="font-weight: 600;"><%= h.sourceName(source.sourceId) %></div>
+                                                    <div class="coin-sub" style="font-weight: 400;"><%= h.sourceRole(source.sourceId) %></div>
+                                                </th>
+                                                <td><span class="badge <%= badge.cls %>"><%= badge.text %></span></td>
+                                                <td class="num"><%= typeof source.healthScore === 'number' ? Math.round(source.healthScore) : '-' %><span class="text-secondary">/100</span></td>
+                                                <td class="num">
+                                                    <%= (source.errorMetrics && typeof source.errorMetrics.errorRate === 'number') ? (100 - source.errorMetrics.errorRate * 100).toFixed(1) + '%' : '-' %>
+                                                </td>
+                                                <td class="num">
+                                                    <%= (source.responseTime && source.responseTime.average) ? Math.round(source.responseTime.average) + ' ms' : '-' %>
+                                                </td>
+                                                <td class="text-secondary" style="font-size: 0.8rem; max-width: 300px; overflow: hidden; text-overflow: ellipsis;">
+                                                    <%= source.lastError || 'None' %>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
                                         <tr>
-                                            <td style="font-weight: 600;"><%= source.sourceName || source.sourceId %></td>
-                                            <td>
-                                                <% if (source.status === 'healthy') { %>
-                                                    <span class="badge badge-success">UP</span>
-                                                <% } else if (source.status === 'degraded') { %>
-                                                    <span class="badge badge-warning">DEGRADED</span>
-                                                <% } else { %>
-                                                    <span class="badge badge-error">DOWN</span>
-                                                <% } %>
-                                            </td>
-                                            <td class="text-right text-secondary"><%= source.healthScore || '-' %></td>
-                                            <td class="text-right text-secondary">
-                                                <%= (source.errorMetrics && source.errorMetrics.errorRate !== undefined) ? (100 - source.errorMetrics.errorRate * 100).toFixed(1) + '%' : '-' %>
-                                            </td>
-                                            <td class="text-right text-secondary">
-                                                <%= (source.responseTime && source.responseTime.average) ? Math.round(source.responseTime.average) + ' ms' : '-' %>
-                                            </td>
-                                            <td class="text-secondary" style="font-size: 0.8rem; max-width: 300px; overflow: hidden; text-overflow: ellipsis;">
-                                                <%= source.lastError || '-' %>
+                                            <td colspan="6" class="text-center" style="padding: 2rem;">
+                                                <div class="text-secondary">No source data available</div>
                                             </td>
                                         </tr>
-                                    <% }); %>
-                                <% } else { %>
-                                    <tr>
-                                        <td colspan="6" class="text-center" style="padding: 2rem;">
-                                            <div class="text-secondary">No source data available</div>
-                                        </td>
-                                    </tr>
-                                <% } %>
-                            </tbody>
-                        </table>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <% if (appSource) { var appBadge = statusBadge(appSource.status); %>
+                    <section class="glass-card section flex items-center justify-between" style="flex-wrap: wrap; gap: 0.75rem 2rem;" aria-labelledby="app-title">
+                        <div>
+                            <h2 id="app-title" style="margin: 0; font-size: 1rem; font-weight: 600;">Web App</h2>
+                            <p class="kpi-sub" style="margin: 0.125rem 0 0;">Page rendering and the health API</p>
+                        </div>
+                        <div class="flex items-center" style="flex-wrap: wrap; gap: 0.75rem 2rem; font-size: 0.875rem; color: var(--text-secondary);">
+                            <% if (appSource.responseTime && appSource.responseTime.average) { %>
+                                <span>Avg response <strong class="text-primary"><%= Math.round(appSource.responseTime.average) %> ms</strong></span>
+                            <% } %>
+                            <span>Health <strong class="text-primary"><%= typeof appSource.healthScore === 'number' ? Math.round(appSource.healthScore) : '-' %></strong>/100</span>
+                            <span class="badge <%= appBadge.cls %>"><%= appBadge.text %></span>
+                        </div>
+                    </section>
+                <% } %>
+
+                <div class="grid-dashboard" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));">
+                    <div class="glass-card">
+                        <h2 class="kpi-label">What the States Mean</h2>
+                        <dl style="margin: 1rem 0 0; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.875rem;">
+                            <div style="display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 0.75rem;">
+                                <dt><span class="badge badge-success">UP</span></dt>
+                                <dd style="margin: 0;" class="text-secondary">
+                                    Requests are succeeding<%= errorPct !== null ? ' (error rate under ' + errorPct + '%)' : '' %><%= slowSeconds !== null ? ' and responses average under ' + slowSeconds + ' seconds' : '' %>.
+                                </dd>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 0.75rem;">
+                                <dt><span class="badge badge-warning">DEGRADED</span></dt>
+                                <dd style="margin: 0;" class="text-secondary">
+                                    Errors or slow responses are above the limit<%= errorPct !== null && slowSeconds !== null ? ' (' + errorPct + '% errors or ' + slowSeconds + ' seconds)' : '' %>. Figures from this source may be stale.
+                                </dd>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 0.75rem;">
+                                <dt><span class="badge badge-error">DOWN</span></dt>
+                                <dd style="margin: 0;" class="text-secondary">Requests to this source are failing.</dd>
+                            </div>
+                        </dl>
+                    </div>
+                    <div class="glass-card">
+                        <h2 class="kpi-label">For Monitoring</h2>
+                        <p class="kpi-sub">The same data as JSON, for uptime checks and alerts:</p>
+                        <a href="<%= apiPath %>"><code style="display: inline-block; padding: 0.5rem 0.75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: rgba(15, 23, 42, 0.6); font-size: 0.875rem;"><%= apiPath %></code></a>
                     </div>
                 </div>
             </div>

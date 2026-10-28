@@ -6,108 +6,157 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blockchains - StablecoinWatch</title>
     <link rel="stylesheet" href="/common.css">
-    <style>
-        .chains-table th,
-        .chains-table td {
-            text-align: center;
-            vertical-align: middle;
-        }
-        .chains-table th:nth-child(2),
-        .chains-table td:nth-child(2),
-        .chains-table th:nth-child(3),
-        .chains-table td:nth-child(3) {
-            text-align: left;
-        }
-    </style>
 </head>
 
 <body>
+    <%
+        var chains = (data && data.platform_data) || [];
+        var coinsBySymbol = {};
+        ((data && data.stablecoins) || []).forEach(function (c) { coinsBySymbol[c.symbol] = c; });
+        var summary = h.getChainsSummary(chains, 5);
+        var pct = function (v) { return (typeof v === 'number' ? v.toFixed(1) : '-') + '%'; };
+    %>
     <div id="wrapper">
-        <%- include('partials/header', { active: 'chains' , data: data }); %>
+        <%- include('partials/header', { active: 'chains', data: data }); %>
 
-            <main>
-                <div class="container">
-                    <h2 class="section-title">Top Blockchains</h2>
+        <main>
+            <div class="container">
+                <section class="card-grid" aria-label="Chain summary">
+                    <div class="card-pair">
+                        <div class="glass-card">
+                            <h3 class="kpi-label">Value on Chains</h3>
+                            <div class="kpi-value"><%= h.formatCompact(summary.total) %></div>
+                            <div class="kpi-sub">Stablecoin supply valued in USD</div>
+                        </div>
+                        <div class="glass-card">
+                            <h3 class="kpi-label">Chains Tracked</h3>
+                            <div class="kpi-value"><%= summary.count %></div>
+                            <div class="kpi-sub"><%= summary.overMillion %> hold more than $1M</div>
+                        </div>
+                    </div>
+                    <div class="card-pair">
+                        <div class="glass-card">
+                            <h3 class="kpi-label"><%= summary.top ? summary.top.name : 'Top Chain' %> Share</h3>
+                            <div class="kpi-value"><%= summary.top ? pct(summary.top.pct) : '-' %></div>
+                            <div class="kpi-sub"><%= summary.next ? summary.next.name + ' next at ' + pct(summary.next.pct) : '' %></div>
+                        </div>
+                        <div class="glass-card">
+                            <h3 class="kpi-label">Top 2 Chains</h3>
+                            <div class="kpi-value"><%= pct(summary.top2) %></div>
+                            <div class="kpi-sub">Top 10 hold <%= pct(summary.top10) %></div>
+                        </div>
+                    </div>
+                </section>
 
-                    <div class="glass-card" style="padding: 0; overflow: hidden;">
-                        <div style="overflow-x: auto;">
-                            <table class="glass-table chains-table">
+                <% if (summary.segments.length > 0) { %>
+                    <section class="glass-card section" aria-labelledby="share-title">
+                        <h3 id="share-title" class="kpi-label">Share of Stablecoin Value</h3>
+                        <div class="share-bar" role="img"
+                            aria-label="<%= summary.segments.map(function (s) { return s.name + ' ' + pct(s.pct); }).join(', ') %>, all others <%= pct(summary.others.pct) %>">
+                            <% summary.segments.forEach(function (s, i) { %>
+                                <span class="seg-<%= i + 1 %>" style="flex: 0 0 <%= s.pct.toFixed(2) %>%;"></span>
+                            <% }); %>
+                            <span class="seg-rest" style="flex: 1 1 auto;"></span>
+                        </div>
+                        <ul class="share-legend">
+                            <% summary.segments.forEach(function (s, i) { %>
+                                <li><span class="swatch seg-<%= i + 1 %>" aria-hidden="true"></span><%= s.name %> <strong><%= pct(s.pct) %></strong></li>
+                            <% }); %>
+                            <li><span class="swatch seg-rest" aria-hidden="true"></span><%= summary.others.count %> others <strong><%= pct(summary.others.pct) %></strong></li>
+                        </ul>
+                    </section>
+                <% } %>
+
+                <section aria-labelledby="list-title">
+                    <div class="section-head">
+                        <h2 id="list-title" class="section-title">Top Blockchains</h2>
+                        <div class="search-box">
+                            <label for="chain-filter" class="sr-only">Filter chains by name</label>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="#94a3b8" stroke-width="2"></circle><path d="M20 20l-3.5-3.5" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"></path></svg>
+                            <input id="chain-filter" type="search" placeholder="Filter chains" autocomplete="off" data-search-input>
+                        </div>
+                    </div>
+
+                    <div class="glass-card table-card" data-table data-page-size="25">
+                        <div class="table-scroll">
+                            <table class="glass-table" style="min-width: 1040px;">
+                                <caption class="sr-only">Blockchains ranked by stablecoin value in USD</caption>
                                 <thead>
                                     <tr>
-                                        <th>Rank</th>
-                                        <th>Chain</th>
-                                        <th>Dominant Coin</th>
-                                        <th>Market Cap</th>
-                                        <th>Coins</th>
-                                        <th>Dominance</th>
+                                        <th scope="col">Rank</th>
+                                        <th scope="col">Chain</th>
+                                        <th scope="col" class="text-right sorted" aria-sort="descending">Stablecoin Value &darr;</th>
+                                        <th scope="col">Dominance</th>
+                                        <th scope="col" class="text-right">Supply 7d</th>
+                                        <th scope="col">Coins</th>
+                                        <th scope="col">Dominant Coin</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <% if (data && data.platform_data && data.platform_data.length> 0) { %>
-                                        <% data.platform_data.forEach(function(chain, index) { %>
-                                            <tr onclick="window.location='/platforms/<%= chain.uri %>'"
-                                                style="cursor: pointer;">
-                                                <td>
-                                                    <span class="text-secondary">#<%= index + 1 %></span>
-                                                </td>
-                                                <td>
-                                                    <div class="flex items-center gap-md">
-                                                        <img src="https://icons.llamao.fi/icons/chains/rsz_<%= encodeURIComponent(chain.name.toLowerCase()) %>"
-                                                            alt="<%= chain.name %>"
-                                                            style="width: 32px; height: 32px; border-radius: 50%;"
-                                                            onerror="this.style.display='none'">
-                                                        <div style="font-weight: 600;">
-                                                            <%= chain.name %>
-                                                        </div>
+                                    <% chains.forEach(function(chain, index) {
+                                        var share = summary.total > 0 ? (chain.mcap_sum / summary.total) * 100 : 0;
+                                        var dom = chain.dominant_stablecoin;
+                                        var domCoin = dom ? coinsBySymbol[dom.symbol] : null;
+                                    %>
+                                        <tr class="row-link" data-href="/platforms/<%= chain.uri %>" data-search="<%= String(chain.name).toLowerCase() %>">
+                                            <td class="text-secondary">#<%= index + 1 %></td>
+                                            <td>
+                                                <div class="coin-cell">
+                                                    <img src="<%= h.getChainIcon(chain.name) %>" alt="" class="logo" loading="lazy" onerror="this.style.visibility='hidden'">
+                                                    <a href="/platforms/<%= chain.uri %>"><%= chain.name %></a>
+                                                </div>
+                                            </td>
+                                            <td class="num"><%= chain.mcap_sum_s %></td>
+                                            <td>
+                                                <div class="share-cell">
+                                                    <div class="supply-bar"><div class="supply-bar-fill" style="width: <%= Math.min(share, 100).toFixed(2) %>%"></div></div>
+                                                    <span><%= h.formatShare(share) %></span>
+                                                </div>
+                                            </td>
+                                            <td class="num <%= h.changeClass(chain.change_7d) %>"><%= h.formatSigned(chain.change_7d) %></td>
+                                            <td><span class="badge badge-neutral"><%= chain.coin_count %></span></td>
+                                            <td style="white-space: nowrap;">
+                                                <% if (dom) { %>
+                                                    <div class="coin-cell" style="gap: 0.5rem;">
+                                                        <% if (domCoin && domCoin.img_url) { %>
+                                                            <img src="<%= domCoin.img_url %>" alt="" class="logo logo-sm" loading="lazy">
+                                                        <% } else { %>
+                                                            <span class="logo logo-sm logo-fallback" aria-hidden="true"><%= String(dom.symbol || '?').charAt(0) %></span>
+                                                        <% } %>
+                                                        <span style="font-weight: 500;"><%= dom.symbol %></span>
+                                                        <% if (typeof dom.percentage === 'number') { %><span class="text-secondary" style="font-size: 0.875rem;"><%= dom.percentage.toFixed(1) %>% of chain</span><% } %>
                                                     </div>
-                                                </td>
-                                                <td>
-                                                    <% if (chain.dominant_stablecoin) { %>
-                                                        <% var domCoin = (data.stablecoins || []).find(function(c) { return c.symbol === chain.dominant_stablecoin.symbol; }); %>
-                                                        <div class="flex items-center gap-sm">
-                                                            <% if (domCoin && domCoin.img_url) { %>
-                                                                <img src="<%= domCoin.img_url %>" alt="<%= chain.dominant_stablecoin.name %>" style="width: 24px; height: 24px; border-radius: 50%;">
-                                                            <% } %>
-                                                            <span style="font-weight: 500;"><%= chain.dominant_stablecoin.name %></span>
-                                                        </div>
-                                                    <% } else { %>
-                                                        <span class="text-secondary">-</span>
-                                                    <% } %>
-                                                </td>
-                                                <td>
-                                                    <div style="font-weight: 500;">
-                                                        <%= chain.mcap_sum_s %>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span class="badge badge-neutral">
-                                                        <%= chain.coin_count %>
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span class="text-primary">
-                                                        <%= chain.supply_percentage_s %>
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                            <% }); %>
                                                 <% } else { %>
-                                                    <tr>
-                                                        <td colspan="6" class="text-center" style="padding: 3rem;">
-                                                            <div class="text-secondary">No blockchain data available
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                    <% } %>
+                                                    <span class="text-secondary">&mdash;</span>
+                                                <% } %>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
                                 </tbody>
                             </table>
                         </div>
+                        <p class="table-empty" data-empty <%= chains.length > 0 ? 'hidden' : '' %>>
+                            <%= chains.length > 0 ? 'No chains match that name.' : 'No blockchain data available' %>
+                        </p>
+                        <div class="table-footer">
+                            <span>Dominance is each chain's share of USD value. Supply 7d counts USD-pegged coins only.</span>
+                            <div class="pager">
+                                <span data-count><%= chains.length %> chains</span>
+                                <div class="pill-group" data-pager hidden>
+                                    <button type="button" class="pill" data-prev aria-label="Previous page">&lsaquo;</button>
+                                    <span class="sr-only" data-page aria-live="polite"></span>
+                                    <button type="button" class="pill" data-next aria-label="Next page">&rsaquo;</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </main>
+                </section>
+            </div>
+        </main>
 
-            <%- include('partials/footer'); %>
+        <%- include('partials/footer'); %>
     </div>
+    <script src="/table-tools.js"></script>
 </body>
 
 </html>

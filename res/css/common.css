@@ -24,6 +24,7 @@ body {
 main {
     flex: 1;
     width: 100%;
+    box-sizing: border-box;
     max-width: 1400px;
     margin: 0 auto;
     padding: var(--space-xl) var(--space-md);

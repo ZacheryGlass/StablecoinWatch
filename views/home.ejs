@@ -9,145 +9,192 @@
 </head>
 
 <body>
+    <%
+        var coins = (data && data.stablecoins) || [];
+        var metrics = (data && data.metrics) || {};
+        var supplyChange = h.getMarketSupplyChange(coins);
+        var pegWatch = h.getPegWatch(coins);
+        var share = h.getMarketShare(coins, metrics.totalMCap, 5);
+        var volumeShare = metrics.totalMCap > 0 && typeof metrics.totalVolume === 'number'
+            ? (metrics.totalVolume / metrics.totalMCap) * 100 : null;
+        var topCoin = coins[0];
+        var secondCoin = coins[1];
+        var pct = function (v) { return (typeof v === 'number' ? v.toFixed(1) : '-') + '%'; };
+    %>
     <div id="wrapper">
-        <%- include('partials/header', { active: 'home' , data: data }); %>
+        <%- include('partials/header', { active: 'home', data: data }); %>
 
-            <main>
-                <div class="container">
-                    <div class="grid-dashboard">
-                        <!-- Market Cap Card -->
+        <main>
+            <div class="container">
+                <section class="card-grid" aria-label="Market summary">
+                    <div class="card-pair">
                         <div class="glass-card">
-                            <h3 class="text-secondary"
-                                style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Total
-                                Market Cap</h3>
-                            <div class="flex items-center gap-sm mt-2">
-                                <span style="font-size: 2rem; font-weight: 700; color: var(--text-primary);">
-                                    <%= (data && data.metrics && data.metrics.totalMCap_s) || '-' %>
-                                </span>
+                            <h3 class="kpi-label">Total Market Cap</h3>
+                            <div class="kpi-value"><%= metrics.totalMCap_s || '-' %></div>
+                            <div class="kpi-sub">
+                                <span class="<%= h.changeClass(supplyChange.d7) %>"><%= h.formatSigned(supplyChange.d7) %></span> supply 7d
+                                &middot; <span class="<%= h.changeClass(supplyChange.d30) %>"><%= h.formatSigned(supplyChange.d30) %></span> 30d
                             </div>
                         </div>
-
-                        <!-- Volume Card -->
                         <div class="glass-card">
-                            <h3 class="text-secondary"
-                                style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">24h
-                                Volume</h3>
-                            <div class="flex items-center gap-sm mt-2">
-                                <span style="font-size: 2rem; font-weight: 700; color: var(--text-primary);">
-                                    <%= (data && data.metrics && data.metrics.totalVolume_s) || '-' %>
-                                </span>
+                            <h3 class="kpi-label">24h Volume</h3>
+                            <div class="kpi-value"><%= metrics.totalVolume_s || '-' %></div>
+                            <div class="kpi-sub"><%= volumeShare !== null ? pct(volumeShare) + ' of market cap traded' : '' %></div>
+                        </div>
+                    </div>
+                    <div class="card-pair">
+                        <div class="glass-card">
+                            <h3 class="kpi-label">Top Coin Dominance</h3>
+                            <div class="kpi-value"><%= metrics.dominance || '-' %></div>
+                            <div class="kpi-sub">
+                                <% if (topCoin) { %><%= topCoin.symbol %><% } %>
+                                <% if (secondCoin && share.segments[1]) { %> &middot; <%= secondCoin.symbol %> next at <%= pct(share.segments[1].pct) %><% } %>
                             </div>
                         </div>
-
-                        <!-- Dominance Card -->
                         <div class="glass-card">
-                            <h3 class="text-secondary"
-                                style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Top Coin
-                                Dominance</h3>
-                            <div class="flex items-center gap-sm mt-2">
-                                <span style="font-size: 2rem; font-weight: 700; color: var(--text-primary);">
-                                    <%= (data && data.metrics && data.metrics.dominance) || '-' %>
-                                </span>
+                            <h3 class="kpi-label">Peg Watch</h3>
+                            <div class="kpi-value">
+                                <span class="<%= pegWatch.off > 0 ? 'text-down' : 'text-up' %>"><%= pegWatch.off %></span>
+                                <span class="kpi-sub" style="font-weight: 400;">off peg by more than 50 bp</span>
+                            </div>
+                            <div class="kpi-sub">
+                                <%= pegWatch.drift %> drifting &middot; <%= pegWatch.on %> within 10 bp
+                                <% if (pegWatch.largestOff) { %>
+                                    &middot; largest off peg: <a href="/coins/<%= pegWatch.largestOff.uri %>" class="text-primary"><%= pegWatch.largestOff.symbol %> <%= pegWatch.largestOff.text %></a>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <% if (share.segments.length > 0) { %>
+                    <section class="glass-card section" aria-labelledby="share-title">
+                        <h3 id="share-title" class="kpi-label">Market Share</h3>
+                        <div class="share-bar" role="img"
+                            aria-label="<%= share.segments.map(function (s) { return s.symbol + ' ' + pct(s.pct); }).join(', ') %>, all others <%= pct(share.others.pct) %>">
+                            <% share.segments.forEach(function (s, i) { %>
+                                <span class="seg-<%= i + 1 %>" style="flex: 0 0 <%= s.pct.toFixed(2) %>%;"></span>
+                            <% }); %>
+                            <span class="seg-rest" style="flex: 1 1 auto;"></span>
+                        </div>
+                        <ul class="share-legend">
+                            <% share.segments.forEach(function (s, i) { %>
+                                <li><span class="swatch seg-<%= i + 1 %>" aria-hidden="true"></span><%= s.symbol %> <strong><%= pct(s.pct) %></strong></li>
+                            <% }); %>
+                            <li><span class="swatch seg-rest" aria-hidden="true"></span><%= share.others.count %> others <strong><%= pct(share.others.pct) %></strong></li>
+                        </ul>
+                    </section>
+                <% } %>
+
+                <section aria-labelledby="list-title">
+                    <div class="section-head">
+                        <h2 id="list-title" class="section-title">Top Stablecoins</h2>
+                        <div class="toolbar">
+                            <div class="pill-group" role="group" aria-label="Filter by peg">
+                                <button type="button" class="pill" data-filter="all" aria-pressed="true">All</button>
+                                <button type="button" class="pill" data-filter="usd" aria-pressed="false">USD</button>
+                                <button type="button" class="pill" data-filter="eur" aria-pressed="false">EUR</button>
+                                <button type="button" class="pill" data-filter="other" aria-pressed="false">Other</button>
+                                <button type="button" class="pill" data-filter="yield" aria-pressed="false">Yield-bearing</button>
+                            </div>
+                            <div class="search-box">
+                                <label for="coin-filter" class="sr-only">Filter by name or symbol</label>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="#94a3b8" stroke-width="2"></circle><path d="M20 20l-3.5-3.5" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"></path></svg>
+                                <input id="coin-filter" type="search" placeholder="Filter by name or symbol" autocomplete="off" data-search-input>
                             </div>
                         </div>
                     </div>
 
-                    <h2 class="section-title">Top Stablecoins</h2>
-
-                    <div class="glass-card" style="padding: 0; overflow: hidden;">
-                        <div style="overflow-x: auto;">
-                            <table class="glass-table">
+                    <div class="glass-card table-card" data-table data-page-size="25">
+                        <div class="table-scroll">
+                            <table class="glass-table" style="min-width: 1100px;">
+                                <caption class="sr-only">Stablecoins ranked by market cap</caption>
                                 <thead>
                                     <tr>
-                                        <th>Rank</th>
-                                        <th>Name</th>
-                                        <th>Price</th>
-                                        <th class="text-right">Market Cap</th>
-                                        <th class="text-right">Volume (24h)</th>
-                                        <th class="text-right">Circulating Supply</th>
-                                        <th>Chain</th>
+                                        <th scope="col">Rank</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Price</th>
+                                        <th scope="col">Peg</th>
+                                        <th scope="col" class="text-right sorted" aria-sort="descending">Market Cap &darr;</th>
+                                        <th scope="col" class="text-right">Supply 7d</th>
+                                        <th scope="col" class="text-right">Volume (24h)</th>
+                                        <th scope="col">Chains</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <% if (data && data.stablecoins && data.stablecoins.length> 0) { %>
-                                        <% data.stablecoins.forEach(function(coin, index) { %>
-                                            <tr onclick="window.location='/coins/<%= coin.uri %>'"
-                                                style="cursor: pointer;">
-                                                <td>
-                                                    <span class="text-secondary">#<%= index + 1 %></span>
-                                                </td>
-                                                <td>
-                                                    <div class="flex items-center gap-md">
-                                                        <% if (coin.img_url) { %>
-                                                            <img src="<%= coin.img_url %>" alt="<%= coin.name %>"
-                                                                style="width: 32px; height: 32px; border-radius: 50%;">
-                                                            <% } %>
-                                                                <div>
-                                                                    <div style="font-weight: 600;">
-                                                                        <%= coin.name %>
-                                                                    </div>
-                                                                    <div class="text-secondary"
-                                                                        style="font-size: 0.75rem;">
-                                                                        <%= coin.symbol %>
-                                                                    </div>
-                                                                </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div style="font-weight: 500;"><%= coin.price_s %>
-                                                    </div>
-                                                </td>
-                                                <td class="text-right">
-                                                    <div style="font-weight: 500;">
-                                                        <%= coin.mcap_s %>
-                                                    </div>
-                                                </td>
-                                                <td class="text-right">
-                                                    <div style="font-weight: 500;">
-                                                        <%= coin.vol_s %>
-                                                    </div>
-                                                </td>
-                                                <td class="text-right">
-                                                    <div class="text-secondary">
-                                                        <%= coin.supply_s %>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <% if (coin.platforms && coin.platforms.length > 0) { %>
-                                                        <div class="flex gap-sm" style="flex-wrap: wrap;">
-                                                            <% coin.platforms.slice(0, 3).forEach(function(p) { %>
-                                                                <span class="badge badge-success">
-                                                                    <%= p.name %>
-                                                                </span>
-                                                                <% }); %>
-                                                                    <% if (coin.platforms.length > 3) { %>
-                                                                        <span class="badge"
-                                                                            style="background: rgba(255,255,255,0.1);">+<%= coin.platforms.length - 3 %></span>
-                                                                        <% } %>
-                                                        </div>
-                                                        <% } else { %>
-                                                            <span class="text-secondary">-</span>
-                                                            <% } %>
-                                                </td>
-                                            </tr>
-                                            <% }); %>
-                                                <% } else { %>
-                                                    <tr>
-                                                        <td colspan="7" class="text-center" style="padding: 3rem;">
-                                                            <div class="text-secondary">No stablecoin data available
-                                                            </div>
-                                                        </td>
-                                                    </tr>
+                                    <% coins.forEach(function(coin, index) {
+                                        var peg = h.getPegStatus(coin);
+                                        var chain = h.getTopChain(coin);
+                                        var change7d = coin.supply_change ? coin.supply_change.d7 : null;
+                                        var mechanism = h.formatMechanism(coin.peg_mechanism);
+                                        var price = coin.main && coin.main.price;
+                                    %>
+                                        <tr class="row-link" data-href="/coins/<%= coin.uri %>"
+                                            data-filter-value="<%= peg.filter %>"
+                                            data-search="<%= (coin.name + ' ' + coin.symbol).toLowerCase() %>">
+                                            <td class="text-secondary">#<%= index + 1 %></td>
+                                            <td>
+                                                <div class="coin-cell">
+                                                    <% if (coin.img_url) { %>
+                                                        <img src="<%= coin.img_url %>" alt="" class="logo" loading="lazy">
+                                                    <% } else { %>
+                                                        <span class="logo logo-fallback" aria-hidden="true"><%= (coin.name || '?').charAt(0).toUpperCase() %></span>
                                                     <% } %>
+                                                    <div>
+                                                        <a href="/coins/<%= coin.uri %>"><%= coin.name %></a>
+                                                        <div class="coin-sub"><%= coin.symbol %><%= mechanism ? ' · ' + mechanism : '' %></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td style="font-weight: 500; font-variant-numeric: tabular-nums;"><%= h.formatPegPrice(price) %></td>
+                                            <td>
+                                                <span class="badge <%= peg.badgeClass %>"><%= peg.text %></span>
+                                                <% if (peg.state !== 'neutral') { %><span class="sr-only"><%= peg.state === 'on' ? 'On peg' : (peg.state === 'drift' ? 'Drifting' : 'Off peg') %></span><% } %>
+                                            </td>
+                                            <td class="num"><%= coin.mcap_s %></td>
+                                            <td class="num <%= h.changeClass(change7d) %>"><%= h.formatSigned(change7d) %></td>
+                                            <td class="num"><%= coin.vol_s && coin.vol_s !== 'No data' ? coin.vol_s : '—' %></td>
+                                            <td style="white-space: nowrap;">
+                                                <% if (chain.count > 0) { %>
+                                                    <span class="badge badge-neutral"><%= chain.count %></span>
+                                                    <span class="text-secondary" style="font-size: 0.875rem;"><%= chain.name %><%= chain.pct !== null ? ' ' + chain.pct + '%' : '' %></span>
+                                                <% } else { %>
+                                                    <span class="text-secondary">&mdash;</span>
+                                                <% } %>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
                                 </tbody>
                             </table>
                         </div>
+                        <p class="table-empty" data-empty <%= coins.length > 0 ? 'hidden' : '' %>>
+                            <%= coins.length > 0 ? 'No stablecoins match this filter.' : 'No stablecoin data available' %>
+                        </p>
+                        <div class="table-footer">
+                            <div class="legend">
+                                <span>Peg:</span>
+                                <span class="badge badge-success">within 10 bp</span>
+                                <span class="badge badge-warning">10&ndash;50 bp</span>
+                                <span class="badge badge-error">over 50 bp</span>
+                                <span>1 bp = 0.01%</span>
+                            </div>
+                            <div class="pager">
+                                <span data-count><%= coins.length %> stablecoins</span>
+                                <div class="pill-group" data-pager hidden>
+                                    <button type="button" class="pill" data-prev aria-label="Previous page">&lsaquo;</button>
+                                    <span class="sr-only" data-page aria-live="polite"></span>
+                                    <button type="button" class="pill" data-next aria-label="Next page">&rsaquo;</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </main>
+                </section>
+            </div>
+        </main>
 
-            <%- include('partials/footer'); %>
+        <%- include('partials/footer'); %>
     </div>
+    <script src="/table-tools.js"></script>
 </body>
 
 </html>

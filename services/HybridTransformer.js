@@ -114,7 +114,51 @@ class HybridTransformer extends IViewModelTransformer {
         // Propagate any structured conflicts detected during aggregation
         sc.conflicts = hybrid.conflicts || hybrid.metadata?.conflicts || null;
 
+        // Per-source figures for comparison, and which source each merged value came from
+        sc.source_snapshots = hybrid.source_snapshots || {};
+        sc.value_sources = hybrid.value_sources || {};
+
+        // Peg mechanism and supply history from DeFiLlama
+        const defillamaData = hybrid.defillamaData || hybrid.metadata?.defillamaData || null;
+        sc.peg_mechanism = defillamaData?.pegMechanism || null;
+        sc.supply_change = this._computeSupplyChange(defillamaData);
+
         return sc;
+    }
+
+    /**
+     * Computes circulating supply change over 1, 7 and 30 days from DeFiLlama history.
+     * Values are percentages; null when the history is missing.
+     *
+     * @param {Object|null} defillamaData - DeFiLlama data with rawCirculating and previous snapshots
+     * @returns {{d1: number|null, d7: number|null, d30: number|null, current: number|null, prevDay: number|null, prevWeek: number|null, prevMonth: number|null}}
+     * @private
+     * @memberof HybridTransformer
+     */
+    _computeSupplyChange(defillamaData) {
+        const empty = { d1: null, d7: null, d30: null, current: null, prevDay: null, prevWeek: null, prevMonth: null };
+        if (!defillamaData?.rawCirculating) return empty;
+
+        const pegKey = defillamaData.pegType || Object.keys(defillamaData.rawCirculating)[0];
+        const read = (obj) => {
+            const v = obj && obj[pegKey];
+            return typeof v === 'number' && isFinite(v) ? v : null;
+        };
+        const current = read(defillamaData.rawCirculating);
+        const pct = (prev) => (current !== null && prev ? ((current - prev) / prev) * 100 : null);
+        const prevDay = read(defillamaData.rawCirculatingPrevDay);
+        const prevWeek = read(defillamaData.rawCirculatingPrevWeek);
+        const prevMonth = read(defillamaData.rawCirculatingPrevMonth);
+
+        return {
+            d1: pct(prevDay),
+            d7: pct(prevWeek),
+            d30: pct(prevMonth),
+            current,
+            prevDay,
+            prevWeek,
+            prevMonth
+        };
     }
 
     /**
@@ -223,6 +267,10 @@ class HybridTransformer extends IViewModelTransformer {
 
         for (const sc of this.stablecoins) {
             if (!sc?.platforms || !sc?.main?.circulating_mcap) continue;
+            const price = typeof sc.main.price === 'number' && sc.main.price > 0 ? sc.main.price : null;
+            const pegKey = sc.defillamaData?.pegType || null;
+            const isUsdPeg = sc.pegged_asset === 'USD';
+
             // Compute total cross-chain supply for this coin across all known platforms
             const coinSupplyTotal = sc.platforms.reduce((sum, p) => {
                 const ps = p.total_supply || p.circulating_supply || 0;
@@ -230,114 +278,119 @@ class HybridTransformer extends IViewModelTransformer {
             }, 0);
 
             for (const platform of sc.platforms) {
+                // 'Unknown' means the coin has no chain data; it is not a chain
+                if (!platform?.name || platform.name === 'Unknown') continue;
+
                 if (!platformMap.has(platform.name)) {
                     platformMap.set(platform.name, {
                         name: platform.name,
-                        mcap_sum: 0,
-                        coin_count: 0,
+                        total_value: 0,
                         total_supply: 0,
-                        stablecoins: [],
-                        supply_breakdown: new Map(),
-                        dominant_stablecoin: { name: '', supply: 0 }
+                        usd_current: 0,
+                        usd_prev_week: 0,
+                        coins: new Map()
                     });
                 }
 
                 const entry = platformMap.get(platform.name);
-                // Allocate only the proportional share of market cap to this platform
                 const platformSupply = platform.total_supply || platform.circulating_supply || 0;
-                let allocatedMcap = 0;
-                if (coinSupplyTotal > 0 && platformSupply > 0) {
-                    allocatedMcap = sc.main.circulating_mcap * (platformSupply / coinSupplyTotal);
+
+                // Value each coin in USD so coins pegged to other currencies count at their real value
+                let value = 0;
+                if (platformSupply > 0 && price) {
+                    value = platformSupply * price;
+                } else if (coinSupplyTotal > 0 && platformSupply > 0) {
+                    value = sc.main.circulating_mcap * (platformSupply / coinSupplyTotal);
                 } else if (sc.platforms.length === 1) {
                     // If we only have one platform, attribute full mcap to it
-                    allocatedMcap = sc.main.circulating_mcap;
+                    value = sc.main.circulating_mcap;
+                }
+
+                // 7-day change on this chain, from DeFiLlama history (USD-pegged coins only)
+                const prevWeekRaw = pegKey ? platform.historical_data?.prevWeek?.[pegKey] : null;
+                const prevWeek = typeof prevWeekRaw === 'number' && prevWeekRaw > 0 ? prevWeekRaw : null;
+                if (isUsdPeg && prevWeek && platformSupply > 0) {
+                    entry.usd_current += platformSupply;
+                    entry.usd_prev_week += prevWeek;
+                }
+
+                entry.total_value += value;
+                entry.total_supply += platformSupply > 0 ? platformSupply : 0;
+
+                const existing = entry.coins.get(sc.symbol);
+                if (existing) {
+                    existing.platform_supply += platformSupply;
+                    existing.platform_value += value;
                 } else {
-                    // No reliable supply split info across multiple platforms - skip to avoid double counting
-                    allocatedMcap = 0;
-                }
-                entry.mcap_sum += allocatedMcap;
-                entry.coin_count += 1;
-
-                // Enhanced supply aggregation using cross-chain data
-                // Reuse computed platformSupply
-                if (platformSupply > 0) {
-                    entry.total_supply += platformSupply;
-
-                    // Track individual stablecoin supplies on this platform
-                    if (!entry.supply_breakdown.has(sc.symbol)) {
-                        entry.supply_breakdown.set(sc.symbol, {
-                            name: sc.name,
-                            symbol: sc.symbol,
-                            supply: 0,
-                            percentage: 0,
-                            uri: sc.uri
-                        });
-                    }
-
-                    const coinEntry = entry.supply_breakdown.get(sc.symbol);
-                    coinEntry.supply += platformSupply;
-
-                    // Track dominant stablecoin on this platform
-                    if (coinEntry.supply > entry.dominant_stablecoin.supply) {
-                        entry.dominant_stablecoin = {
-                            name: sc.name,
-                            symbol: sc.symbol,
-                            supply: coinEntry.supply,
-                            uri: sc.uri
-                        };
-                    }
-                }
-
-                // Track unique stablecoins on this platform
-                if (!entry.stablecoins.find(coin => coin.symbol === sc.symbol)) {
-                    entry.stablecoins.push({
+                    entry.coins.set(sc.symbol, {
                         name: sc.name,
                         symbol: sc.symbol,
                         uri: sc.uri,
-                        price: sc.main?.price || null,
+                        img_url: sc.img_url || null,
+                        pegged_asset: sc.pegged_asset || null,
+                        price: sc.main?.price ?? null,
                         market_cap: sc.main?.circulating_mcap || null,
                         platform_supply: platformSupply,
-                        platform_percentage: platform.supply_percentage || null
+                        platform_value: value,
+                        platform_percentage: null,
+                        change_7d: prevWeek && platformSupply > 0 ? ((platformSupply - prevWeek) / prevWeek) * 100 : null
                     });
                 }
             }
         }
 
-        // Calculate total supply across all platforms for percentage calculations
-        let totalSupplyAllPlatforms = 0;
-        for (const entry of platformMap.values()) {
-            totalSupplyAllPlatforms += entry.total_supply;
-        }
+        const totalValueAllPlatforms = Array.from(platformMap.values())
+            .reduce((sum, p) => sum + p.total_value, 0);
+        const round2 = (v) => Math.round(v * 100) / 100;
 
         return Array.from(platformMap.values())
             .map(platform => {
-                // Convert supply breakdown map to array and calculate percentages
-                const supplyBreakdownArray = Array.from(platform.supply_breakdown.values())
+                const coins = Array.from(platform.coins.values())
                     .map(coin => ({
                         ...coin,
-                        percentage: platform.total_supply > 0 ?
-                            Math.round((coin.supply / platform.total_supply) * 10000) / 100 : 0
+                        platform_percentage: platform.total_value > 0
+                            ? round2((coin.platform_value / platform.total_value) * 100)
+                            : null
                     }))
-                    .sort((a, b) => b.supply - a.supply);
+                    .sort((a, b) => (b.platform_value || 0) - (a.platform_value || 0));
+
+                const share = totalValueAllPlatforms > 0
+                    ? round2((platform.total_value / totalValueAllPlatforms) * 100)
+                    : 0;
+                const top = coins.length > 0 && coins[0].platform_value > 0 ? coins[0] : null;
 
                 return {
                     name: platform.name,
                     uri: DataFormatter.slugify(platform.name),
-                    mcap_sum: platform.mcap_sum,
-                    mcap_sum_s: DataFormatter.formatNumber(platform.mcap_sum),
-                    coin_count: platform.coin_count,
+                    // Stablecoin value on this chain in USD (kept as mcap_sum for older callers)
+                    mcap_sum: platform.total_value,
+                    mcap_sum_s: DataFormatter.formatNumber(platform.total_value),
+                    coin_count: coins.length,
                     total_supply: platform.total_supply,
                     total_supply_s: DataFormatter.formatNumber(platform.total_supply, false),
-                    supply_percentage: totalSupplyAllPlatforms > 0 ?
-                        Math.round((platform.total_supply / totalSupplyAllPlatforms) * 10000) / 100 : 0,
-                    supply_percentage_s: totalSupplyAllPlatforms > 0 ?
-                        `${Math.round((platform.total_supply / totalSupplyAllPlatforms) * 10000) / 100}%` : '0%',
-                    stablecoins: platform.stablecoins.sort((a, b) => (b.platform_supply || 0) - (a.platform_supply || 0)),
-                    supply_breakdown: supplyBreakdownArray,
-                    dominant_stablecoin: platform.dominant_stablecoin.name ? platform.dominant_stablecoin : null
+                    // Share of stablecoin value across all chains
+                    supply_percentage: share,
+                    supply_percentage_s: `${share}%`,
+                    change_7d: platform.usd_prev_week > 0
+                        ? ((platform.usd_current - platform.usd_prev_week) / platform.usd_prev_week) * 100
+                        : null,
+                    stablecoins: coins,
+                    supply_breakdown: coins
+                        .filter(coin => coin.platform_value > 0)
+                        .map(coin => ({
+                            name: coin.name,
+                            symbol: coin.symbol,
+                            uri: coin.uri,
+                            supply: coin.platform_supply,
+                            value: coin.platform_value,
+                            percentage: coin.platform_percentage
+                        })),
+                    dominant_stablecoin: top
+                        ? { name: top.name, symbol: top.symbol, uri: top.uri, img_url: top.img_url, supply: top.platform_supply, value: top.platform_value, percentage: top.platform_percentage }
+                        : null
                 };
             })
-            .sort((a, b) => (b.total_supply || 0) - (a.total_supply || 0));
+            .sort((a, b) => (b.mcap_sum || 0) - (a.mcap_sum || 0));
     }
 
     /**

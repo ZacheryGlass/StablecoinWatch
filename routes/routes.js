@@ -6,6 +6,7 @@ const util = require('../app/util');
 const ApiConfig = require('../config/ApiConfig');
 const AssetClassificationConfig = require('../config/AssetClassificationConfig');
 const AssetClassifier = require('../services/domain/AssetClassifier');
+const AppConfig = require('../config/AppConfig');
 
 // Helper function to calculate data completeness for chain metrics
 function calculateChainDataCompleteness(data) {
@@ -22,6 +23,30 @@ function calculateChainDataCompleteness(data) {
         dataCompleteness: Math.round(dataCompleteness * 100),
         showChainMetrics
     };
+}
+
+/**
+ * Status from a health report, or null when the report is missing or failed
+ * @param {Object|null} health - Result of healthMonitor.getSystemHealth()
+ * @returns {string|null} System status
+ */
+function healthOkStatus(health) {
+    return health && !health.error ? (health.status || null) : null;
+}
+
+/**
+ * Overall system status for the header indicator ('healthy', 'degraded', ...), or null
+ * @param {Object} svc - Services container
+ * @returns {Promise<string|null>} System status
+ */
+async function getSystemStatus(svc) {
+    try {
+        if (!svc.healthMonitor) return null;
+        const health = await svc.healthMonitor.getSystemHealth();
+        return health?.status || null;
+    } catch (_) {
+        return null;
+    }
 }
 
 /**
@@ -58,6 +83,7 @@ router.get('/', async (req, res) => {
         dataCompleteness,
         showChainMetrics,
         active: 'home',
+        systemStatus: await getSystemStatus(svc),
         formatter: {
             formatNumber: util.formatNumber,
             formatPrice: util.formatPrice,
@@ -100,6 +126,12 @@ router.get('/status', async (req, res) => {
         health,
         mockMode,
         active: 'status',
+        systemStatus: healthOkStatus(health),
+        thresholds: {
+            errorRate: AppConfig.health.errorRateThreshold,
+            responseTimeMs: AppConfig.health.responseTimeThreshold
+        },
+        healthApiPath: '/api/health',
         formatter: {
             formatNumber: require('../app/util').formatNumber,
             formatPrice: require('../app/util').formatPrice,
@@ -145,6 +177,7 @@ router.get('/platforms', async (req, res) => {
         dataCompleteness,
         showChainMetrics,
         active: 'chains',
+        systemStatus: await getSystemStatus(svc),
         formatter: {
             formatNumber: util.formatNumber,
             formatPrice: util.formatPrice,
@@ -176,6 +209,7 @@ router.get('/coins/:symbol', async (req, res) => {
         showChainMetrics,
         coin: coin,
         active: '',
+        systemStatus: await getSystemStatus(svc),
         formatter: {
             formatNumber: util.formatNumber,
             formatPrice: util.formatPrice,
@@ -232,6 +266,7 @@ router.get('/platforms/:name', async (req, res) => {
             },
             platformIndex: -1,
             active: '',
+            systemStatus: await getSystemStatus(svc),
             formatter: {
                 formatNumber: util.formatNumber,
                 formatPrice: util.formatPrice,
@@ -251,6 +286,7 @@ router.get('/platforms/:name', async (req, res) => {
         platform: platformEntry,
         platformIndex: platformIndex,
         active: '',
+        systemStatus: await getSystemStatus(svc),
         formatter: {
             formatNumber: util.formatNumber,
             formatPrice: util.formatPrice,

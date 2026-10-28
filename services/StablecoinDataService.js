@@ -197,11 +197,11 @@ class StablecoinDataService extends IStablecoinDataService {
         // 3) Merge per symbol using priority and consensusd
         const aggregated = [];
         for (const [key, entries] of bySymbol) {
-            const pickBy = (picker) => {
+            const pickBy = (picker, from = entries) => {
                 // Return value from highest-priority source that satisfies picker
                 let best = null;
                 let bestPrio = -Infinity;
-                for (const { sourceId, data } of entries) {
+                for (const { sourceId, data } of from) {
                     const val = picker(data);
                     const prio = sourcePriority.get(sourceId) || 0;
                     if ((val !== undefined && val !== null) && prio > bestPrio) {
@@ -217,12 +217,17 @@ class StablecoinDataService extends IStablecoinDataService {
             const slugPick = pickBy(d => d.slug);
 
             // Market data consensus
-            const prices = entries.map(e => ({ s: e.sourceId, v: e.data.marketData?.price })).filter(x => typeof x.v === 'number');
-            const marketCaps = entries.map(e => ({ s: e.sourceId, v: e.data.marketData?.marketCap })).filter(x => typeof x.v === 'number');
+            // Messari's stablecoin feed has no prices (its fetcher assumes $1.00), so only
+            // use its price and market cap when no other source prices the coin
+            const pricedEntries = entries.some(e => e.sourceId !== 'messari' && typeof e.data.marketData?.price === 'number')
+                ? entries.filter(e => e.sourceId !== 'messari')
+                : entries;
+            const prices = pricedEntries.map(e => ({ s: e.sourceId, v: e.data.marketData?.price })).filter(x => typeof x.v === 'number');
+            const marketCaps = pricedEntries.map(e => ({ s: e.sourceId, v: e.data.marketData?.marketCap })).filter(x => typeof x.v === 'number');
             const volumes = entries.map(e => ({ s: e.sourceId, v: e.data.marketData?.volume24h })).filter(x => typeof x.v === 'number');
 
-            const primaryPrice = pickBy(d => d.marketData?.price);
-            const primaryMCap = pickBy(d => d.marketData?.marketCap);
+            const primaryPrice = pickBy(d => d.marketData?.price, pricedEntries);
+            const primaryMCap = pickBy(d => d.marketData?.marketCap, pricedEntries);
             const primaryVol = pickBy(d => d.marketData?.volume24h);
 
             const supplyCirc = pickBy(d => d.supplyData?.circulating);
@@ -368,6 +373,7 @@ class StablecoinDataService extends IStablecoinDataService {
                     consensus: consensus
                 },
                 dataSources: sourceIds,
+                sourceSnapshots: this._buildSourceSnapshots(entries),
                 lastUpdated: Date.now(),
                 quality: this._computeQuality({ marketData, supply: { circ: supplyCirc?.value, total: supplyTotal?.value } })
             };
@@ -639,6 +645,34 @@ class StablecoinDataService extends IStablecoinDataService {
         const s = [...arr].sort((a, b) => a - b);
         const m = Math.floor(s.length / 2);
         return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+    }
+
+    /**
+     * Captures each source's own values before merging, so views can compare
+     * sources instead of showing the merged value for every one of them.
+     *
+     * @param {Array} entries - Array of { sourceId, data } for a single symbol
+     * @returns {Object} Map of sourceId to { price, marketCap, volume24h, circulating, description }
+     * @private
+     * @memberof StablecoinDataService
+     */
+    _buildSourceSnapshots(entries) {
+        const num = (v) => (typeof v === 'number' && isFinite(v) ? v : null);
+        const snapshots = {};
+        for (const { sourceId, data } of entries) {
+            if (!sourceId || snapshots[sourceId]) continue;
+            // Messari's price is an assumed $1.00, not a quote
+            const quoted = sourceId !== 'messari';
+            snapshots[sourceId] = {
+                price: quoted ? num(data?.marketData?.price) : null,
+                marketCap: quoted ? num(data?.marketData?.marketCap) : null,
+                volume24h: num(data?.marketData?.volume24h),
+                circulating: num(data?.supplyData?.circulating),
+                // DeFiLlama descriptions are generated from its peg fields, not written text
+                description: sourceId === 'defillama' ? null : (data?.metadata?.description || null)
+            };
+        }
+        return snapshots;
     }
 
     /**
