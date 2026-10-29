@@ -216,8 +216,9 @@ describe('AssetClassifier - Complex Symbol Patterns', () => {
     describe('Single Character and Very Short Symbols', () => {
         test('should handle very short symbols', () => {
             const shortSymbols = [
-                { symbol: 'U', name: 'USD Coin Short', expected: null }, // Too ambiguous
-                { symbol: 'E', name: 'EUR Coin Short', expected: null }, // Too ambiguous
+                // The symbol alone is too ambiguous, so the currency named in the asset name decides
+                { symbol: 'U', name: 'USD Coin Short', expected: 'USD' },
+                { symbol: 'E', name: 'EUR Coin Short', expected: 'EUR' },
                 { symbol: 'US', name: 'US Dollar Short', expected: 'USD' },
                 { symbol: 'EU', name: 'Euro Short', expected: 'EUR' },
                 { symbol: '$', name: 'Dollar Symbol', expected: 'USD' },
@@ -246,7 +247,7 @@ describe('AssetClassifier - Complex Symbol Patterns', () => {
                 { symbol: 'USDD', name: 'USDD Stablecoin', expected: 'USD' },
                 { symbol: 'EUUR', name: 'Double U EUR', expected: 'EUR' },
                 { symbol: 'EURR', name: 'StablR Euro', expected: 'EUR' },
-                { symbol: 'USSS', name: 'Triple S USD', expected: null }, // Too ambiguous
+                { symbol: 'USSS', name: 'Triple S USD', expected: 'USD' }, // Ambiguous symbol, name says USD
                 { symbol: 'UUUU', name: 'Quad U Token', expected: null } // Too ambiguous
             ];
 

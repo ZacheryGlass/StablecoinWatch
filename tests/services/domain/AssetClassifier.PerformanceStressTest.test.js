@@ -179,16 +179,21 @@ describe('AssetClassifier - Performance Stress Tests', () => {
             };
 
             const iterations = 10000;
+            const results = new Array(iterations);
             const startTime = Date.now();
 
+            // Assert outside the timed loop: 20k jest expect() calls alone take ~400ms
             for (let i = 0; i < iterations; i++) {
-                const result = classifier.classify({ asset: testAsset });
-                expect(result.assetCategory).toBe('Stablecoin');
-                expect(result.peggedAsset).toBe('USD');
+                results[i] = classifier.classify({ asset: testAsset });
             }
 
             const endTime = Date.now();
-            
+
+            results.forEach(result => {
+                expect(result.assetCategory).toBe('Stablecoin');
+                expect(result.peggedAsset).toBe('USD');
+            });
+
             // Should handle 10k classifications of same asset very quickly
             expect(endTime - startTime).toBeLessThan(100);
             

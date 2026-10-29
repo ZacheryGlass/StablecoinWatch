@@ -70,10 +70,10 @@ describe('AssetClassifier - Chain-Specific Classification', () => {
             ];
 
             usdcChainVariants.forEach(variant => {
-                const result = classifier.classify({
+                const result = classifier.classify({ asset: {
                     ...variant,
                     slug: `usd-coin-${variant.chain.toLowerCase()}`
-                });
+                }});
                 expect(result.assetCategory).toBe('Stablecoin');
                 expect(result.peggedAsset).toBe('USD');
             });
@@ -129,10 +129,10 @@ describe('AssetClassifier - Chain-Specific Classification', () => {
             ];
 
             eurcChainVariants.forEach(variant => {
-                const result = classifier.classify({
+                const result = classifier.classify({ asset: {
                     ...variant,
                     slug: `eurc-${variant.chain.toLowerCase()}`
-                });
+                }});
                 expect(result.assetCategory).toBe('Stablecoin');
                 expect(result.peggedAsset).toBe('EUR');
             });
@@ -169,10 +169,10 @@ describe('AssetClassifier - Chain-Specific Classification', () => {
             ];
 
             chainSymbolVariants.forEach(variant => {
-                const result = classifier.classify({
+                const result = classifier.classify({ asset: {
                     ...variant,
                     slug: variant.name.toLowerCase().replace(/\s+/g, '-')
-                });
+                }});
                 expect(result.assetCategory).toBe('Stablecoin');
                 expect(result.peggedAsset).toBe('USD');
             });
@@ -207,10 +207,10 @@ describe('AssetClassifier - Chain-Specific Classification', () => {
             ];
 
             bridgedTokens.forEach(token => {
-                const result = classifier.classify({
+                const result = classifier.classify({ asset: {
                     ...token,
                     slug: token.name.toLowerCase().replace(/\s+/g, '-')
-                });
+                }});
                 expect(result.assetCategory).toBe('Stablecoin');
                 expect(result.peggedAsset).toBe('USD');
             });
@@ -254,7 +254,7 @@ describe('AssetClassifier - Chain-Specific Classification', () => {
                 }
             };
 
-            const result = classifier.classify(complexChainAsset);
+            const result = classifier.classify({ asset: complexChainAsset });
             expect(result.assetCategory).toBe('Stablecoin');
             expect(result.peggedAsset).toBe('EUR');
         });
@@ -290,7 +290,7 @@ describe('AssetClassifier - Chain-Specific Classification', () => {
                 }
             };
 
-            const result = classifier.classify(multiChainAsset);
+            const result = classifier.classify({ asset: multiChainAsset });
             expect(result.assetCategory).toBe('Stablecoin');
             expect(result.peggedAsset).toBe('USD');
         });
@@ -328,7 +328,7 @@ describe('AssetClassifier - Chain-Specific Classification', () => {
                 slug: "multi-chain-usd"
             };
 
-            const result = classifier.classify(ecosystemHeavyAsset);
+            const result = classifier.classify({ asset: ecosystemHeavyAsset });
             expect(result.assetCategory).toBe('Stablecoin');
             expect(result.peggedAsset).toBe('USD');
         });
@@ -370,10 +370,10 @@ describe('AssetClassifier - Chain-Specific Classification', () => {
             ];
 
             l2Variants.forEach(variant => {
-                const result = classifier.classify({
+                const result = classifier.classify({ asset: {
                     ...variant,
                     slug: variant.name.toLowerCase().replace(/\s+/g, '-')
-                });
+                }});
                 expect(result.assetCategory).toBe('Stablecoin');
                 expect(result.peggedAsset).toBe('USD');
             });
@@ -410,10 +410,10 @@ describe('AssetClassifier - Chain-Specific Classification', () => {
             ];
 
             bridgedAssets.forEach(asset => {
-                const result = classifier.classify({
+                const result = classifier.classify({ asset: {
                     ...asset,
                     slug: asset.name.toLowerCase().replace(/\s+/g, '-')
-                });
+                }});
                 expect(result.assetCategory).toBe('Stablecoin');
                 expect(result.peggedAsset).toBe('USD');
             });
@@ -481,10 +481,10 @@ describe('AssetClassifier - Chain-Specific Classification', () => {
             ];
 
             migratedAssets.forEach(asset => {
-                const result = classifier.classify({
+                const result = classifier.classify({ asset: {
                     ...asset,
                     slug: asset.name.toLowerCase().replace(/\s+/g, '-')
-                });
+                }});
                 expect(result.assetCategory).toBe('Stablecoin');
                 expect(result.peggedAsset).toBe('USD');
             });
@@ -518,10 +518,10 @@ describe('AssetClassifier - Chain-Specific Classification', () => {
             ];
 
             regulatoryVariants.forEach(variant => {
-                const result = classifier.classify({
+                const result = classifier.classify({ asset: {
                     ...variant,
                     slug: variant.name.toLowerCase().replace(/\s+/g, '-')
-                });
+                }});
                 expect(result.assetCategory).toBe('Stablecoin');
                 expect(result.peggedAsset).toBe('USD');
             });
@@ -558,14 +558,13 @@ describe('AssetClassifier - Chain-Specific Classification', () => {
             ];
 
             crossChainAssets.forEach(asset => {
-                const result = classifier.classify({
+                const result = classifier.classify({ asset: {
                     ...asset,
                     slug: asset.name.toLowerCase().replace(/\s+/g, '-')
-                });
+                }});
                 expect(result.assetCategory).toBe('Stablecoin');
                 expect(result.peggedAsset).toBe('USD');
             });
         });
     });
-});});
 });

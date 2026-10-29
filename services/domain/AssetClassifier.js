@@ -245,6 +245,14 @@ class AssetClassifier {
 
         // Load additional currencies from environment
         this._loadEnvironmentCurrencies();
+
+        // Currencies known to have stablecoins: common enough for name patterns, or the target of a
+        // configured stablecoin alias (IDRT -> IDR). Loose symbol heuristics trust only these,
+        // so a ticker like STND does not read as the Sao Tome dobra (STN).
+        this._stablecoinCurrencyCodes = new Set([
+            ...this._currencyNamePatterns.keys(),
+            ...Object.values(this._currencyAliasMap).filter(code => this._isoCurrencyCodes.has(code))
+        ]);
     }
 
     /**
@@ -349,17 +357,24 @@ class AssetClassifier {
                 });
             }
 
-            const { tags = [], name = '', symbol = '', slug = '' } = asset;
+            const { name = '', symbol = '', slug = '', pegType } = asset;
+
+            // Sources without a tag taxonomy (raw DeFiLlama, CoinGecko or Messari payloads) send no tags array;
+            // malformed tags are treated the same way rather than failing the classification
+            const hasTags = Array.isArray(asset.tags);
+            const tags = hasTags ? asset.tags : [];
 
             // Normalize inputs for consistent matching with additional safety checks
-            let tagsLower, nameLower, symbolLower, slugLower;
+            let tagsLower, nameLower, symbolLower, slugLower, pegCurrency;
             try {
                 tagsLower = this._normalizeTags(tags);
                 nameLower = this._normalizeString(name);
                 symbolLower = this._normalizeString(symbol);
                 slugLower = this._normalizeString(slug);
+                // Explicit DeFiLlama peg (e.g. 'peggedUSD') outranks tags and symbol inference
+                pegCurrency = this._currencyFromPegTag(this._normalizeString(pegType));
             } catch (normalizationError) {
-                this._recordError('pattern', 'Input normalization failed', source, { 
+                this._recordError('pattern', 'Input normalization failed', source, {
                     error: normalizationError.message,
                     asset: { symbol, name }
                 });
@@ -367,10 +382,11 @@ class AssetClassifier {
             }
 
             // Determine primary asset category first (stablecoin takes priority)
-            const assetCategory = this._classifyCategory(tagsLower);
+            const assetCategory = this._classifyCategory(tagsLower, { pegCurrency, hasTags, symbolLower });
 
             // Determine specific pegged asset type
-            const peggedAsset = this._classifyPeggedAsset(tagsLower, nameLower, symbolLower, slugLower, assetCategory);
+            const peggedAsset = pegCurrency ||
+                this._classifyPeggedAsset(tagsLower, nameLower, symbolLower, slugLower, assetCategory);
 
             const result = {
                 assetCategory,
@@ -379,8 +395,8 @@ class AssetClassifier {
 
             const durationMs = performance.now() - startTime;
 
-            // Create asset key for conflict tracking
-            const assetKey = this._createAssetKey({ symbol, name, slug });
+            // Create asset key for conflict tracking (normalized values, so non-string fields cannot throw)
+            const assetKey = this._createAssetKey({ symbol: symbolLower, name: nameLower, slug: slugLower });
 
             // Record classification for conflict detection
             this._recordClassificationForConflictDetection(assetKey, source, result, { symbol, name });
@@ -456,12 +472,17 @@ class AssetClassifier {
     }
 
     /**
-     * Classify primary asset category based on tags
+     * Classify primary asset category based on tags, falling back to explicit peg data
+     * and, for sources with no tags at all, a recognised fiat stablecoin symbol
      * @private
      * @param {Array<string>} tagsLower - Normalized tags
+     * @param {Object} [fallback] - Non-tag evidence
+     * @param {string|null} [fallback.pegCurrency] - Currency from an explicit pegType
+     * @param {boolean} [fallback.hasTags=true] - Whether the source supplied a tags array
+     * @param {string} [fallback.symbolLower=''] - Lowercase symbol
      * @returns {string} Asset category
      */
-    _classifyCategory(tagsLower) {
+    _classifyCategory(tagsLower, { pegCurrency = null, hasTags = true, symbolLower = '' } = {}) {
         // Check for stablecoin tags first
         if (tagsLower.some(tag => this._stablecoinTags.has(tag))) {
             return this.ASSET_CATEGORIES.STABLECOIN;
@@ -476,7 +497,12 @@ class AssetClassifier {
         if (tagsLower.some(tag => /^pegged[a-z0-9]+$/i.test(tag))) {
             return this.ASSET_CATEGORIES.STABLECOIN;
         }
-        
+
+        // Explicit DeFiLlama pegType field, equivalent to a 'peggedXXX' tag
+        if (pegCurrency) {
+            return this.ASSET_CATEGORIES.STABLECOIN;
+        }
+
         // Check for tokenized asset tags (generic)
         if (tagsLower.some(tag => this._tokenizedAssetTags.has(tag))) {
             return this.ASSET_CATEGORIES.TOKENIZED_ASSET;
@@ -486,8 +512,45 @@ class AssetClassifier {
         if (tagsLower.some(tag => this._tokenizedSubtypes.has(tag))) {
             return this.ASSET_CATEGORIES.TOKENIZED_ASSET;
         }
-        
+
+        // No tag taxonomy at all: an unambiguous fiat stablecoin ticker (USDT, EURC, ...) is enough.
+        // An empty tags array is a source saying "not tagged as a stablecoin", so it does not qualify.
+        if (!hasTags && this._isFiatStablecoinSymbol(symbolLower)) {
+            return this.ASSET_CATEGORIES.STABLECOIN;
+        }
+
         return this.ASSET_CATEGORIES.OTHER;
+    }
+
+    /**
+     * Check whether a symbol is a ticker built from an ISO currency code,
+     * either a configured alias that contains its code (USDT, EURC, XSGD) or CODE + T/C
+     * @private
+     * @param {string} symbolLower - Lowercase symbol
+     * @returns {boolean} True for a recognised fiat stablecoin ticker
+     */
+    _isFiatStablecoinSymbol(symbolLower) {
+        if (!symbolLower) return false;
+        const symbolUpper = symbolLower.toUpperCase();
+        const aliased = this._currencyAliasMap[symbolUpper];
+        if (aliased && this._isoCurrencyCodes.has(aliased) && symbolUpper.includes(aliased)) {
+            return true;
+        }
+        const match = /^([a-z]{3})[tc]$/.exec(symbolLower);
+        return !!match && this._isoCurrencyCodes.has(match[1].toUpperCase());
+    }
+
+    /**
+     * Extract the pegged currency from a 'peggedXXX' tag or DeFiLlama pegType
+     * @private
+     * @param {string} tagLower - Lowercase tag or pegType
+     * @returns {string|null} Currency code (alias-mapped) or null
+     */
+    _currencyFromPegTag(tagLower) {
+        const match = /^pegged([a-z0-9]+)$/.exec(tagLower);
+        if (!match) return null;
+        const raw = match[1].toUpperCase();
+        return this._currencyAliasMap[raw] || raw;
     }
 
     /**
@@ -516,10 +579,9 @@ class AssetClassifier {
 
             // Some sources use 'peggedUSD' or 'peggedEUR' style tags; check those too
             for (const t of tagsLower) {
-                const m2 = /^pegged([a-z0-9]+)$/.exec(t);
-                if (m2) {
-                    const raw = m2[1].toUpperCase();
-                    return this._currencyAliasMap[raw] || raw;
+                const pegged = this._currencyFromPegTag(t);
+                if (pegged) {
+                    return pegged;
                 }
             }
 
@@ -717,7 +779,7 @@ class AssetClassifier {
 
         // Try to extract any valid ISO currency code from symbol/name
         // Look for 3-letter codes at the start/end of symbols or embedded in names
-        const symbolMatch = symbolLower.match(/^([a-z]{3})[tc]?$|^([a-z]{3})[-_]/); 
+        const symbolMatch = symbolLower.match(/^([a-z]{3})[tc]?$|^([a-z]{3})[-_]/);
         if (symbolMatch) {
             const code = (symbolMatch[1] || symbolMatch[2]).toUpperCase();
             if (this._isoCurrencyCodes.has(code)) {
@@ -725,13 +787,10 @@ class AssetClassifier {
             }
         }
 
-        // Special handling for X-prefixed currency stablecoins (XSGD, XEUR, etc.)
-        const xPrefixMatch = symbolLower.match(/^x([a-z]{3})$/);
-        if (xPrefixMatch) {
-            const code = xPrefixMatch[1].toUpperCase();
-            if (this._isoCurrencyCodes.has(code)) {
-                return this._currencyAliasMap[code] || code;
-            }
+        // Bridged, wrapped and extended tickers (USDC.e, vBUSD, USDe, lisUSD)
+        const variantCurrency = this._detectCurrencyFromSymbolVariant(symbolLower);
+        if (variantCurrency) {
+            return variantCurrency;
         }
 
         // Check for currency codes in names/slugs
@@ -740,6 +799,54 @@ class AssetClassifier {
             const code = nameMatch[1].toUpperCase();
             if (this._isoCurrencyCodes.has(code)) {
                 return this._currencyAliasMap[code] || code;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Detect currency from a decorated or extended ticker
+     * - Chain/bridge decorations: USDC.e, USDT_tron, USDC-eth, ibc/USDC, USDC(Wormhole)
+     * - Short extensions of a stablecoin currency code: USDe, USD1, EURR, USDT2, IDRX
+     * - X-prefixed codes: XSGD, XEUR
+     * - Protocol prefixes on a stablecoin currency code: vBUSD, yvUSDC, axlUSDC, lisUSD, FRXUSD
+     * @private
+     * @param {string} symbolLower - Lowercase symbol
+     * @returns {string|null} Detected currency code or null
+     */
+    _detectCurrencyFromSymbolVariant(symbolLower) {
+        const core = symbolLower
+            .replace(/^.*\//, '')
+            .replace(/\(.*\)$/, '')
+            .replace(/[._-][a-z0-9]+$/, '');
+        if (!core) return null;
+
+        const toCurrency = (code) => this._currencyAliasMap[code] || code;
+
+        const aliased = this._currencyAliasMap[core.toUpperCase()];
+        if (aliased) {
+            return aliased;
+        }
+
+        const extended = /^([a-z]{3})[a-z0-9]{0,2}$/.exec(core);
+        if (extended && this._stablecoinCurrencyCodes.has(extended[1].toUpperCase())) {
+            return toCurrency(extended[1].toUpperCase());
+        }
+
+        const xPrefixed = /^x([a-z]{3})$/.exec(core);
+        if (xPrefixed && this._isoCurrencyCodes.has(xPrefixed[1].toUpperCase())) {
+            return toCurrency(xPrefixed[1].toUpperCase());
+        }
+
+        // Prefixes are only trusted on stablecoin currencies, so a stray ending like 'open' does not read as PEN
+        for (const code of this._stablecoinCurrencyCodes) {
+            const lower = code.toLowerCase();
+            const index = core.lastIndexOf(lower);
+            if (index < 1 || index > 4) continue;
+            const rest = core.slice(index + lower.length);
+            if (rest === '' || rest === 't' || rest === 'c') {
+                return toCurrency(code);
             }
         }
 
@@ -803,6 +910,8 @@ class AssetClassifier {
         if (patterns.name) {
             this._currencyNamePatterns.set(code, patterns.name);
         }
+
+        this._stablecoinCurrencyCodes.add(code);
     }
 
     /**
@@ -1434,14 +1543,8 @@ class AssetClassifier {
             };
         }
 
-        const { tags, name, symbol, slug } = asset;
-
-        if (tags !== undefined && !Array.isArray(tags)) {
-            return {
-                isValid: false,
-                error: `Invalid asset input: tags must be an array (got ${typeof tags})`
-            };
-        }
+        // Non-array tags are not rejected: classify() treats them as "no tags supplied"
+        const { name, symbol, slug } = asset;
 
         // Check for excessively long inputs that could cause performance issues
         const inputs = { name, symbol, slug };
@@ -1464,10 +1567,10 @@ class AssetClassifier {
      * @returns {string} Normalized lowercase string
      */
     _normalizeString(input) {
-        if (input === null || input === undefined) {
+        if (input === null || input === undefined || typeof input === 'object') {
             return '';
         }
-        
+
         if (typeof input !== 'string') {
             input = String(input);
         }

@@ -91,6 +91,11 @@ The classifier uses a multi-layer approach for maximum accuracy:
    - Text patterns in asset name or slug
    - Case-insensitive matching
 
+Non-tag evidence:
+- `asset.pegType` (DeFiLlama, e.g. `peggedUSD`) marks a stablecoin and sets `peggedAsset`, outranking tags.
+- No `tags` array at all (raw API payload): a fiat stablecoin ticker (`USDT`, `EURC`) still classifies as Stablecoin. An empty array does not.
+- Peg from decorated tickers: `USDC.e`, `ibc/USDC`, `vBUSD`, `axlUSDC`, `USDe`, `lisUSD`.
+
 ### Configuration
 
 #### Default Taxonomy
