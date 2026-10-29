@@ -287,7 +287,10 @@ class StablecoinDataService extends IStablecoinDataService {
             const logoPick = pickBy(d => d.metadata?.logoUrl);
             const dateAddedPick = pickBy(d => d.metadata?.dateAdded);
             const peggedAssetPick = pickBy(d => d.metadata?.peggedAsset);
-            const assetCategoryPick = pickBy(d => d.assetCategory);
+            // 'Other' means the classifier found no evidence (e.g. untagged CoinGecko/Messari records),
+            // so it must not outrank a lower-priority source that positively classified the coin
+            const assetCategoryPick = pickBy(d => (d.assetCategory === 'Other' ? null : d.assetCategory))
+                || pickBy(d => d.assetCategory);
             
             // Enhanced conflict detection with structured output
             const conflicts = this._detectConflicts(entries, key);
